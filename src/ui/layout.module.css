@@ -65,7 +65,7 @@
 }
 .sectionBody {
   padding: 2px 12px 12px;
-  animation: ifdy-slide-up var(--dur-2) var(--ease-out);
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
 }
 
 .grid2 {
@@ -147,7 +147,7 @@
   border-radius: 50%;
   border: 1.6px solid currentColor;
   border-right-color: transparent;
-  animation: ifdy-spin 0.7s linear infinite;
+  animation: global(ifdy-spin) 0.7s linear infinite;
   opacity: 0.8;
 }
 
@@ -159,7 +159,7 @@
   gap: 8px;
   padding: 28px 20px;
   text-align: center;
-  animation: ifdy-fade-in var(--dur-3) ease;
+  animation: global(ifdy-fade-in) var(--dur-3) ease;
 }
 .artIcon {
   display: inline-block;

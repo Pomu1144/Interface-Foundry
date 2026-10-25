@@ -468,7 +468,7 @@
   border-radius: 4px;
   background: linear-gradient(90deg, var(--bg-3) 0%, var(--bg-4) 40%, var(--bg-3) 80%);
   background-size: 200% 100%;
-  animation: ifdy-shimmer 1.3s linear infinite;
+  animation: global(ifdy-shimmer) 1.3s linear infinite;
 }
 
 /* Viewport menu ----------------------------------------------------------- */
@@ -536,7 +536,7 @@
   gap: 6px;
   padding: 18px 20px;
   text-align: center;
-  animation: ifdy-fade-in var(--dur-3) ease;
+  animation: global(ifdy-fade-in) var(--dur-3) ease;
 }
 .qaEmptyMark {
   display: grid;

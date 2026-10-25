@@ -543,7 +543,7 @@ button.chip:hover {
   pointer-events: none;
   background: linear-gradient(100deg, transparent 30%, rgba(91, 141, 255, 0.12) 50%, transparent 70%);
   background-size: 200% 100%;
-  animation: ifdy-shimmer 1.2s linear infinite;
+  animation: global(ifdy-shimmer) 1.2s linear infinite;
 }
 .parked {
   display: grid;
@@ -575,7 +575,7 @@ button.chip:hover {
   box-shadow: var(--shadow-pop);
   text-align: center;
   pointer-events: auto;
-  animation: ifdy-pop-in 220ms var(--ease-out) both;
+  animation: global(ifdy-pop-in) 220ms var(--ease-out) both;
 }
 .noticeIcon {
   display: grid;

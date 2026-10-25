@@ -234,7 +234,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 4px 12px 12px 28px;
-  animation: ifdy-slide-up var(--dur-2) var(--ease-out);
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
 }
 .field {
   display: grid;

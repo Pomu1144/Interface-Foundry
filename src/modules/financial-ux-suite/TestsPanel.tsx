@@ -1,4 +1,4 @@
-import { Copy, Download, FileCode2, FileJson, FileText, FlaskConical, Grid3x3, Info, Monitor, Play, RotateCcw, Square, Trash2, Workflow } from 'lucide-react';
+import { Copy, Download, FileCode2, FileJson, FileText, FlaskConical, Grid3x3, Info, Monitor, Play, RotateCcw, SkipForward, Square, Trash2, Workflow } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { Scenario, ScenarioRun, ViewportContext, ViewportState } from '@shared/types';
@@ -16,6 +16,7 @@ import {
   issueTarget,
   issueTitle,
   latestRuns,
+  resolvePause,
   runBatch,
   runCellKey,
   runDuration,
@@ -55,6 +56,7 @@ export function TestsPanel() {
   const target = useRunner((r) => r.target);
   const selection = useRunner((r) => r.testsSelection);
   const lastBatch = useRunner((r) => r.lastBatch);
+  const paused = useRunner((r) => r.paused);
   const [matrixOpen, setMatrixOpen] = useState(false);
 
   const scoped = useMemo(() => scenariosForScope(scenarios, scope), [scenarios, scope]);
@@ -229,6 +231,25 @@ export function TestsPanel() {
           <Trash2 size={13} />
         </IconButton>
       </div>
+
+      {paused && (
+        <div className={s.pause} role="alert">
+          <StatusGlyph status="failed" size={13} />
+          <span className={s.pauseText}>
+            <b>Paused at step {paused.stepIndex + 1}</b>
+            {active?.current ? ` of ${active.current.scenarioName} · ${active.current.viewportLabel}` : ''} — {paused.error}
+          </span>
+          <Button size="sm" variant="secondary" icon={<RotateCcw size={11} />} onClick={() => resolvePause('retry')}>
+            Retry step
+          </Button>
+          <Button size="sm" variant="secondary" icon={<SkipForward size={11} />} onClick={() => resolvePause('continue')}>
+            Continue
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => resolvePause('stop')}>
+            Stop run
+          </Button>
+        </div>
+      )}
 
       <div className={s.scope} role="note">
         <Info size={12} />

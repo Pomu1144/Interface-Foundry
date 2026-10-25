@@ -135,7 +135,7 @@
   color: var(--text-1);
   font-size: 11px;
   pointer-events: none;
-  animation: ifdy-fade-in var(--dur-1) ease;
+  animation: global(ifdy-fade-in) var(--dur-1) ease;
 }
 .tipHead {
   color: var(--text-2);

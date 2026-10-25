@@ -232,7 +232,7 @@ ${r.issues.length ? `<div class="k">Detected issues (${r.issues.length})</div><o
 <title>Financial UX test report${opts.projectName ? ` · ${e(opts.projectName)}` : ''}</title><style>${CSS}</style></head>
 <body><main>
 <h1>Financial UX test report${opts.projectName ? ` — ${e(opts.projectName)}` : ''}</h1>
-<div class="meta">Generated ${e(new Date(generatedAt).toLocaleString())} by IFDY (Interface Foundry) · ${s.scenarios} scenarios × ${s.viewports} viewports · simulated viewports, approximate device geometry</div>
+<div class="meta">Generated ${e(new Date(generatedAt).toLocaleString())} by IFDY (Interface Foundry) · ${s.scenarios} scenario${s.scenarios === 1 ? '' : 's'} × ${s.viewports} viewport${s.viewports === 1 ? '' : 's'} · simulated viewports, approximate device geometry</div>
 <div class="scope">${e(SCOPE_NOTE)}</div>
 <div class="cards">${card(s.total, 'runs')}${card(s.passed, 'passed')}${card(s.failed, 'failed')}${card(s.passRate === null ? '—' : `${Math.round(s.passRate * 100)}%`, 'pass rate')}${card(formatMs(s.durationMs), 'total duration')}${card(s.issues, 'detected issues')}${card(s.consoleErrors, 'console errors')}</div>
 <h2>Results</h2>

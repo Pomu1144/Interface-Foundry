@@ -5,7 +5,7 @@ import type { Scenario, ScenarioRun, ViewportState } from '@shared/types';
 import { Button, IconButton, Menu, SearchInput, Tooltip } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { runAction } from '@/app/actions';
-import { formatMs, latestRunByScenario, runBatch, runDuration, showInTimeline, stopRuns, useRunner } from '@/modules/interaction-replayer';
+import { formatMs, latestRunByScenario, latestRuns, runBatch, runDuration, showInTimeline, stopRuns, useRunner } from '@/modules/interaction-replayer';
 import { MatrixDialog } from '@/modules/interaction-replayer/MatrixDialog';
 import { FINANCIAL_SUITES } from '@/modules/financial-ux-suite/scenarios';
 import { AddStepPopover } from './AddStep';
@@ -41,6 +41,20 @@ export function ScenariosPanel() {
   const [matrixFor, setMatrixFor] = useState<{ list: Scenario[]; label: string } | null>(null);
 
   const latest = useMemo(() => latestRunByScenario(runs), [runs]);
+  /** Latest result per viewport, folded into one badge: failed if any viewport fails. */
+  const verdicts = useMemo(() => {
+    const map = new Map<string, { status: ScenarioRun['status']; passed: number; total: number }>();
+    for (const r of latestRuns(runs).values()) {
+      if (r.status === 'running') continue;
+      const v = map.get(r.scenarioId) ?? { status: 'passed' as ScenarioRun['status'], passed: 0, total: 0 };
+      v.total += 1;
+      if (r.status === 'passed') v.passed += 1;
+      if (r.status === 'failed') v.status = 'failed';
+      else if (r.status === 'aborted' && v.status !== 'failed') v.status = 'aborted';
+      map.set(r.scenarioId, v);
+    }
+    return map;
+  }, [runs]);
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = q ? scenarios.filter((x) => `${x.name} ${x.suite ?? ''} ${x.description} ${x.tags.join(' ')}`.toLowerCase().includes(q)) : scenarios;
@@ -180,7 +194,7 @@ export function ScenariosPanel() {
         {scenarios.length > 0 && !groups.length && <div className={s.noMatch}>No scenarios match “{query}”.</div>}
         {groups.map(([suite, list]) => {
           const open = !collapsed[suite];
-          const results = list.map((x) => latest.get(x.id)).filter(Boolean) as ScenarioRun[];
+          const results = list.map((x) => verdicts.get(x.id)).filter(Boolean) as { status: ScenarioRun['status'] }[];
           const passed = results.filter((r) => r.status === 'passed').length;
           const failed = results.filter((r) => r.status === 'failed').length;
           return (
@@ -211,9 +225,13 @@ export function ScenariosPanel() {
                   return (
                     <div key={sc.id} className={s.item} role="treeitem" aria-selected={selected} data-selected={selected ? 'true' : undefined} data-active={isActive ? 'true' : undefined}>
                       <button className={s.itemMain} onClick={() => openInTimeline(sc, last)} title={sc.description || sc.name}>
-                        <StatusGlyph status={isActive ? 'running' : (last?.status ?? 'idle')} size={13} />
+                        <StatusGlyph status={isActive ? 'running' : (verdicts.get(sc.id)?.status ?? 'idle')} size={13} />
                         <span className={s.itemName}>{sc.name}</span>
-                        {last && !isActive && <span className={s.itemMeta}>{formatMs(runDuration(last))}</span>}
+                        {last && !isActive && (
+                          <span className={s.itemMeta} title={verdicts.get(sc.id) && verdicts.get(sc.id)!.total > 1 ? 'Viewports passing (latest run on each)' : 'Latest run duration'}>
+                            {verdicts.get(sc.id) && verdicts.get(sc.id)!.total > 1 ? `${verdicts.get(sc.id)!.passed}/${verdicts.get(sc.id)!.total}` : formatMs(runDuration(last))}
+                          </span>
+                        )}
                         {isActive && active?.current && (
                           <span className={s.itemMeta}>
                             {active.current.stepIndex + 1}/{active.current.stepCount}

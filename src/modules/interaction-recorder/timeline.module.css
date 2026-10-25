@@ -117,7 +117,7 @@
   background: var(--danger-soft);
   color: var(--text-0);
   font-size: var(--fs-xs);
-  animation: ifdy-slide-up var(--dur-2) var(--ease-out);
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
 }
 .pauseText {
   flex: 1;
@@ -169,7 +169,7 @@
 }
 .miniSeg[data-status='running'] {
   background: var(--accent);
-  animation: ifdy-pulse 1s ease-in-out infinite;
+  animation: global(ifdy-pulse) 1s ease-in-out infinite;
 }
 .miniSeg[data-selected='true'] {
   box-shadow: 0 0 0 1.5px var(--accent);

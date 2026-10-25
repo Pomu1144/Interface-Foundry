@@ -75,7 +75,7 @@
   margin-top: 2vh;
 }
 .intro {
-  animation: ifdy-slide-up 500ms var(--ease-out);
+  animation: global(ifdy-slide-up) 500ms var(--ease-out);
 }
 .title {
   margin: 0;
@@ -246,7 +246,7 @@
     0 0 0 1px var(--line-2),
     var(--shadow-3);
   overflow: hidden;
-  animation: ifdy-fade-in 700ms ease;
+  animation: global(ifdy-fade-in) 700ms ease;
 }
 .shotBar {
   display: flex;

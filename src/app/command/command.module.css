@@ -4,7 +4,7 @@
   z-index: 960;
   background: rgba(4, 5, 7, 0.5);
   backdrop-filter: blur(3px);
-  animation: ifdy-fade-in var(--dur-2) ease;
+  animation: global(ifdy-fade-in) var(--dur-2) ease;
 }
 .content {
   position: fixed;
@@ -18,7 +18,7 @@
   backdrop-filter: blur(24px) saturate(160%);
   box-shadow: var(--shadow-pop), var(--shadow-3);
   overflow: hidden;
-  animation: ifdy-pop-in var(--dur-2) var(--ease-out);
+  animation: global(ifdy-pop-in) var(--dur-2) var(--ease-out);
 }
 :root[data-theme='light'] .content {
   background: rgba(255, 255, 255, 0.96);

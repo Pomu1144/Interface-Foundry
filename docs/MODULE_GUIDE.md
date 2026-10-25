@@ -81,8 +81,13 @@ The studio must look like the best IDE in the world: dense, calm, precise.
   `--warning`, `--danger`, `--r-*`, `--fs-*`, `--font-mono`…). No hard-coded colors except in
   previews of user content. Light theme must keep working (`:root[data-theme='light']`).
 * Type scale: 11–13px UI, mono for code/values. Row height 26–28px. 4px grid.
-* Icons: `lucide-react` (vector, 13–16px). Rich illustrations generated with Higgsfield live in
-  `src/app/art.ts` — use them for empty states and onboarding, never as tiny glyphs.
+* Shared animations (`ifdy-fade-in`, `ifdy-pop-in`, `ifdy-slide-up`, `ifdy-spin`,
+  `ifdy-pulse`, `ifdy-shimmer`) are global keyframes in `src/styles/global.css`. CSS modules
+  rename animation names, so reference them as `animation: global(ifdy-spin) 0.7s linear
+  infinite;`. Keyframes defined inside a module need no wrapper.
+* Icons: `lucide-react` (vector, 13–16px) for UI glyphs. The flat line icons in
+  `src/app/art.ts` (Higgsfield, monochrome masks) are for empty states, start actions and
+  device categories: render them with `<ArtIcon>` or `EmptyState art=…`, never as `<img>`.
 * Every state is designed: empty, loading (Spinner/shimmer), error, unsupported, permission
   denied. No inert buttons; if a capability is unavailable, disable it and say why.
 * Look at `src/modules/canvas/FoldDock.tsx`, `src/app/dialogs/SettingsDialog.tsx` and

@@ -194,14 +194,15 @@ export class BrowserSession implements PageHost {
       });
     }
     this.send({ t: 'status', pageId, status: 'opening', url: msg.url });
-    const context = await this.ensureContext();
-    if (this.disposed) return;
     const page = new RemotePage(pageId, this, msg);
     try {
+      const context = await this.ensureContext();
+      if (this.disposed) return;
       await page.start(context);
     } catch (err) {
       await page.close();
-      throw err;
+      this.send({ t: 'status', pageId, status: 'error', url: msg.url, error: `Chromium could not open the page: ${(err as Error).message.split('\n')[0]}` });
+      return;
     }
     // Registered only once started: live messages sent meanwhile were queued behind the open.
     if (this.disposed) return void page.close();

@@ -34,7 +34,7 @@
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--danger) 28%, transparent),
     var(--shadow-1);
-  animation: ifdy-slide-up var(--dur-2) var(--ease-out);
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
 }
 .recTop {
   display: flex;
@@ -203,7 +203,7 @@
   width: 2px;
   border-radius: 2px;
   background: var(--accent);
-  animation: ifdy-pulse 1.2s ease-in-out infinite;
+  animation: global(ifdy-pulse) 1.2s ease-in-out infinite;
 }
 .itemMain {
   display: flex;

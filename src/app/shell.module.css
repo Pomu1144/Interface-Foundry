@@ -271,7 +271,7 @@
 .saveDot[data-status='saving']::before {
   background: var(--warning);
   box-shadow: 0 0 6px var(--warning);
-  animation: ifdy-pulse 1s ease infinite;
+  animation: global(ifdy-pulse) 1s ease infinite;
 }
 .saveDot[data-status='error']::before {
   background: var(--danger);
@@ -401,7 +401,7 @@ button.statusItem:hover {
 }
 .engineDot[data-status='loading'] {
   background: var(--warning);
-  animation: ifdy-pulse 1s infinite;
+  animation: global(ifdy-pulse) 1s infinite;
 }
 .engineDot[data-status='error'],
 .engineDot[data-status='crashed'] {

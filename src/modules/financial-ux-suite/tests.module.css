@@ -600,3 +600,23 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.pause {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+  background: var(--danger-soft);
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+  flex: none;
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
+}
+.pauseText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

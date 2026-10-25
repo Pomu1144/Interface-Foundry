@@ -130,7 +130,7 @@
   border-top: 1px solid var(--line-2);
   background: var(--bg-2);
   flex: none;
-  animation: ifdy-slide-up var(--dur-2) var(--ease-out);
+  animation: global(ifdy-slide-up) var(--dur-2) var(--ease-out);
 }
 .detailHead {
   display: flex;
