@@ -107,6 +107,29 @@ export type ResponsiveAuditOptions = {
   ignoreSelectors: string[];
 };
 
+/** An asset referenced by the page (assets.scan). */
+export type PageAsset = {
+  kind: 'image' | 'icon' | 'background' | 'video' | 'font';
+  /** Absolute URL (empty for system fonts). */
+  url: string;
+  label: string;
+  /** Number of elements / rules using it. */
+  count: number;
+  selector?: string;
+  nodeId?: NodeId;
+  width?: number;
+  height?: number;
+  alt?: string;
+  /** Fonts: family, weight/style, and load status from document.fonts. */
+  family?: string;
+  weight?: string;
+  style?: string;
+  status?: 'loaded' | 'loading' | 'unloaded' | 'error' | 'system';
+};
+
+/** Rules and inline styles that reference a custom property (tokens.usage). */
+export type TokenUsage = { selector: string; property: string; value: string; source: string; media?: string; matches: number };
+
 export type PreviewEnv = {
   fontScale?: number;
   colorScheme?: 'light' | 'dark' | null;
@@ -146,6 +169,8 @@ export interface AgentMethods {
   'record.stop': [void, void];
   'replay.step': [{ action: StepAction; timeout: number }, ReplayResult];
   'tokens.scan': [void, { name: string; value: string; usage: number }[]];
+  'tokens.usage': [{ name: string }, TokenUsage[]];
+  'assets.scan': [void, PageAsset[]];
   'env.set': [PreviewEnv, void];
   'nav.go': [{ url: string }, void];
   'nav.reload': [void, void];
@@ -186,6 +211,8 @@ export const AGENT_METHODS: readonly AgentMethod[] = [
   'record.stop',
   'replay.step',
   'tokens.scan',
+  'tokens.usage',
+  'assets.scan',
   'env.set',
   'nav.go',
   'nav.reload',

@@ -311,6 +311,9 @@ export async function replayStep(action: StepAction, timeout: number): Promise<R
         const d = r.el as HTMLButtonElement;
         if (d.disabled) throw new Error(`${describeLocator(action.locator)} is disabled`);
         dispatchPointerClick(r.el);
+        // Extra clicks of a double-click land in the same task, before the page can re-render.
+        for (let i = 1; i < Math.min(3, action.clickCount ?? 1); i++) dispatchPointerClick(r.el);
+        if ((action.clickCount ?? 1) > 1) r.el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, composed: true, view: window }));
         return done(true, undefined, r.strategy);
       }
       case 'fill': {
