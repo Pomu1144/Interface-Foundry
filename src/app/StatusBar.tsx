@@ -14,8 +14,10 @@ export function StatusBar() {
   const changes = useStudio((st) => st.changes.length);
   const experiments = useStudio((st) => st.changes.filter((c) => c.experiment).length);
   const editTarget = useStudio((st) => st.editTarget);
+  const boardEngine = useStudio((st) => st.viewport.engine ?? 'auto');
   const vp = primary?.viewport;
-  const engineLabel = primary?.engine === 'remote' ? 'Chromium (controlled)' : primary?.engine === 'embed' ? 'Embedded (read-only)' : 'Sandboxed frame';
+  const remoteName = boardEngine === 'webkit' ? 'WebKit' : boardEngine === 'ios-simulator' ? 'iOS Simulator' : 'Chromium';
+  const engineLabel = primary?.engine === 'remote' ? `${remoteName} (controlled)` : primary?.engine === 'embed' ? 'Embedded (read-only)' : 'Sandboxed frame';
   return (
     <footer className={s.statusBar}>
       <Tooltip content={server.status === 'online' ? 'IFDY companion connected' : 'Companion offline — start with npm run dev'} side="top">

@@ -188,6 +188,10 @@ export type ServerMessage =
       detail?: string;
       /** Touch support changed: touch event APIs only appear after the next load. */
       touchNeedsReload?: boolean;
+      /** The engine reloaded the page to apply this emulation (WebKit: DPR, mobile, touch and UA are fixed per context). */
+      reloaded?: boolean;
+      /** false: this page cannot take input (e.g. iOS Simulator mirrored without idb), so the board is view-only. */
+      input?: boolean;
     }
   /**
    * Visual viewport in CSS px. Differs from the device viewport when a mobile page has no

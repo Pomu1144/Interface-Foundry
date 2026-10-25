@@ -541,3 +541,13 @@
 .engineChip[data-engine='ios-simulator'] {
   color: var(--accent-strong);
 }
+.engineChip[data-suggest='webkit']::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--info);
+  vertical-align: 1px;
+}

@@ -5,8 +5,10 @@ import {
   encodeFrame,
   isAllowedRemoteUrl,
   type ClientMessage,
+  type EngineInfo,
   type FrameHeader,
   type OpenMessage,
+  type RemoteEngine,
   type ServerMessage,
 } from '../../src/modules/preview-runtime/remote/protocol';
 import type { BrowserManager } from './manager';
@@ -16,6 +18,14 @@ import { createWebKitPage, webkitStatus } from './webkit-page';
 import { createSimulatorPage, iosSimulatorStatus } from '../ios/simulator-page';
 
 const PAGE_ID = /^[\w.:~-]{1,96}$/;
+
+const unavailableEngine = (id: RemoteEngine, label: string, err: unknown): EngineInfo => ({
+  id,
+  available: false,
+  label,
+  detail: `Status check failed: ${(err as Error)?.message?.split('\n')[0] ?? String(err)}`,
+  features: { inspect: false, input: false, touch: false, foldEmulation: false, rotate: false },
+});
 /** Frame-rate budget shared by every streaming page of one studio tab. */
 const TOTAL_FPS = 150;
 const MAX_FPS_PER_PAGE = 40;
@@ -102,8 +112,9 @@ export class BrowserSession implements PageHost {
             label: `Chromium ${this.browserVersion}`,
             features: { inspect: true, input: true, touch: true, foldEmulation: df.method !== 'none', rotate: true },
           },
-          await webkitStatus(this.manager),
-          await iosSimulatorStatus(this.manager),
+          // Other engines report their own availability; a failure there never blocks Chromium.
+          await webkitStatus(this.manager).catch((err) => unavailableEngine('webkit', 'WebKit', err)),
+          await iosSimulatorStatus(this.manager).catch((err) => unavailableEngine('ios-simulator', 'Safari (iOS Simulator)', err)),
         ],
       });
     } catch (err) {
@@ -263,11 +274,11 @@ export class BrowserSession implements PageHost {
           if (this.context === ctx) {
             this.context = null;
             this.contextPromise = null;
-            for (const [id, p] of this.pages) {
+            for (const [id, p] of this.chromiumPages()) {
               void p.close();
+              this.pages.delete(id);
               this.send({ t: 'status', pageId: id, status: 'closed', error: 'Chromium closed this page (the browser restarted).' });
             }
-            this.pages.clear();
           }
         });
         this.context = ctx;
@@ -328,15 +339,19 @@ export class BrowserSession implements PageHost {
     return this.manager.isForbiddenUrl(url);
   }
 
-  /** The browser went away (crash or idle shutdown). */
+  /** Chromium went away (crash or idle shutdown). Pages of other engines keep running. */
   onBrowserGone() {
     this.context = null;
     this.contextPromise = null;
-    for (const [id, p] of this.pages) {
+    for (const [id, p] of this.chromiumPages()) {
       void p.close();
+      this.pages.delete(id);
       this.send({ t: 'status', pageId: id, status: 'closed', error: 'Chromium exited. Reload to start it again.' });
     }
-    this.pages.clear();
+  }
+
+  private chromiumPages() {
+    return [...this.pages].filter(([, p]) => p instanceof RemotePage);
   }
 
   async dispose() {

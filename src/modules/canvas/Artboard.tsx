@@ -97,17 +97,26 @@ function EnginePicker({ spec }: { spec: BoardSpec }) {
     else if (spec.role === 'primary') studio().setViewport({ engine });
     else studio().setCompare({ partner: { ...studio().compare.partner, engine } });
   };
+  // iPhone / iPad boards are better served by Safari's engine; Auto stays the default.
+  const apple = spec.device.platform === 'ios';
   const hint = (id: PreviewEngine) => {
     const e = info(id);
-    if (!e) return id === 'auto' ? 'iframe / default' : undefined;
-    return e.available ? e.label : 'Unavailable';
+    const suggested = apple && id === 'webkit' && e?.available !== false ? ' · suggested' : '';
+    if (!e) return id === 'auto' ? 'iframe / default' : suggested ? 'suggested' : undefined;
+    return e.available ? `${e.label}${suggested}` : 'Unavailable';
   };
   const current = spec.engine;
   return (
     <Menu
       width={300}
       trigger={
-        <button className={s.engineChip} data-engine={current} title="Rendering engine" onPointerDown={(e) => e.stopPropagation()}>
+        <button
+          className={s.engineChip}
+          data-engine={current}
+          data-suggest={apple && current === 'auto' && info('webkit')?.available ? 'webkit' : undefined}
+          title={apple && current === 'auto' ? 'Rendering engine — WebKit (Safari’s engine) is suggested for this device' : 'Rendering engine'}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {ENGINE_LABEL[current]}
         </button>
       }
@@ -125,8 +134,10 @@ function EnginePicker({ spec }: { spec: BoardSpec }) {
           type: 'label',
           label:
             current === 'webkit'
-              ? "Safari's engine on this OS, not iOS Safari."
-              : current === 'ios-simulator'
+              ? (info('webkit')?.detail ?? "Safari's engine on this OS, not iOS Safari.")
+              : apple && current === 'auto' && info('webkit')?.available
+                ? 'Tip: render this iPhone/iPad board with WebKit to see Safari’s engine (not iOS Safari itself).'
+                : current === 'ios-simulator'
                 ? (info('ios-simulator')?.detail ?? 'Real Mobile Safari; needs the companion on a Mac with Xcode.')
                 : current === 'chromium'
                   ? 'Streamed from the companion with full device emulation.'

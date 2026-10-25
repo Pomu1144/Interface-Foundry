@@ -543,13 +543,13 @@ export class RemotePage implements LivePage {
  * The page's own address is reported as-is (like the agent's hello), so the studio can
  * navigate and capture it; only network entries and logs are redacted.
  */
-const pageUrl = (u: string) => (u.length > 4096 ? u.slice(0, 4096) : u);
+export const pageUrl = (u: string) => (u.length > 4096 ? u.slice(0, 4096) : u);
 
 const num = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
 
 const LEVELS: Record<string, WireConsoleEntry['level']> = { log: 'log', info: 'info', warning: 'warn', error: 'error', debug: 'debug', trace: 'debug', assert: 'error' };
 
-function consoleMessage(pageId: string, msg: ConsoleMessage): ServerMessage {
+export function consoleMessage(pageId: string, msg: ConsoleMessage): ServerMessage {
   const loc = msg.location();
   let source: string | undefined;
   if (loc.url) {
