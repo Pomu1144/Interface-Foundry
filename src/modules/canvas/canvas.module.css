@@ -1,0 +1,520 @@
+.canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.065) 1px, transparent 0);
+  cursor: default;
+  touch-action: none;
+}
+:root[data-theme='light'] .canvas {
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.09) 1px, transparent 0);
+}
+.canvas[data-panning='true'],
+.canvas[data-tool='pan'] {
+  cursor: grab;
+}
+.canvas[data-panning='true']:active {
+  cursor: grabbing;
+}
+.canvas[data-panning='true'] iframe,
+.canvas[data-panning='true'] canvas {
+  pointer-events: none !important;
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px 700px at 50% 42%, rgba(91, 141, 255, 0.035), transparent 70%),
+    radial-gradient(800px 400px at 50% 110%, rgba(255, 122, 69, 0.03), transparent 70%);
+  pointer-events: none;
+}
+.world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.boardSlot {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.board {
+  position: relative;
+}
+.boardLabel {
+  position: absolute;
+  overflow: hidden;
+  bottom: calc(100% + 14px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-size: 12px;
+  pointer-events: none;
+}
+.boardLabel > * {
+  flex: none;
+}
+.boardLabel > .boardDims,
+.boardLabel > .boardMeta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.boardName {
+  color: var(--text-0);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.boardDims {
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.boardMeta {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.frameWrap {
+  position: relative;
+  perspective: 2600px;
+  transform-style: preserve-3d;
+}
+
+/* Loading & status ---------------------------------------------------- */
+.loadingShimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(91, 141, 255, 0.12) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: global(ifdy-shimmer) 1.2s linear infinite;
+}
+.statusCard {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: rgba(12, 13, 16, 0.92);
+  backdrop-filter: blur(6px);
+  color: var(--text-1);
+  text-align: center;
+  font-size: 13px;
+}
+.statusIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.statusIcon[data-tone='warning'] {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.statusTitle {
+  color: var(--text-0);
+  font-size: 15px;
+  font-weight: 600;
+}
+.statusText {
+  max-width: 340px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* Responsive handles --------------------------------------------------- */
+.rHandleX,
+.rHandleY,
+.rHandleXY {
+  position: absolute;
+  z-index: 10;
+  background: var(--bg-3);
+  border: 1px solid var(--line-3);
+  border-radius: 4px;
+  transition: background var(--dur-1) ease;
+}
+.rHandleX:hover,
+.rHandleY:hover,
+.rHandleXY:hover {
+  background: var(--accent);
+}
+.rHandleX {
+  top: 50%;
+  right: -16px;
+  width: 8px;
+  height: 48px;
+  margin-top: -24px;
+  cursor: ew-resize;
+}
+.rHandleY {
+  left: 50%;
+  bottom: -16px;
+  width: 48px;
+  height: 8px;
+  margin-left: -24px;
+  cursor: ns-resize;
+}
+.rHandleXY {
+  right: -16px;
+  bottom: -16px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+/* Breakpoint bar --------------------------------------------------------- */
+.bpBar {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  pointer-events: auto;
+}
+.bpTrack {
+  position: relative;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(91, 141, 255, 0.35), rgba(167, 139, 250, 0.3) 60%, rgba(255, 122, 69, 0.3));
+  max-height: 3px;
+}
+.bpMark {
+  position: absolute;
+  bottom: -5px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--text-3);
+  transform: translateX(-50%);
+  cursor: pointer;
+  max-height: 13px;
+  transition: background var(--dur-1) ease;
+}
+.bpMark[data-active='true'] {
+  background: var(--accent-strong);
+}
+.bpMark:hover {
+  background: var(--molten);
+}
+
+/* Overlay ---------------------------------------------------------------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+.overlay > * {
+  position: absolute;
+}
+.hover {
+  outline: 1px solid var(--ov-hover);
+  outline-offset: -0.5px;
+  background: rgba(91, 141, 255, 0.06);
+  transition: all 40ms linear;
+}
+.hoverLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.hoverTag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.hoverDims {
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+.selection {
+  outline: 1.5px solid var(--ov-select);
+  outline-offset: -0.75px;
+  box-shadow: 0 0 0 4px rgba(91, 141, 255, 0.12);
+}
+.selection[data-hidden='true'] {
+  outline-style: dashed;
+  background: repeating-linear-gradient(45deg, rgba(91, 141, 255, 0.08) 0 6px, transparent 6px 12px);
+}
+.mirror {
+  outline: 1.5px dashed rgba(167, 139, 250, 0.9);
+  outline-offset: -0.75px;
+  background: rgba(167, 139, 250, 0.06);
+}
+.marginShade {
+  border-style: solid;
+  border-color: var(--ov-margin);
+  box-sizing: border-box;
+}
+.paddingShade {
+  border-style: solid;
+  border-color: var(--ov-padding);
+  box-sizing: border-box;
+}
+.handle,
+.edgeHandle {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.5px var(--ov-select),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.handle[data-resize],
+.edgeHandle {
+  pointer-events: auto;
+}
+.edgeHandle {
+  width: 6px;
+  height: 16px;
+  margin: -8px 0 0 -3px;
+  border-radius: 3px;
+}
+.edgeHandle[data-axis='y'] {
+  width: 16px;
+  height: 6px;
+  margin: -3px 0 0 -8px;
+}
+.dimBadge {
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--ov-select);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.contextBar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 34px;
+  padding: 0 4px 0 10px;
+  border-radius: 10px;
+  background: rgba(22, 23, 28, 0.94);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+  animation: global(ifdy-pop-in) var(--dur-2) var(--ease-out);
+}
+:root[data-theme='light'] .contextBar {
+  background: rgba(255, 255, 255, 0.96);
+}
+.contextLabel {
+  max-width: 180px;
+  margin-right: 6px;
+  overflow: hidden;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.measure {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.measure line {
+  stroke: var(--ov-measure);
+  stroke-width: 1;
+}
+.measureTarget {
+  fill: rgba(255, 92, 138, 0.06);
+  stroke: var(--ov-measure);
+  stroke-width: 1;
+}
+.measureLabel {
+  display: grid;
+  place-items: center;
+  height: 18px;
+  margin: 0 auto;
+  width: fit-content;
+  min-width: 22px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--ov-measure);
+  color: #fff;
+  font: 600 10.5px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dock ----------------------------------------------------------------- */
+.dock {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 8px;
+  transform: translateX(-50%);
+  border-radius: 14px;
+  background: rgba(20, 21, 25, 0.86);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow:
+    var(--shadow-pop),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: global(ifdy-slide-up) var(--dur-3) var(--ease-out);
+  white-space: nowrap;
+}
+:root[data-theme='light'] .dock {
+  background: rgba(255, 255, 255, 0.9);
+}
+.dockDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--line-2);
+  margin: 0 2px;
+}
+.scrubber {
+  width: 132px;
+}
+.dockValue {
+  width: 34px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-align: right;
+}
+.dockNote {
+  color: var(--warning);
+  font-size: 10.5px;
+}
+
+.zoomHud {
+  position: absolute;
+  right: 14px;
+  bottom: 18px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: rgba(20, 21, 25, 0.86);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-pop);
+}
+:root[data-theme='light'] .zoomHud {
+  background: rgba(255, 255, 255, 0.9);
+}
+.zoomValue {
+  min-width: 46px;
+  height: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.zoomValue:hover {
+  background: var(--bg-hover);
+}
+
+@media (max-width: 1400px) {
+  .scrubber {
+    width: 90px;
+  }
+}
+
+.dockSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.dockSettingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-1);
+  font-size: 12px;
+}
+.dockHelp {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* Rulers ------------------------------------------------------------------ */
+.rulerTop,
+.rulerLeft,
+.rulerCorner {
+  position: absolute;
+  z-index: 35;
+  pointer-events: none;
+}
+.rulerTop {
+  top: 0;
+  left: 18px;
+}
+.rulerLeft {
+  top: 18px;
+  left: 0;
+}
+.rulerCorner {
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.boardRemove {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.boardRemove:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}

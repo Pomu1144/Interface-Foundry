@@ -1,0 +1,506 @@
+.app {
+  display: grid;
+  grid-template-rows: var(--toolbar-h) minmax(0, 1fr) var(--statusbar-h);
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  background: var(--bg-0);
+}
+.main {
+  display: flex;
+  min-height: 0;
+}
+.workArea {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  background: var(--bg-1);
+}
+.center {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  background: var(--bg-canvas);
+}
+.separator {
+  position: relative;
+  flex: none;
+  width: 1px;
+  background: var(--line-1);
+  outline: none;
+  transition: background var(--dur-2) ease;
+}
+.separator::after {
+  content: '';
+  position: absolute;
+  inset: 0 -3px;
+  z-index: 5;
+}
+.separator:hover,
+.separator[data-separator='active'],
+.separator[data-separator-state='drag'] {
+  background: var(--accent);
+}
+.separatorH {
+  width: auto;
+  height: 1px;
+}
+.separatorH::after {
+  inset: -3px 0;
+}
+
+/* Toolbar ------------------------------------------------------------- */
+.toolbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--line-1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--bg-1);
+  z-index: 20;
+}
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.toolbarGroup > * {
+  flex: none;
+}
+.toolbarGroup > .brand {
+  flex: 0 1 auto;
+}
+.toolbarRight {
+  justify-content: flex-end;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 8px 0 3px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  flex: 0 1 auto;
+}
+/* Below 1800px the Inspect/Interact labels collapse to icons (still named for assistive tech). */
+@media (max-width: 1799px) {
+  .modeSwitch [data-segment-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .modeSwitch [role='radio'] {
+    padding: 0 6px;
+  }
+}
+.brand:hover {
+  background: var(--bg-hover);
+}
+.brandIcon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.brandText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.15;
+}
+.brandProject {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-0);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brandSource {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--line-2);
+  flex: none;
+}
+
+/* Activity pill (Xcode-style) */
+.activity {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 3px;
+  border-radius: 9px;
+  background: var(--bg-inset);
+  box-shadow:
+    inset 0 0 0 1px var(--line-1),
+    inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  width: clamp(360px, 34vw, 640px);
+}
+.runButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-1);
+}
+.runButton:hover {
+  background: var(--bg-hover);
+  color: var(--success);
+}
+.runButton[data-running='true'] {
+  color: var(--success);
+}
+.scheme {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.scheme:hover {
+  background: var(--bg-hover);
+}
+.schemeSep {
+  color: var(--text-3);
+}
+.schemeIcon {
+  color: var(--text-1);
+}
+.activityStatus {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 26px;
+  padding: 0 10px;
+  border-left: 1px solid var(--line-1);
+  color: var(--text-1);
+  font-size: 11.5px;
+}
+.activityText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activityText b {
+  color: var(--text-0);
+  font-weight: 600;
+}
+.activityProgress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  transition: width 300ms var(--ease-out);
+}
+.counts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  padding: 0 2px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.count[data-tone='warning'] {
+  color: var(--warning);
+}
+.count[data-tone='danger'] {
+  color: var(--danger);
+}
+.count[data-tone='success'] {
+  color: var(--success);
+}
+.saveDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  color: var(--text-2);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.saveDot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+.saveDot[data-status='unsaved']::before,
+.saveDot[data-status='saving']::before {
+  background: var(--warning);
+  box-shadow: 0 0 6px var(--warning);
+  animation: global(ifdy-pulse) 1s ease infinite;
+}
+.saveDot[data-status='error']::before {
+  background: var(--danger);
+  box-shadow: 0 0 6px var(--danger);
+}
+
+/* Activity bar ---------------------------------------------------------- */
+.activityBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: var(--activitybar-w);
+  padding: 8px 0;
+  border-right: 1px solid var(--line-1);
+  background: var(--bg-0);
+  flex: none;
+}
+.activityItem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  transition:
+    color var(--dur-1) ease,
+    background var(--dur-1) ease;
+}
+.activityItem:hover {
+  color: var(--text-0);
+  background: var(--bg-hover);
+}
+.activityItem[data-active='true'] {
+  color: var(--text-0);
+  background: var(--bg-3);
+  box-shadow: var(--highlight-top), 0 0 0 1px var(--line-1);
+}
+.activityItem[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+.activitySpacer {
+  flex: 1;
+}
+
+/* Status bar ------------------------------------------------------------- */
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  border-top: 1px solid var(--line-1);
+  background: var(--bg-0);
+  color: var(--text-2);
+  font-size: 11px;
+  overflow: hidden;
+}
+.statusItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  white-space: nowrap;
+}
+button.statusItem:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+.statusMono {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.statusSpacer {
+  flex: 1;
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.crumb {
+  max-width: 160px;
+  height: 20px;
+  padding: 0 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crumb:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+.crumb:last-child {
+  color: var(--accent-strong);
+}
+.engineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.engineDot[data-status='ready'] {
+  background: var(--success);
+}
+.engineDot[data-status='loading'] {
+  background: var(--warning);
+  animation: global(ifdy-pulse) 1s infinite;
+}
+.engineDot[data-status='error'],
+.engineDot[data-status='crashed'] {
+  background: var(--danger);
+}
+
+/* Document area ----------------------------------------------------------- */
+.docTabs {
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-0);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: none;
+}
+.docTabs::-webkit-scrollbar {
+  display: none;
+}
+.docTab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 220px;
+  padding: 0 8px 0 12px;
+  border: 0;
+  border-right: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.docTab:hover {
+  color: var(--text-0);
+  background: var(--bg-hover);
+}
+.docTab[data-active='true'] {
+  color: var(--text-0);
+  background: var(--bg-canvas);
+}
+.docTab[data-active='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1.5px;
+  background: var(--molten-gradient);
+}
+.docTabTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.docClose {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: var(--text-3);
+  opacity: 0;
+}
+.docTab:hover .docClose,
+.docTab[data-active='true'] .docClose {
+  opacity: 1;
+}
+.docClose:hover {
+  background: var(--bg-active);
+  color: var(--text-0);
+}
+.docDirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-1);
+}
+.docBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}

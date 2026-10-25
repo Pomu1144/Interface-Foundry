@@ -1,0 +1,423 @@
+.root {
+  position: relative;
+  height: 100vh;
+  overflow: auto;
+  background: var(--bg-0);
+  color: var(--text-0);
+}
+/* Quiet engineering backdrop: a faint dot grid that fades out toward the bottom. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(var(--line-2) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.35) 55%, transparent 90%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.35) 55%, transparent 90%);
+}
+.content {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 48px 32px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brandIcon {
+  width: 32px;
+  height: 32px;
+}
+.brandName {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.brandSub {
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+.serverStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--r-full);
+  background: var(--bg-1);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--text-1);
+  font-size: 12px;
+}
+.serverStatus[data-status='online'] svg {
+  color: var(--success);
+}
+.serverStatus[data-status='offline'] svg {
+  color: var(--danger);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+  align-items: start;
+  gap: 48px;
+  margin-top: 2vh;
+}
+.intro {
+  animation: global(ifdy-slide-up) 500ms var(--ease-out);
+}
+.title {
+  margin: 0;
+  font-size: clamp(28px, 2.4vw, 36px);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.titleSub {
+  color: var(--text-2);
+}
+.lede {
+  margin: 14px 0 0;
+  color: var(--text-1);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.start {
+  display: flex;
+  flex-direction: column;
+  margin-top: 26px;
+  border-radius: var(--r-lg);
+  background: var(--bg-1);
+  box-shadow:
+    inset 0 0 0 1px var(--line-2),
+    var(--shadow-1);
+  overflow: hidden;
+}
+.startItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px 12px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  text-align: left;
+  transition: background var(--dur-1) ease;
+}
+.startItem + .startItem {
+  box-shadow: inset 0 1px 0 var(--line-1);
+}
+.startItem:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.startItem:focus-visible {
+  outline: none;
+  background: var(--accent-softer);
+}
+.startItem:disabled {
+  cursor: progress;
+}
+.startTile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+  color: var(--text-1);
+  transition: color var(--dur-2) ease;
+}
+.startItem:first-child .startTile {
+  background: var(--molten-soft);
+  color: var(--molten);
+}
+.startItem:hover .startTile {
+  color: var(--text-0);
+}
+.startItem:first-child:hover .startTile {
+  color: var(--molten);
+}
+.startText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.startTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+.startDesc {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.startChevron {
+  flex: none;
+  color: var(--text-3);
+}
+
+.urlForm {
+  margin-top: 22px;
+}
+.urlLabel {
+  display: block;
+  margin: 0 0 8px 2px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.urlBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 7px 0 14px;
+  border-radius: var(--r-lg);
+  background: var(--bg-1);
+  box-shadow:
+    inset 0 0 0 1px var(--line-2),
+    var(--shadow-1);
+  transition: box-shadow var(--dur-2) ease;
+}
+.urlBox:focus-within {
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 0 0 3px var(--accent-softer);
+}
+.urlIcon {
+  flex: none;
+  color: var(--text-2);
+}
+.urlInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.urlInput:focus {
+  outline: none;
+}
+.urlInput::placeholder {
+  color: var(--text-3);
+}
+.urlDevices {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+  color: var(--text-3);
+}
+.urlNote {
+  margin: 8px 2px 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* Product shot in a neutral window frame */
+.shot {
+  margin: 0;
+  border-radius: 12px;
+  background: var(--bg-1);
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    var(--shadow-3);
+  overflow: hidden;
+  animation: global(ifdy-fade-in) 700ms ease;
+}
+.shotBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-2);
+}
+.shotDots {
+  display: flex;
+  gap: 6px;
+}
+.shotDots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bg-4);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.shotTitle {
+  flex: 1;
+  margin-right: 40px;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 11px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shotImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: left top;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-top: auto;
+  border-radius: var(--r-lg);
+  background: var(--bg-1);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  overflow: hidden;
+}
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px 18px;
+}
+.feature + .feature {
+  box-shadow: inset 1px 0 0 var(--line-1);
+}
+.featureIcon {
+  margin-bottom: 8px;
+  color: var(--text-1);
+}
+.featureTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+.featureText {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.recent {
+  max-width: 880px;
+}
+.recentHead {
+  margin-bottom: 8px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.recentList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.recentItem {
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+}
+.recentItem:hover {
+  background: var(--bg-2);
+}
+.recentOpen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  text-align: left;
+}
+.recentIcon {
+  color: var(--text-2);
+}
+.recentName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recentMeta {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.recentDelete {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-3);
+}
+.recentDelete:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.footer {
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+.footer button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shot {
+    max-width: 760px;
+  }
+  .features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .feature:nth-child(4) {
+    box-shadow: inset 0 1px 0 var(--line-1);
+  }
+  .feature:nth-child(n + 5) {
+    box-shadow:
+      inset 1px 0 0 var(--line-1),
+      inset 0 1px 0 var(--line-1);
+  }
+}

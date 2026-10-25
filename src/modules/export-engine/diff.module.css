@@ -1,0 +1,230 @@
+.file {
+  --diff-add: color-mix(in srgb, var(--success) 9%, transparent);
+  --diff-add-strong: color-mix(in srgb, var(--success) 26%, transparent);
+  --diff-del: color-mix(in srgb, var(--danger) 9%, transparent);
+  --diff-del-strong: color-mix(in srgb, var(--danger) 26%, transparent);
+  --diff-row: 19px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+.file + .file {
+  margin-top: 10px;
+}
+.dense {
+  --diff-row: 18px;
+}
+
+.fileHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+}
+.fileHeader[data-clickable='true'] {
+  cursor: pointer;
+}
+.fileHeader[data-clickable='true']:hover {
+  background: var(--bg-3);
+}
+.fileIcon {
+  color: var(--text-2);
+  flex: none;
+}
+.newIcon {
+  color: var(--accent);
+  flex: none;
+}
+.path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+.adds {
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.dels {
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.body {
+  overflow-x: auto;
+}
+.table {
+  min-width: max-content;
+  width: 100%;
+  font-size: 11.5px;
+  line-height: var(--diff-row);
+}
+
+.hunk {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-top: 1px solid var(--line-1);
+  border-bottom: 1px solid var(--line-1);
+  background: var(--accent-softer);
+}
+.hunk:first-child {
+  border-top: 0;
+}
+.hunkRange {
+  color: var(--text-2);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.hunkLabels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-family: var(--font-ui);
+}
+
+.inlineRow {
+  display: grid;
+  grid-template-columns: 40px 40px 16px 1fr;
+  min-height: var(--diff-row);
+}
+.splitRow {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px minmax(0, 1fr);
+  min-height: var(--diff-row);
+}
+.no {
+  padding: 0 8px 0 0;
+  color: var(--text-3);
+  font-size: 10.5px;
+  text-align: right;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-1);
+}
+.inlineRow.add .no,
+.noAdd {
+  background: var(--diff-add);
+  color: color-mix(in srgb, var(--success) 70%, var(--text-2));
+}
+.inlineRow.del .no,
+.noDel {
+  background: var(--diff-del);
+  color: color-mix(in srgb, var(--danger) 70%, var(--text-2));
+}
+.sign {
+  color: var(--text-3);
+  text-align: center;
+  user-select: none;
+}
+.inlineRow.add .sign {
+  color: var(--success);
+}
+.inlineRow.del .sign {
+  color: var(--danger);
+}
+.add {
+  background: var(--diff-add);
+}
+.del {
+  background: var(--diff-del);
+}
+.cell {
+  min-width: 0;
+  padding-left: 8px;
+  overflow: hidden;
+}
+.splitRow .cell + .no {
+  border-left: 1px solid var(--line-1);
+}
+.empty {
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--line-1) 5px 6px);
+}
+.code {
+  color: var(--text-0);
+  white-space: pre;
+  tab-size: 2;
+}
+.markAdd {
+  border-radius: 2px;
+  background: var(--diff-add-strong);
+}
+.markDel {
+  border-radius: 2px;
+  background: var(--diff-del-strong);
+}
+.meta {
+  padding: 0 12px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-style: italic;
+}
+.more {
+  display: block;
+  width: 100%;
+  height: 28px;
+  border: 0;
+  border-top: 1px solid var(--line-1);
+  background: var(--bg-2);
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+}
+.more:hover {
+  background: var(--bg-3);
+}
+
+.synComment {
+  color: var(--syn-comment);
+  font-style: italic;
+}
+.synKeyword {
+  color: var(--syn-keyword);
+}
+.synTag {
+  color: var(--syn-tag);
+}
+.synAttr {
+  color: var(--syn-attr);
+}
+.synString {
+  color: var(--syn-string);
+}
+.synNumber {
+  color: var(--syn-number);
+}
+.synProperty {
+  color: var(--syn-property);
+}
+.synFn {
+  color: var(--syn-fn);
+}
+.synPunct {
+  color: var(--syn-punct);
+}
+.synInvalid {
+  color: var(--danger);
+}

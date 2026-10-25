@@ -1,0 +1,81 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.note {
+  margin-top: 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.list {
+  padding: 4px 6px;
+}
+.group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 8px 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-1);
+  text-align: left;
+}
+.item:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+.item[data-active='true'] {
+  background: var(--accent-soft);
+  color: var(--text-0);
+}
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+.item[data-active='true'] .glyph {
+  color: var(--accent-strong);
+}
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.footer {
+  margin-top: auto;
+  padding: 8px;
+  border-top: 1px solid var(--line-1);
+}

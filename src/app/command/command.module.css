@@ -1,0 +1,108 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 960;
+  background: rgba(4, 5, 7, 0.5);
+  backdrop-filter: blur(3px);
+  animation: global(ifdy-fade-in) var(--dur-2) ease;
+}
+.content {
+  position: fixed;
+  z-index: 961;
+  top: 14vh;
+  left: 50%;
+  width: min(640px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background: rgba(20, 21, 26, 0.94);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--shadow-pop), var(--shadow-3);
+  overflow: hidden;
+  animation: global(ifdy-pop-in) var(--dur-2) var(--ease-out);
+}
+:root[data-theme='light'] .content {
+  background: rgba(255, 255, 255, 0.96);
+}
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid var(--line-1);
+}
+.searchIcon {
+  color: var(--text-2);
+}
+.input {
+  flex: 1;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 15px;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+.list {
+  max-height: min(56vh, 480px);
+  overflow-y: auto;
+  padding: 6px;
+  scroll-padding: 8px;
+}
+.empty {
+  padding: 28px;
+  color: var(--text-2);
+  text-align: center;
+  font-size: 13px;
+}
+.group [cmdk-group-heading] {
+  padding: 10px 10px 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--text-0);
+  font-size: 13px;
+  cursor: default;
+}
+.item[data-selected='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+.item[data-selected='true'] .icon,
+.item[data-selected='true'] .hint {
+  color: rgba(255, 255, 255, 0.85);
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  color: var(--text-2);
+  flex: none;
+}
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.hint {
+  color: var(--text-3);
+  font-size: 11.5px;
+}

@@ -1,0 +1,975 @@
+/* 3D view hierarchy ---------------------------------------------------- */
+
+.root {
+  position: absolute;
+  inset: 0;
+  container: h3d-root / inline-size;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-canvas);
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+}
+
+/* Header ---------------------------------------------------------------- */
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-1);
+  min-width: 0;
+}
+.titleIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 26%, transparent), color-mix(in oklch, var(--molten) 22%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 35%, transparent);
+  color: var(--text-0);
+}
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.title {
+  color: var(--text-0);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.meta {
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta b {
+  color: var(--text-1);
+  font-weight: 500;
+}
+.headerStatus {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.spacer {
+  flex: 1;
+}
+.toolGroup {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--bg-inset);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+}
+.vdiv {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: var(--line-2);
+}
+.spin {
+  animation: h3d-spin 0.9s linear infinite;
+}
+@keyframes h3d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Body ------------------------------------------------------------------- */
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Depth rail ------------------------------------------------------------- */
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 188px;
+  min-height: 0;
+  border-right: 1px solid var(--line-1);
+  background: var(--bg-0);
+}
+.railHead {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--line-1);
+}
+.railTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.railTitle {
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.railRange {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.gradientKey {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in oklch, var(--molten) 50%, var(--accent)), var(--molten));
+  opacity: 0.85;
+}
+
+.rangeRoot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 16px;
+  touch-action: none;
+  user-select: none;
+}
+.rangeTrack {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-4);
+}
+.rangeFill {
+  position: absolute;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--molten));
+}
+.rangeThumb {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-0);
+  box-shadow:
+    0 0 0 1px var(--line-3),
+    0 1px 4px rgba(0, 0, 0, 0.45);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+.rangeThumb:hover {
+  transform: scale(1.15);
+}
+.rangeThumb:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.levels {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 6px 8px;
+  overflow-y: auto;
+}
+.level {
+  --c: color-mix(in oklch, var(--molten) calc(var(--t) * 100%), var(--accent));
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px 1fr 26px auto;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 4px 0 8px;
+  border-radius: 6px;
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  cursor: default;
+}
+.level::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--c);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--c) 60%, transparent);
+}
+.level:hover {
+  background: var(--bg-hover);
+}
+.level[data-off='true'] {
+  color: var(--text-3);
+}
+.level[data-off='true']::before {
+  opacity: 0.25;
+  box-shadow: none;
+}
+.level[data-path='true'] .levelDepth {
+  color: var(--text-0);
+}
+.levelDepth {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.levelBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 14px;
+  min-width: 0;
+}
+.levelFill {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--c) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--c) 30%, transparent);
+}
+.levelCount {
+  color: var(--text-1);
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.level[data-off='true'] .levelFill {
+  opacity: 0.35;
+}
+.level[data-off='true'] .levelCount {
+  color: var(--text-3);
+}
+.levelActions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-right: -2px;
+}
+.levelBtn {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-3);
+  opacity: 0;
+  transition:
+    opacity var(--dur-1) ease,
+    color var(--dur-1) ease,
+    background var(--dur-1) ease;
+}
+.level:hover .levelBtn,
+.levelBtn:focus-visible,
+.levelBtn[data-on='true'] {
+  opacity: 1;
+}
+.levelBtn:hover {
+  background: var(--bg-active);
+  color: var(--text-0);
+}
+.levelBtn[data-on='true'] {
+  color: var(--accent-strong);
+}
+.levelBtn[data-tone='warn'][data-on='true'] {
+  color: var(--warning);
+}
+.levelBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.railFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line-1);
+}
+.railNote {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+/* Stage ------------------------------------------------------------------ */
+.stage {
+  --bw: 1px;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text-0) 6.5%, transparent) 1px, transparent 0);
+  background-size: 24px 24px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+  container: h3d-stage / inline-size;
+}
+.stage:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.stage[data-drag='orbit'] {
+  cursor: grabbing;
+}
+.stage[data-drag='pan'] {
+  cursor: move;
+}
+.stage[data-drag] .world {
+  pointer-events: none;
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 620px at 50% 44%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%),
+    radial-gradient(700px 380px at 50% 112%, color-mix(in srgb, var(--molten) 6%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+.pan {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  perspective-origin: 0 0;
+  will-change: transform;
+}
+.world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.grid {
+  position: absolute;
+  transform-origin: 0 0;
+  background-image:
+    linear-gradient(var(--line-2) var(--bw), transparent var(--bw)), linear-gradient(90deg, var(--line-2) var(--bw), transparent var(--bw)),
+    linear-gradient(var(--line-1) var(--bw), transparent var(--bw)), linear-gradient(90deg, var(--line-1) var(--bw), transparent var(--bw));
+  background-size:
+    200px 200px,
+    200px 200px,
+    40px 40px,
+    40px 40px;
+  -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  pointer-events: none;
+}
+
+.base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  background: var(--bg-2);
+  box-shadow:
+    0 0 0 var(--bw) var(--line-3),
+    var(--shadow-3);
+  pointer-events: none;
+}
+.base img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.92;
+  -webkit-user-drag: none;
+}
+.stage[data-flat] .base img {
+  opacity: 1;
+}
+.baseEmpty {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg, var(--line-1) 0 1px, transparent 1px 10px);
+}
+
+.layer {
+  --c: color-mix(in oklch, var(--molten) calc(var(--t) * 100%), var(--accent));
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transition: opacity var(--dur-2) ease;
+}
+.stage[data-moving] .layer {
+  will-change: transform;
+}
+.stage[data-hl] .layer:not([data-hl]) {
+  opacity: 0.12;
+}
+
+.plane {
+  position: absolute;
+  box-sizing: border-box;
+  border: var(--bw) solid color-mix(in oklch, var(--c) 72%, transparent);
+  background: var(--fill, color-mix(in oklch, var(--c) 4%, transparent));
+  background-origin: border-box;
+  pointer-events: auto;
+}
+.plane[data-kind='image'] {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 42%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7));
+}
+/* CSS background images (gradients, photos): a slightly stronger tint, no hatch — they are often large containers. */
+.plane[data-bgimg='true'] {
+  background-color: color-mix(in oklch, var(--c) 9%, transparent);
+}
+.stage[data-shot] .plane[data-kind='image'] {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7)), var(--shot);
+  background-size: auto, var(--shot-size);
+  background-position:
+    0 0,
+    var(--bp);
+  background-repeat: repeat, no-repeat;
+}
+.stage[data-wire] .plane,
+.stage[data-flat] .plane:not([data-state='sel']):not([data-hover]) {
+  background-color: transparent;
+}
+.stage[data-wire] .plane:not([data-kind='image']) {
+  background-image: none;
+}
+.stage[data-wire] .plane[data-kind='image'] {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7));
+}
+
+.plane[data-hover] {
+  border-color: var(--c);
+  background-color: color-mix(in oklch, var(--c) 16%, transparent);
+  box-shadow: 0 0 calc(var(--bw) * 10) color-mix(in oklch, var(--c) 40%, transparent);
+}
+.stage[data-sel] .plane:not([data-state]):not([data-hover]) {
+  border-color: color-mix(in oklch, var(--c) 34%, transparent);
+}
+.plane[data-state='path'] {
+  border-color: var(--c);
+  box-shadow:
+    0 0 calc(var(--bw) * 12) color-mix(in oklch, var(--c) 42%, transparent),
+    inset 0 0 calc(var(--bw) * 10) color-mix(in oklch, var(--c) 16%, transparent);
+}
+.plane[data-state='sel'] {
+  z-index: 1;
+  border: calc(var(--bw) * 1.5) solid var(--accent-strong);
+  background-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow:
+    0 0 0 calc(var(--bw) * 2.5) color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 calc(var(--bw) * 28) calc(var(--bw) * 4) color-mix(in srgb, var(--accent) 45%, transparent),
+    inset 0 0 calc(var(--bw) * 18) color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.layer[data-hl] .plane {
+  border-color: var(--c);
+  background-color: color-mix(in oklch, var(--c) 12%, transparent);
+}
+
+.text {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  display: none;
+  max-width: calc(100% - 4px);
+  margin-left: 2px;
+  padding: 0.15em 0.4em;
+  overflow: hidden;
+  transform: translateY(-50%);
+  border-radius: 0.3em;
+  background: color-mix(in srgb, var(--bg-1) 86%, transparent);
+  color: var(--text-0);
+  font-family: var(--font-ui);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.stage[data-detail] .text {
+  display: block;
+}
+
+/* Screen-space labels ---------------------------------------------------- */
+.labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.label {
+  --c: color-mix(in oklch, var(--molten) calc(var(--t) * 100%), var(--accent));
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  height: 18px;
+  padding: 0 6px 0 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--bg-2) 90%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--c) 30%, var(--line-1)),
+    var(--shadow-1);
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+  visibility: hidden;
+  will-change: transform;
+}
+.labelDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--c);
+}
+.labelText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label[data-state='path'] {
+  color: var(--text-0);
+}
+.label[data-state='sel'] {
+  background: var(--accent);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+:root:not([data-theme='light']) .label[data-state='sel'] {
+  color: #fff;
+}
+.label[data-state='sel'] .labelDot {
+  background: currentColor;
+}
+
+/* Tooltip ---------------------------------------------------------------- */
+.tip {
+  --c: color-mix(in oklch, var(--molten) calc(var(--tip-t, 0) * 100%), var(--accent));
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+  max-width: 300px;
+  padding: 7px 9px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-2) 94%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow:
+    var(--shadow-pop),
+    inset 0 1px 0 color-mix(in srgb, var(--text-0) 5%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease;
+}
+.tip[data-show] {
+  opacity: 1;
+}
+.tipHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tipSwatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--c);
+  border-radius: 3px;
+  box-shadow: 0 0 8px color-mix(in oklch, var(--c) 60%, transparent);
+}
+.tipLabel {
+  overflow: hidden;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tipMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tipMeta b {
+  color: var(--text-0);
+  font-weight: 500;
+}
+.tipKind:empty {
+  display: none;
+}
+.tipKind {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--bg-active);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+.tipText {
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tipText:empty {
+  display: none;
+}
+
+/* Floating chrome -------------------------------------------------------- */
+.dock {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  max-width: calc(100% - 24px);
+  padding: 0 6px;
+  transform: translateX(-50%);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow:
+    var(--shadow-pop),
+    inset 0 1px 0 color-mix(in srgb, var(--text-0) 5%, transparent);
+  cursor: default;
+  white-space: nowrap;
+  animation: h3d-rise var(--dur-3) var(--ease-out);
+}
+@keyframes h3d-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+.dockDiv {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  background: var(--line-2);
+}
+.spacingCtl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  color: var(--text-2);
+}
+.spacingSlider {
+  width: 104px;
+}
+.dockValue {
+  min-width: 30px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.hud {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-pop);
+  cursor: default;
+  animation: h3d-drop var(--dur-3) var(--ease-out);
+}
+@keyframes h3d-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.hudValue {
+  min-width: 42px;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.hudAngles {
+  min-width: 64px;
+  padding: 0 6px 0 6px;
+  border-right: 1px solid var(--line-2);
+  margin-right: 2px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+.hint {
+  position: absolute;
+  left: 12px;
+  bottom: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.hint kbd {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--bg-active);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 6px 10px;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-2) 92%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-pop);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  cursor: default;
+}
+.toast b {
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+@container h3d-stage (max-width: 1080px) {
+  .hint {
+    display: none;
+  }
+}
+@container h3d-stage (max-width: 700px) {
+  .presetLabel {
+    display: none;
+  }
+  .spacingSlider {
+    width: 64px;
+  }
+}
+@container h3d-stage (max-width: 520px) {
+  .spacingCtl,
+  .hudAngles {
+    display: none;
+  }
+}
+
+@container h3d-root (max-width: 760px) {
+  .rail {
+    width: 148px;
+  }
+  .railNote,
+  .meta {
+    display: none;
+  }
+}
+
+/* States ----------------------------------------------------------------- */
+.center {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: 24px;
+}
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+.loadingTitle {
+  color: var(--text-0);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.skeleton {
+  position: relative;
+  width: 120px;
+  height: 96px;
+  perspective: 600px;
+}
+.skeletonPlane {
+  --c: color-mix(in oklch, var(--molten) calc(var(--t) * 100%), var(--accent));
+  position: absolute;
+  inset: 14px 22px;
+  border: 1px solid color-mix(in oklch, var(--c) 80%, transparent);
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--c) 8%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--c) 25%, transparent);
+  animation: h3d-float 1.8s var(--ease-in-out) infinite;
+  animation-delay: calc(var(--t) * -0.6s);
+}
+@keyframes h3d-float {
+  0%,
+  100% {
+    transform: rotateX(52deg) rotateZ(-38deg) translateZ(calc(var(--t) * 28px));
+  }
+  50% {
+    transform: rotateX(52deg) rotateZ(-38deg) translateZ(calc(var(--t) * 46px));
+  }
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 340px;
+}
+.empty > :last-child {
+  padding-top: 14px;
+}
+.empty > :last-child > div:nth-child(2) {
+  max-width: 300px;
+}
+.emptyMark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background:
+    linear-gradient(var(--bg-2), var(--bg-2)) padding-box,
+    linear-gradient(135deg, color-mix(in oklch, var(--accent) 70%, transparent), color-mix(in oklch, var(--molten) 70%, transparent)) border-box;
+  border: 1px solid transparent;
+  box-shadow:
+    0 8px 28px -10px color-mix(in srgb, var(--accent) 45%, transparent),
+    var(--highlight-top);
+  color: var(--text-0);
+}
+.errorCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(440px, 100%);
+}
+
+/* Camera presets --------------------------------------------------------- */
+.presets {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.presetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  transition:
+    background var(--dur-1) ease,
+    color var(--dur-1) ease;
+}
+.presetBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+.presetBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  perspective: 60px;
+}
+.glyphWorld {
+  position: relative;
+  width: 10px;
+  height: 12px;
+  transform-style: preserve-3d;
+}
+.glyphPlane {
+  --c: color-mix(in oklch, var(--molten) calc(var(--t) * 100%), var(--accent));
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--c);
+  border-radius: 1.5px;
+  background: color-mix(in oklch, var(--c) 18%, transparent);
+}
+.presetBtn:hover .glyphPlane {
+  background: color-mix(in oklch, var(--c) 30%, transparent);
+}

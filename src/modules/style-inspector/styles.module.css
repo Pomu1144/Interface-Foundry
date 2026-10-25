@@ -1,0 +1,240 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line-1);
+  font-family: var(--font-ui);
+}
+.toolbar > label:first-child {
+  flex: 1;
+}
+.experiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-3);
+}
+.experiment[data-on='true'] {
+  color: var(--molten);
+}
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px 4px;
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.note svg {
+  flex: none;
+  margin-top: 2px;
+}
+.rule {
+  margin: 6px 8px 0;
+  padding: 6px 8px 4px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+}
+.override {
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 69, 0.3);
+  background: linear-gradient(180deg, rgba(255, 122, 69, 0.05), transparent), var(--bg-2);
+}
+.dim {
+  opacity: 0.78;
+}
+.ruleHead {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 20px;
+}
+.selector {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--syn-property);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brace {
+  color: var(--syn-punct);
+}
+.spacer {
+  flex: 1;
+}
+.source {
+  flex: none;
+  max-width: 140px;
+  overflow: hidden;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  text-decoration: underline;
+  text-decoration-color: var(--line-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.source:hover {
+  color: var(--accent-strong);
+}
+.ruleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 4px;
+}
+.mediaChip {
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--violet-soft);
+  color: var(--violet-text);
+  font-size: 10px;
+}
+.decl {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 22px;
+  padding-left: 2px;
+  border-radius: 3px;
+}
+.decl:hover {
+  background: var(--bg-hover);
+}
+.check {
+  width: 12px;
+  height: 12px;
+  margin: 0 4px 0 0;
+  accent-color: var(--accent);
+  opacity: 0;
+}
+.decl:hover .check,
+.disabled .check {
+  opacity: 1;
+}
+.checkSpacer {
+  width: 16px;
+  flex: none;
+}
+.prop {
+  color: var(--syn-attr);
+}
+.colon,
+.semi {
+  color: var(--syn-punct);
+}
+.valueWrap {
+  min-width: 0;
+  cursor: text;
+}
+.value {
+  color: var(--text-0);
+  word-break: break-word;
+}
+.important {
+  color: var(--syn-keyword);
+}
+.overridden .prop,
+.overridden .value,
+.disabled .prop,
+.disabled .value {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+  opacity: 0.55;
+}
+.valueInput,
+.propInput {
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.propInput {
+  flex: 0 0 110px;
+}
+.modDot {
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--molten);
+  box-shadow: 0 0 6px var(--molten);
+  flex: none;
+}
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 4px -1px 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.ruleFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 20px;
+}
+.inheritedHead {
+  margin: 14px 12px 2px;
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+.inheritedFrom {
+  color: var(--text-1);
+  font-family: var(--font-mono);
+}
+.block {
+  margin: 14px 8px 0;
+}
+.blockTitle {
+  margin: 0 4px 4px;
+  color: var(--text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.varRow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+}
+.varFrom {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 10px;
+}
+.media {
+  padding: 2px 4px;
+  color: var(--violet-text);
+}

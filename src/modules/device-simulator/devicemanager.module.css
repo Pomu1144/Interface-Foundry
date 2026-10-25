@@ -1,0 +1,137 @@
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  min-height: 460px;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 8px;
+  border-right: 1px solid var(--line-1);
+}
+.listActions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-0);
+  text-align: left;
+}
+.item:hover {
+  background: var(--bg-hover);
+}
+.item[data-active='true'] {
+  background: var(--accent-soft);
+}
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--bg-3);
+  color: var(--text-1);
+}
+.itemText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.itemName {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.itemMeta {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.heroArt {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--bg-3);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--text-1);
+}
+.heroName {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.heroMeta {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.readonly,
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.spec {
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+}
+.specTitle {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.specGrid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.specGrid dt {
+  color: var(--text-2);
+}
+.specGrid dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.help {
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.foldToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-1);
+}

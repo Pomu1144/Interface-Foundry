@@ -1,0 +1,118 @@
+.pop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.title {
+  color: var(--text-0);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.where {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.k {
+  width: 52px;
+  flex: none;
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--text-0);
+  font: inherit;
+  font-size: var(--fs-sm);
+  outline: none;
+}
+.input:focus {
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 0 0 3px var(--accent-softer);
+}
+.target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: var(--r-sm);
+  background: var(--accent-softer);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent-strong);
+}
+.target[data-missing='true'] {
+  background: var(--warning-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warning) 30%, transparent);
+  color: var(--warning);
+}
+.targetText {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+.target[data-missing='true'] .targetText {
+  font-family: var(--font-ui);
+  white-space: normal;
+  color: var(--text-1);
+}
+.fixtures {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.fixture {
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--bg-3);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.fixture[data-on='true'] {
+  background: var(--accent-soft);
+  color: var(--text-0);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.hint {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+}

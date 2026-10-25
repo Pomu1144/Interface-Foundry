@@ -1,0 +1,715 @@
+.device {
+  position: relative;
+  flex: none;
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+.body {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(155deg, #3a3c42 0%, #1b1c20 32%, #141518 60%, #26272c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.11),
+    inset 0 0 0 2.5px #0a0a0c,
+    inset 0 0 0 3.5px rgba(255, 255, 255, 0.05),
+    0 50px 120px -30px rgba(0, 0, 0, 0.85),
+    0 22px 50px -18px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.animating .body {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 2.5px #0a0a0c,
+    0 80px 160px -30px rgba(0, 0, 0, 0.9),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.iphone-island .body,
+.iphone-notch .body {
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+    linear-gradient(155deg, #55545a 0%, #2a2a2e 22%, #1a1a1d 55%, #3b3a3f 100%);
+}
+.iphone-home .body {
+  background: linear-gradient(160deg, #2b2c30 0%, #121215 50%, #222327 100%);
+}
+.dual-screen .body {
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.09), transparent 55%),
+    linear-gradient(160deg, #e8e8ea 0%, #c9cacd 30%, #b6b7ba 60%, #d9dadc 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.2),
+    0 50px 120px -30px rgba(0, 0, 0, 0.85),
+    0 22px 50px -18px rgba(0, 0, 0, 0.7);
+}
+.laptop .body,
+.monitor .body {
+  background: linear-gradient(180deg, #1f2024 0%, #141518 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 40px 100px -30px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.ipad .body,
+.android-tablet .body {
+  background: linear-gradient(155deg, #3a3b40 0%, #1d1e22 40%, #2a2b30 100%);
+}
+
+.screen {
+  position: absolute;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
+  isolation: isolate;
+}
+.screenBare {
+  box-shadow:
+    0 0 0 1px var(--line-3),
+    0 30px 80px -24px rgba(0, 0, 0, 0.8);
+  background: #fff;
+}
+.viewport {
+  position: absolute;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* System UI --------------------------------------------------------- */
+.statusBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px 0 30px;
+  background: #fff;
+  color: #000;
+  font-family: -apple-system, 'SF Pro Text', 'Geist Variable', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  z-index: 2;
+  pointer-events: none;
+}
+.statusAndroid {
+  padding: 0 16px;
+  font-family: 'Roboto', 'Geist Variable', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.statusDark {
+  background: #000;
+  color: #fff;
+}
+.time {
+  font-variant-numeric: tabular-nums;
+}
+.statusIcons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.statusAndroid .statusIcons {
+  transform: scale(0.85);
+  transform-origin: right center;
+}
+.battery {
+  position: relative;
+  width: 24px;
+  height: 11.5px;
+  border-radius: 3.5px;
+  box-shadow: inset 0 0 0 1px currentColor;
+  opacity: 0.95;
+}
+.battery::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 3.5px;
+  width: 1.5px;
+  height: 4.5px;
+  border-radius: 0 1px 1px 0;
+  background: currentColor;
+  opacity: 0.5;
+}
+.batteryLevel {
+  position: absolute;
+  inset: 2px 5px 2px 2px;
+  border-radius: 1.8px;
+  background: currentColor;
+}
+.homeArea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  z-index: 2;
+  pointer-events: none;
+}
+.homeBar {
+  width: 36%;
+  max-width: 140px;
+  height: 5px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.88;
+  transform: translateY(4px);
+}
+.homeArea:not(.statusDark) .homeBar {
+  color: #000;
+}
+.homeBarAndroid {
+  width: 26%;
+  height: 4px;
+  transform: none;
+  opacity: 0.6;
+}
+.sideSafe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+}
+.browserBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  background: #f2f2f4;
+  border-bottom: 1px solid #ddd;
+  z-index: 2;
+}
+.urlPill {
+  width: 70%;
+  height: 60%;
+  border-radius: 10px;
+  background: #e2e2e6;
+}
+
+.island {
+  position: absolute;
+  top: 11px;
+  height: 35px;
+  border-radius: 20px;
+  background: #000;
+  z-index: 3;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+.island::after {
+  content: '';
+  position: absolute;
+  right: 22%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2b3550 0%, #0d1018 55%, #000 70%);
+}
+.punch {
+  position: absolute;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #26304a 0%, #07090f 60%, #000 75%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.glare {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 28%, transparent 42%);
+  mix-blend-mode: screen;
+}
+.sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 210, 170, 0.1) 52%, transparent 65%);
+  mix-blend-mode: screen;
+}
+
+/* Folds ------------------------------------------------------------- */
+.hinge {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.06) 100%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 6px),
+    linear-gradient(90deg, #121214 0%, #2a2b2f 30%, #3a3b40 50%, #2a2b2f 70%, #121214 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.8),
+    inset -1px 0 0 rgba(0, 0, 0, 0.8);
+}
+.hingeH {
+  background:
+    linear-gradient(180deg, #121214 0%, #2a2b2f 30%, #3a3b40 50%, #2a2b2f 70%, #121214 100%);
+}
+.crease {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.07) 40%, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 0, 0.07) 60%, transparent 100%);
+  mix-blend-mode: multiply;
+}
+.creaseH {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.07) 40%, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 0, 0.07) 60%, transparent 100%);
+}
+.panelShade {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+.seam {
+  position: absolute;
+  z-index: 1;
+  background: linear-gradient(90deg, #8d8e92, #f4f4f5 35%, #bdbec1 50%, #f4f4f5 65%, #8d8e92);
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.3),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+.seamH {
+  background: linear-gradient(180deg, #8d8e92, #f4f4f5 35%, #bdbec1 50%, #f4f4f5 65%, #8d8e92);
+}
+
+/* Hardware details ---------------------------------------------------- */
+.btn {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1b1b1e, #4a4a50);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+.laptopBase {
+  position: absolute;
+  top: 100%;
+  height: 14px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, #4a4b51 0%, #2a2b2f 40%, #17181b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 26px 50px -16px rgba(0, 0, 0, 0.8);
+}
+.laptopBase::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 15%;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 0 0 6px 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.standNeck {
+  position: absolute;
+  top: 100%;
+  width: 80px;
+  height: 70px;
+  background: linear-gradient(90deg, #2a2b30, #45464c 50%, #2a2b30);
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+}
+.standFoot {
+  position: absolute;
+  top: calc(100% + 70px);
+  width: 220px;
+  height: 10px;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(180deg, #4a4b51, #1d1e22);
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.8);
+}
+
+/* 3D stage (orbit, spin, orientation glide) ---------------------------- */
+.stage {
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transform: translate(var(--flip-x, 0px), var(--flip-y, 0px)) rotateZ(var(--orbit-spin, 0deg)) rotateX(var(--orbit-pitch, 0deg)) rotateY(var(--orbit-yaw, 0deg));
+}
+.stage[data-device-stage='primary'] {
+  cursor: grab;
+}
+.stage[data-device-stage='primary']:active {
+  cursor: grabbing;
+}
+.stageWrap {
+  position: relative;
+  transform-style: preserve-3d;
+}
+.stageHandles {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+  transform-origin: 0 0;
+  opacity: 0;
+  transition: opacity var(--dur-2) ease;
+}
+.stageWrap:hover .stageHandles,
+.stageHandles:focus-within {
+  opacity: 1;
+}
+.rotateHandle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text-1);
+  box-shadow:
+    inset 0 0 0 1px var(--line-2),
+    0 6px 18px -6px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  transition:
+    color var(--dur-1) ease,
+    background var(--dur-1) ease;
+}
+.rotateHandle[data-no-orbit] {
+  cursor: pointer;
+}
+.rotateHandle:hover {
+  background: var(--bg-4);
+  color: var(--text-0);
+}
+
+/* 3D hinge foldable ------------------------------------------------------ */
+.fold3d {
+  position: relative;
+  flex: none;
+  transform-style: preserve-3d;
+}
+.panel {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+.panelStatic {
+  transform: translateZ(0.5px);
+  transition:
+    left 280ms var(--ease-out),
+    top 280ms var(--ease-out),
+    width 280ms var(--ease-out),
+    height 280ms var(--ease-out),
+    border-radius 280ms var(--ease-out);
+}
+.panelStatic .body,
+.face .body {
+  border-radius: inherit;
+}
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.screenOff {
+  position: absolute;
+  background:
+    radial-gradient(90% 60% at 30% 25%, rgba(91, 141, 255, 0.1), transparent 60%),
+    radial-gradient(80% 50% at 80% 90%, rgba(255, 122, 69, 0.07), transparent 60%),
+    #05060a;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
+}
+.faceShade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.25) 60%, rgba(255, 255, 255, 0.04));
+  opacity: calc((1 - var(--fold-open, 1)) * 0.95);
+}
+.faceBack {
+  overflow: hidden;
+}
+.backBody {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(70% 45% at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(160deg, #2e2f34 0%, #18191c 55%, #24252a 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.dual-screen .backBody {
+  background:
+    radial-gradient(70% 45% at 30% 20%, rgba(255, 255, 255, 0.5), transparent 60%),
+    linear-gradient(160deg, #e3e3e5 0%, #c3c4c7 55%, #d6d7d9 100%);
+}
+.backBody::after {
+  content: '';
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 18%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3a3c44, #0c0d10 60%);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  opacity: 0.85;
+}
+.hinge3d {
+  position: absolute;
+  border-radius: 6px;
+  transform: translateZ(0.6px);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, transparent 22%, rgba(255, 255, 255, 0.35) 48%, transparent 70%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(180deg, #9a9b9f 0%, #d9dadc 12%, #b9babd 50%, #d9dadc 88%, #9a9b9f 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.hinge3dH {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, transparent 22%, rgba(255, 255, 255, 0.35) 48%, transparent 70%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(90deg, #9a9b9f 0%, #d9dadc 12%, #b9babd 50%, #d9dadc 88%, #9a9b9f 100%);
+}
+.screen3d {
+  transform: translateZ(1px);
+}
+.revealWindow {
+  position: absolute;
+  z-index: 8;
+  overflow: hidden;
+  pointer-events: none;
+}
+.revealCover {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 60% at 30% 25%, rgba(91, 141, 255, 0.1), transparent 60%),
+    #05060a;
+  will-change: transform;
+}
+/* Light catching the leading edge of the content as it slides across. */
+.revealCover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 46px;
+  background: linear-gradient(90deg, rgba(122, 162, 255, 0.55), rgba(122, 162, 255, 0));
+  opacity: calc(var(--fold-slide, 1) * (1 - var(--fold-slide, 1)) * 3.2);
+}
+.revealCover[data-edge='start']::before {
+  left: 0;
+}
+.revealCover[data-edge='end']::before {
+  right: 0;
+  transform: scaleX(-1);
+}
+.revealCoverH::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: auto;
+  width: auto;
+  height: 46px;
+  background: linear-gradient(180deg, rgba(122, 162, 255, 0.55), rgba(122, 162, 255, 0));
+}
+.revealCoverH[data-edge='end']::before {
+  top: auto;
+  bottom: 0;
+  transform: scaleY(-1);
+}
+.floorShadow {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -6%;
+  height: 16%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), transparent);
+  transform: translateZ(-2px);
+  opacity: calc(0.4 + var(--fold-lift, 0) * 0.45);
+}
+
+/* Realistic hardware: band, glass, backs ------------------------------- */
+.device {
+  transform-style: preserve-3d;
+}
+.device > :not(.backFace) {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.glass {
+  position: absolute;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.05) 0%, transparent 30%),
+    #040405;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+.backFace {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.back {
+  position: absolute;
+  overflow: hidden;
+}
+.backPlate {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.18),
+    0 30px 80px -24px rgba(0, 0, 0, 0.8);
+}
+.backBand {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+.backWhenFolded {
+  position: absolute;
+  inset: 0;
+  opacity: clamp(0, (0.5 - var(--fold-open, 1)) * 1000, 1);
+}
+.camModule {
+  position: absolute;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 1px 2px rgba(255, 255, 255, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.18);
+  filter: brightness(0.94);
+}
+.camBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 3px 8px rgba(0, 0, 0, 0.35);
+}
+.camWindow {
+  position: absolute;
+  background: linear-gradient(180deg, #0b0c0e, #050506);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.camPill {
+  position: absolute;
+  background: linear-gradient(160deg, rgba(20, 20, 22, 0.92), rgba(10, 10, 12, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.backLight .camPill {
+  background: linear-gradient(160deg, rgba(225, 227, 230, 0.95), rgba(200, 202, 206, 0.95));
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.lens {
+  position: absolute;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 32%, rgba(160, 190, 255, 0.55) 0 6%, transparent 7%),
+    radial-gradient(circle at 60% 66%, rgba(140, 90, 200, 0.35) 0 10%, transparent 20%),
+    radial-gradient(circle, #0d1320 0 34%, #05070c 35% 52%, #1b1d22 53% 60%, #2c2e33 61% 72%, #121316 73%);
+  box-shadow:
+    0 0 0 1.5px rgba(30, 30, 34, 0.9),
+    0 0 0 2.5px rgba(160, 160, 165, 0.35),
+    0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.lensRing {
+  box-shadow:
+    0 0 0 2px #2a2b2f,
+    0 0 0 3px rgba(190, 190, 195, 0.45),
+    0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.lensRaised {
+  box-shadow:
+    0 0 0 2.5px #1f2023,
+    0 0 0 3.5px rgba(180, 180, 185, 0.5),
+    0 3px 6px rgba(0, 0, 0, 0.5);
+}
+.flash {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fffbe9, #e8dcb3 55%, #b9ad86);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.lidar {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #2a2a30, #09090b 70%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.mic {
+  position: absolute;
+  border-radius: 50%;
+  background: #0c0c0e;
+}
+.earpiece {
+  position: absolute;
+  height: 5px;
+  border-radius: 3px;
+  background: #18181b;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8);
+  backface-visibility: hidden;
+}
+.frontCam {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #26304a, #07090f 70%);
+  backface-visibility: hidden;
+}
+.homeButton {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #121214, #050506 70%);
+  box-shadow:
+    0 0 0 2px #6e6f73,
+    inset 0 1px 2px rgba(255, 255, 255, 0.06);
+  backface-visibility: hidden;
+}
+.screen3d {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* The live page follows the viewport while it widens across the second screen. */
+.screen3d .viewport > iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
+.hinge3d {
+  backface-visibility: visible;
+}
