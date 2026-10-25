@@ -1,0 +1,304 @@
+.root {
+  position: relative;
+  height: 100vh;
+  overflow: auto;
+  background: #050506;
+  color: var(--text-0);
+}
+.hero {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: 68% 40%;
+  opacity: 0.9;
+  animation: ifdy-fade-in 900ms ease;
+}
+.heroShade {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 6, 0.97) 0%, rgba(5, 5, 6, 0.86) 38%, rgba(5, 5, 6, 0.35) 70%, rgba(5, 5, 6, 0.55) 100%),
+    linear-gradient(180deg, rgba(5, 5, 6, 0) 50%, rgba(5, 5, 6, 0.95) 100%);
+}
+.content {
+  position: relative;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 48px 40px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brandIcon {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 6px 18px rgba(255, 106, 61, 0.45));
+}
+.brandName {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.brandSub {
+  color: var(--text-2);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.serverStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  color: var(--text-1);
+  font-size: 12px;
+}
+.serverStatus[data-status='online'] svg {
+  color: var(--success);
+}
+.serverStatus[data-status='offline'] svg {
+  color: var(--danger);
+}
+.intro {
+  max-width: 760px;
+  margin-top: 4vh;
+  animation: ifdy-slide-up 600ms var(--ease-out);
+}
+.title {
+  margin: 0;
+  font-size: clamp(36px, 4.6vw, 58px);
+  font-weight: 650;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+.titleAccent {
+  background: linear-gradient(90deg, #ff8a52 0%, #ffb547 45%, #ffd9a8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lede {
+  max-width: 600px;
+  margin: 18px 0 0;
+  color: var(--text-1);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.urlBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  height: 52px;
+  padding: 0 8px 0 16px;
+  border-radius: 14px;
+  background: rgba(16, 17, 20, 0.78);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(18px);
+  transition: box-shadow var(--dur-2) ease;
+}
+.urlBox:focus-within {
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 0 0 4px var(--accent-softer),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8);
+}
+.urlIcon {
+  color: var(--text-2);
+  flex: none;
+}
+.urlInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  font-size: 14px;
+}
+.urlInput::placeholder {
+  color: var(--text-3);
+}
+.urlDevices {
+  display: flex;
+  align-items: center;
+}
+.urlDevices img {
+  width: 30px;
+  height: 30px;
+  margin-left: -8px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
+}
+.urlNote {
+  margin: 10px 2px 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.features {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+}
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    box-shadow var(--dur-3) ease;
+  animation: ifdy-slide-up 700ms var(--ease-out) both;
+}
+.feature:nth-child(2) {
+  animation-delay: 40ms;
+}
+.feature:nth-child(3) {
+  animation-delay: 80ms;
+}
+.feature:nth-child(4) {
+  animation-delay: 120ms;
+}
+.feature:nth-child(5) {
+  animation-delay: 160ms;
+}
+.feature:nth-child(6) {
+  animation-delay: 200ms;
+}
+.feature:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 18px 40px -18px rgba(0, 0, 0, 0.8);
+}
+.featureArt {
+  width: 56px;
+  height: 56px;
+  margin: -4px 0 6px -4px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.55));
+}
+.featureTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.featureText {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.recent {
+  max-width: 760px;
+}
+.recentHead {
+  margin-bottom: 8px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.recentList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.recentItem {
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.recentItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.recentOpen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.recentIcon {
+  color: var(--text-2);
+}
+.recentName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recentMeta {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.recentDelete {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+}
+.recentDelete:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.footer {
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+.footer button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

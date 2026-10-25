@@ -1,0 +1,143 @@
+/*
+ * Harborline design tokens.
+ * Every colour, space, radius and type size used by the demo is defined here
+ * as a custom property on :root so design tools can read and edit them.
+ */
+:root {
+  /* Brand */
+  --hl-color-navy: #0b2545;
+  --hl-color-navy-900: #071a33;
+  --hl-color-navy-700: #163a63;
+  --hl-color-navy-500: #2f5a8a;
+  --hl-color-navy-100: #e6ecf4;
+  --hl-color-navy-50: #f2f5fa;
+  --hl-color-teal: #13a89e;
+  --hl-color-teal-700: #0a7a72;
+  --hl-color-teal-800: #075e58;
+  --hl-color-teal-100: #d5f1ee;
+  --hl-color-teal-50: #ecf8f6;
+  --hl-color-gold: #f2b544;
+  --hl-color-gold-700: #8a5a00;
+  --hl-color-gold-100: #fcefd2;
+  --hl-color-gold-50: #fff8e8;
+
+  /* Neutrals */
+  --hl-color-white: #ffffff;
+  --hl-color-ink: #0f1b2d;
+  --hl-color-slate-700: #334155;
+  --hl-color-slate-600: #4a5568;
+  --hl-color-slate-500: #5b6676;
+  --hl-color-slate-400: #8492a6;
+  --hl-color-slate-300: #b8c2d0;
+  --hl-color-slate-200: #d7dde6;
+  --hl-color-slate-100: #e8ecf2;
+  --hl-color-slate-50: #f4f6f9;
+
+  /* Feedback */
+  --hl-color-danger: #b42318;
+  --hl-color-danger-700: #912018;
+  --hl-color-danger-50: #fef3f2;
+  --hl-color-danger-200: #fecdca;
+  --hl-color-success: #067647;
+  --hl-color-success-50: #ecfdf3;
+  --hl-color-success-200: #abefc6;
+  --hl-color-warning: #8a5a00;
+  --hl-color-warning-50: #fffaeb;
+  --hl-color-info: #1d4f91;
+  --hl-color-info-50: #eff6ff;
+
+  /* Semantic aliases */
+  --hl-color-bg: var(--hl-color-slate-50);
+  --hl-color-surface: var(--hl-color-white);
+  --hl-color-surface-muted: var(--hl-color-navy-50);
+  --hl-color-text: var(--hl-color-ink);
+  --hl-color-text-muted: var(--hl-color-slate-600);
+  --hl-color-text-subtle: var(--hl-color-slate-500);
+  --hl-color-text-inverse: var(--hl-color-white);
+  --hl-color-border: var(--hl-color-slate-200);
+  --hl-color-border-strong: var(--hl-color-slate-400);
+  --hl-color-link: var(--hl-color-teal-700);
+  --hl-color-link-hover: var(--hl-color-teal-800);
+  --hl-color-primary: var(--hl-color-navy);
+  --hl-color-primary-hover: var(--hl-color-navy-700);
+  --hl-color-accent: var(--hl-color-teal);
+  --hl-color-focus: #1f6fd1;
+  --hl-color-focus-inverse: var(--hl-color-gold);
+
+  /* Typography */
+  --hl-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --hl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --hl-font-size-2xs: 0.6875rem;
+  --hl-font-size-xs: 0.75rem;
+  --hl-font-size-sm: 0.875rem;
+  --hl-font-size-md: 1rem;
+  --hl-font-size-lg: 1.125rem;
+  --hl-font-size-xl: 1.25rem;
+  --hl-font-size-2xl: 1.5rem;
+  --hl-font-size-3xl: 1.875rem;
+  --hl-font-size-4xl: 2.25rem;
+  --hl-font-size-5xl: 3rem;
+  --hl-font-weight-regular: 400;
+  --hl-font-weight-medium: 500;
+  --hl-font-weight-semibold: 600;
+  --hl-font-weight-bold: 700;
+  --hl-line-height-tight: 1.2;
+  --hl-line-height-snug: 1.35;
+  --hl-line-height-normal: 1.5;
+  --hl-line-height-relaxed: 1.65;
+  --hl-letter-spacing-tight: -0.02em;
+  --hl-letter-spacing-wide: 0.06em;
+  --hl-measure: 68ch;
+
+  /* Spacing (4px base) */
+  --hl-space-0: 0;
+  --hl-space-1: 0.25rem;
+  --hl-space-2: 0.5rem;
+  --hl-space-3: 0.75rem;
+  --hl-space-4: 1rem;
+  --hl-space-5: 1.25rem;
+  --hl-space-6: 1.5rem;
+  --hl-space-7: 1.75rem;
+  --hl-space-8: 2rem;
+  --hl-space-9: 2.25rem;
+  --hl-space-10: 2.5rem;
+  --hl-space-12: 3rem;
+  --hl-space-14: 3.5rem;
+  --hl-space-16: 4rem;
+  --hl-space-20: 5rem;
+
+  /* Radii */
+  --hl-radius-xs: 4px;
+  --hl-radius-sm: 6px;
+  --hl-radius-md: 10px;
+  --hl-radius-lg: 16px;
+  --hl-radius-xl: 24px;
+  --hl-radius-pill: 999px;
+
+  /* Elevation */
+  --hl-shadow-xs: 0 1px 2px rgb(11 37 69 / 0.06);
+  --hl-shadow-sm: 0 1px 3px rgb(11 37 69 / 0.08), 0 1px 2px rgb(11 37 69 / 0.04);
+  --hl-shadow-md: 0 6px 16px -4px rgb(11 37 69 / 0.12), 0 2px 6px -2px rgb(11 37 69 / 0.06);
+  --hl-shadow-lg: 0 24px 48px -12px rgb(11 37 69 / 0.22);
+  --hl-shadow-focus: 0 0 0 3px rgb(31 111 209 / 0.35);
+
+  /* Sizing */
+  --hl-control-height: 3rem;
+  --hl-control-height-sm: 2.5rem;
+  --hl-tap-target-min: 2.75rem;
+  --hl-header-height: 4rem;
+  --hl-content-max: 80rem;
+  --hl-gutter: var(--hl-space-4);
+  --hl-split-gap: var(--hl-space-9);
+
+  /* Motion */
+  --hl-duration-fast: 120ms;
+  --hl-duration-base: 200ms;
+  --hl-duration-slow: 320ms;
+  --hl-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layers */
+  --hl-z-header: 20;
+  --hl-z-popover: 40;
+  --hl-z-modal: 100;
+}

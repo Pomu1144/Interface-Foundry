@@ -1,0 +1,115 @@
+/* Account maintenance (profile) route. */
+
+.profile-form {
+  display: grid;
+  gap: var(--hl-space-6);
+}
+
+.profile-form .card__title {
+  margin-bottom: calc(var(--hl-space-4) * -1);
+}
+
+.profile-form__intro {
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-font-size-sm);
+}
+
+.profile-form__group {
+  display: grid;
+  gap: var(--hl-space-5);
+}
+
+.profile-form__group .field + .field {
+  margin-top: 0;
+}
+
+.profile-form__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  width: 100%;
+  margin-bottom: var(--hl-space-4);
+  padding-bottom: var(--hl-space-2);
+  border-bottom: 1px solid var(--hl-color-slate-100);
+  color: var(--hl-color-navy);
+  font-size: var(--hl-font-size-md);
+  font-weight: var(--hl-font-weight-semibold);
+}
+
+.profile-form__legend svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--hl-color-teal-700);
+}
+
+.profile-form > [data-slot]:empty {
+  display: none;
+}
+
+.profile-form__row {
+  display: grid;
+  gap: var(--hl-space-5);
+}
+
+@media (min-width: 30rem) {
+  .profile-form__row {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+}
+
+.profile-form #profile-zip {
+  max-width: 12rem;
+}
+
+.profile-form__success p + p {
+  margin-top: var(--hl-space-1);
+}
+
+.profile-form__reference {
+  font-family: var(--hl-font-mono);
+  font-size: var(--hl-font-size-xs);
+}
+
+/* Error summary (shared) ---------------------------------------------------- */
+
+.error-summary {
+  padding: var(--hl-space-5);
+  border: 2px solid var(--hl-color-danger);
+  border-radius: var(--hl-radius-md);
+  background: var(--hl-color-danger-50);
+}
+
+.error-summary:focus {
+  outline: 3px solid var(--hl-color-focus);
+  outline-offset: 2px;
+}
+
+.error-summary__title {
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  margin-bottom: var(--hl-space-3);
+  color: var(--hl-color-danger-700);
+  font-size: var(--hl-font-size-lg);
+}
+
+.error-summary__title svg {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.error-summary__list {
+  display: grid;
+  gap: var(--hl-space-2);
+  padding-left: var(--hl-space-5);
+}
+
+.error-summary__list a {
+  color: var(--hl-color-danger-700);
+  font-weight: var(--hl-font-weight-semibold);
+}
+
+.profile-aside .muted + .small {
+  margin-top: var(--hl-space-2);
+}

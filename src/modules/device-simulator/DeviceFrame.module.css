@@ -1,0 +1,338 @@
+.device {
+  position: relative;
+  flex: none;
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+.body {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(155deg, #3a3c42 0%, #1b1c20 32%, #141518 60%, #26272c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.11),
+    inset 0 0 0 2.5px #0a0a0c,
+    inset 0 0 0 3.5px rgba(255, 255, 255, 0.05),
+    0 50px 120px -30px rgba(0, 0, 0, 0.85),
+    0 22px 50px -18px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.animating .body {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 2.5px #0a0a0c,
+    0 80px 160px -30px rgba(0, 0, 0, 0.9),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.iphone-island .body,
+.iphone-notch .body {
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+    linear-gradient(155deg, #55545a 0%, #2a2a2e 22%, #1a1a1d 55%, #3b3a3f 100%);
+}
+.iphone-home .body {
+  background: linear-gradient(160deg, #2b2c30 0%, #121215 50%, #222327 100%);
+}
+.dual-screen .body {
+  background:
+    radial-gradient(120% 60% at 30% 0%, rgba(255, 255, 255, 0.09), transparent 55%),
+    linear-gradient(160deg, #e8e8ea 0%, #c9cacd 30%, #b6b7ba 60%, #d9dadc 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.2),
+    0 50px 120px -30px rgba(0, 0, 0, 0.85),
+    0 22px 50px -18px rgba(0, 0, 0, 0.7);
+}
+.laptop .body,
+.monitor .body {
+  background: linear-gradient(180deg, #1f2024 0%, #141518 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 40px 100px -30px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.ipad .body,
+.android-tablet .body {
+  background: linear-gradient(155deg, #3a3b40 0%, #1d1e22 40%, #2a2b30 100%);
+}
+
+.screen {
+  position: absolute;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
+  isolation: isolate;
+}
+.screenBare {
+  box-shadow:
+    0 0 0 1px var(--line-3),
+    0 30px 80px -24px rgba(0, 0, 0, 0.8);
+  background: #fff;
+}
+.viewport {
+  position: absolute;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* System UI --------------------------------------------------------- */
+.statusBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px 0 30px;
+  background: #fff;
+  color: #000;
+  font-family: -apple-system, 'SF Pro Text', 'Geist Variable', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  z-index: 2;
+  pointer-events: none;
+}
+.statusAndroid {
+  padding: 0 16px;
+  font-family: 'Roboto', 'Geist Variable', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.statusDark {
+  background: #000;
+  color: #fff;
+}
+.time {
+  font-variant-numeric: tabular-nums;
+}
+.statusIcons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.statusAndroid .statusIcons {
+  transform: scale(0.85);
+  transform-origin: right center;
+}
+.battery {
+  position: relative;
+  width: 24px;
+  height: 11.5px;
+  border-radius: 3.5px;
+  box-shadow: inset 0 0 0 1px currentColor;
+  opacity: 0.95;
+}
+.battery::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 3.5px;
+  width: 1.5px;
+  height: 4.5px;
+  border-radius: 0 1px 1px 0;
+  background: currentColor;
+  opacity: 0.5;
+}
+.batteryLevel {
+  position: absolute;
+  inset: 2px 5px 2px 2px;
+  border-radius: 1.8px;
+  background: currentColor;
+}
+.homeArea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  z-index: 2;
+  pointer-events: none;
+}
+.homeBar {
+  width: 36%;
+  max-width: 140px;
+  height: 5px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.88;
+  transform: translateY(4px);
+}
+.homeArea:not(.statusDark) .homeBar {
+  color: #000;
+}
+.homeBarAndroid {
+  width: 26%;
+  height: 4px;
+  transform: none;
+  opacity: 0.6;
+}
+.sideSafe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+}
+.browserBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  background: #f2f2f4;
+  border-bottom: 1px solid #ddd;
+  z-index: 2;
+}
+.urlPill {
+  width: 70%;
+  height: 60%;
+  border-radius: 10px;
+  background: #e2e2e6;
+}
+
+.island {
+  position: absolute;
+  top: 11px;
+  height: 35px;
+  border-radius: 20px;
+  background: #000;
+  z-index: 3;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+.island::after {
+  content: '';
+  position: absolute;
+  right: 22%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2b3550 0%, #0d1018 55%, #000 70%);
+}
+.punch {
+  position: absolute;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #26304a 0%, #07090f 60%, #000 75%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.glare {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 28%, transparent 42%);
+  mix-blend-mode: screen;
+}
+.sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 210, 170, 0.1) 52%, transparent 65%);
+  mix-blend-mode: screen;
+}
+
+/* Folds ------------------------------------------------------------- */
+.hinge {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.06) 100%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 6px),
+    linear-gradient(90deg, #121214 0%, #2a2b2f 30%, #3a3b40 50%, #2a2b2f 70%, #121214 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.8),
+    inset -1px 0 0 rgba(0, 0, 0, 0.8);
+}
+.hingeH {
+  background:
+    linear-gradient(180deg, #121214 0%, #2a2b2f 30%, #3a3b40 50%, #2a2b2f 70%, #121214 100%);
+}
+.crease {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.07) 40%, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 0, 0.07) 60%, transparent 100%);
+  mix-blend-mode: multiply;
+}
+.creaseH {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.07) 40%, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 0, 0.07) 60%, transparent 100%);
+}
+.panelShade {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+.seam {
+  position: absolute;
+  z-index: 1;
+  background: linear-gradient(90deg, #8d8e92, #f4f4f5 35%, #bdbec1 50%, #f4f4f5 65%, #8d8e92);
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.3),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+.seamH {
+  background: linear-gradient(180deg, #8d8e92, #f4f4f5 35%, #bdbec1 50%, #f4f4f5 65%, #8d8e92);
+}
+
+/* Hardware details ---------------------------------------------------- */
+.btn {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1b1b1e, #4a4a50);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+.laptopBase {
+  position: absolute;
+  top: 100%;
+  height: 14px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, #4a4b51 0%, #2a2b2f 40%, #17181b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 26px 50px -16px rgba(0, 0, 0, 0.8);
+}
+.laptopBase::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 15%;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 0 0 6px 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.standNeck {
+  position: absolute;
+  top: 100%;
+  width: 80px;
+  height: 70px;
+  background: linear-gradient(90deg, #2a2b30, #45464c 50%, #2a2b30);
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+}
+.standFoot {
+  position: absolute;
+  top: calc(100% + 70px);
+  width: 220px;
+  height: 10px;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(180deg, #4a4b51, #1d1e22);
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.8);
+}

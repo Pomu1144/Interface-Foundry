@@ -1,0 +1,177 @@
+/* Modal dialogs and the session pages. */
+
+.has-modal,
+.has-modal body {
+  overflow: hidden;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--hl-z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--hl-space-4);
+  overflow-y: auto;
+  background: rgb(7 26 51 / 0.62);
+  backdrop-filter: blur(3px);
+  animation: hl-fade-in var(--hl-duration-base) var(--hl-ease-standard);
+}
+
+.modal {
+  width: 100%;
+  max-width: 30rem;
+  padding: var(--hl-space-6);
+  border-radius: var(--hl-radius-xl);
+  background: var(--hl-color-surface);
+  box-shadow: var(--hl-shadow-lg);
+  animation: hl-rise-in var(--hl-duration-slow) var(--hl-ease-standard);
+}
+
+.modal:focus {
+  outline: none;
+}
+
+.modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--hl-space-4);
+  margin-bottom: var(--hl-space-3);
+}
+
+.modal__title {
+  font-size: var(--hl-font-size-xl);
+}
+
+.modal__close {
+  margin: calc(var(--hl-space-2) * -1) calc(var(--hl-space-2) * -1) 0 0;
+}
+
+.modal__body {
+  display: grid;
+  gap: var(--hl-space-3);
+  color: var(--hl-color-slate-700);
+}
+
+.modal__footer {
+  margin-top: var(--hl-space-6);
+}
+
+@keyframes hl-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hl-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+/* Session dialog ---------------------------------------------------------------- */
+
+.session-modal {
+  display: grid;
+  gap: var(--hl-space-3);
+}
+
+.session-modal__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--hl-color-gold-100);
+  color: var(--hl-color-gold-700);
+}
+
+.session-modal__icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.session-modal__desc {
+  color: var(--hl-color-text-muted);
+}
+
+.session-modal__form {
+  display: grid;
+  gap: var(--hl-space-4);
+  margin-top: var(--hl-space-2);
+}
+
+.session-modal__form .field + .field {
+  margin-top: 0;
+}
+
+.session-modal__user {
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  min-height: var(--hl-control-height-sm);
+  padding: 0 var(--hl-space-3);
+  border-radius: var(--hl-radius-md);
+  background: var(--hl-color-slate-50);
+  color: var(--hl-color-ink);
+  font-family: var(--hl-font-mono);
+  font-size: var(--hl-font-size-sm);
+}
+
+.session-modal__user svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--hl-color-slate-500);
+}
+
+.session-modal__actions {
+  margin-top: var(--hl-space-2);
+}
+
+/* Signed-out / paused pages ----------------------------------------------------- */
+
+.session-expired {
+  display: grid;
+  align-content: center;
+  min-height: 60vh;
+}
+
+.session-expired__card {
+  display: grid;
+  gap: var(--hl-space-4);
+  justify-items: start;
+  padding: var(--hl-space-8);
+}
+
+.session-tips .good-to-know__list {
+  margin-top: var(--hl-space-1);
+}
+
+/* Dual-screen devices that expose viewport segments: keep dialogs on one screen. */
+@media (horizontal-viewport-segments: 2) {
+  .modal-backdrop {
+    place-items: center start;
+    padding-right: calc(100vw - env(viewport-segment-right 0 0, 50vw) + var(--hl-space-4));
+  }
+}
+
+.session-expired__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--hl-color-navy-50);
+  color: var(--hl-color-navy);
+}
+
+.session-expired__icon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.session-expired__text {
+  color: var(--hl-color-text-muted);
+}

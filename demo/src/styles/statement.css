@@ -1,0 +1,233 @@
+/* Mortgage statement route. */
+
+.statement__actions {
+  align-items: center;
+}
+
+@media (max-width: 599px) {
+  .statement__download {
+    display: none;
+  }
+}
+
+.statement__download-status {
+  margin-bottom: var(--hl-space-6);
+}
+
+.statement__content {
+  display: grid;
+  gap: var(--hl-space-6);
+}
+
+.amount-due__total {
+  color: var(--hl-color-navy);
+  font-size: var(--hl-font-size-4xl);
+  font-weight: var(--hl-font-weight-semibold);
+  line-height: 1.1;
+  letter-spacing: var(--hl-letter-spacing-tight);
+}
+
+.amount-due__date {
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  margin-top: var(--hl-space-2);
+  color: var(--hl-color-ink);
+  font-weight: var(--hl-font-weight-medium);
+}
+
+.amount-due__date svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--hl-color-teal-700);
+}
+
+.amount-due__late {
+  margin-top: var(--hl-space-4);
+  padding: var(--hl-space-3) var(--hl-space-4);
+  border-radius: var(--hl-radius-md);
+  background: var(--hl-color-warning-50);
+  color: var(--hl-color-warning);
+  font-size: var(--hl-font-size-sm);
+  line-height: var(--hl-line-height-normal);
+}
+
+.statement__subhead {
+  margin: var(--hl-space-6) 0 var(--hl-space-1);
+  color: var(--hl-color-ink);
+  font-size: var(--hl-font-size-sm);
+  font-weight: var(--hl-font-weight-semibold);
+  letter-spacing: 0;
+}
+
+/* Past payments mini table */
+
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--hl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-table th,
+.mini-table td {
+  padding: var(--hl-space-2) 0 var(--hl-space-2) var(--hl-space-3);
+  border-bottom: 1px solid var(--hl-color-slate-100);
+  text-align: right;
+}
+
+.mini-table th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.mini-table thead th {
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-font-size-xs);
+  font-weight: var(--hl-font-weight-semibold);
+}
+
+.mini-table tbody th {
+  color: var(--hl-color-text-muted);
+  font-weight: var(--hl-font-weight-regular);
+}
+
+.mini-table td {
+  color: var(--hl-color-ink);
+  font-weight: var(--hl-font-weight-medium);
+}
+
+.mini-table__total th,
+.mini-table__total td {
+  border-top: 2px solid var(--hl-color-navy);
+  border-bottom: 0;
+  color: var(--hl-color-navy);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+/* Transaction activity --------------------------------------------------------- */
+
+.statement-activity {
+  padding: 0;
+}
+
+.statement-activity__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--hl-space-1) var(--hl-space-4);
+  padding: var(--hl-space-5) var(--hl-space-5) var(--hl-space-4);
+}
+
+.statement-activity__header .card__title {
+  margin: 0;
+}
+
+.statement-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--hl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.statement-table th,
+.statement-table td {
+  padding: var(--hl-space-3) var(--hl-space-3);
+  border-bottom: 1px solid var(--hl-color-slate-100);
+  text-align: left;
+  vertical-align: top;
+}
+
+.statement-table th:first-child,
+.statement-table td:first-child {
+  padding-left: var(--hl-space-5);
+}
+
+.statement-table th:last-child,
+.statement-table td:last-child {
+  padding-right: var(--hl-space-5);
+}
+
+.statement-table thead th {
+  position: sticky;
+  top: var(--hl-header-height);
+  border-top: 1px solid var(--hl-color-border);
+  border-bottom: 1px solid var(--hl-color-border);
+  background: var(--hl-color-slate-50);
+  color: var(--hl-color-slate-600);
+  font-size: var(--hl-font-size-xs);
+  font-weight: var(--hl-font-weight-semibold);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.statement-table tbody tr:hover {
+  background: var(--hl-color-navy-50);
+}
+
+.statement-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.statement-table__date {
+  color: var(--hl-color-slate-600);
+  white-space: nowrap;
+}
+
+.statement-table__desc {
+  min-width: 16rem;
+  color: var(--hl-color-ink);
+  line-height: var(--hl-line-height-snug);
+}
+
+.statement-table .statement-table__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.statement-table__num.is-negative {
+  color: var(--hl-color-danger);
+}
+
+.statement-table__total {
+  font-weight: var(--hl-font-weight-semibold);
+}
+
+.statement-table__balance {
+  color: var(--hl-color-navy);
+  font-weight: var(--hl-font-weight-semibold);
+}
+
+.statement-table__row--disbursement .statement-table__desc,
+.statement-table__row--escrow-refund .statement-table__desc {
+  color: var(--hl-color-slate-700);
+}
+
+.statement-table__row--fee,
+.statement-table__row--fee-reversal {
+  background: var(--hl-color-warning-50);
+}
+
+/* Explanatory notes ------------------------------------------------------------- */
+
+.statement-note p + p {
+  margin-top: var(--hl-space-3);
+}
+
+.statement-note p {
+  color: var(--hl-color-slate-700);
+  font-size: var(--hl-font-size-sm);
+}
+
+.escrow-analysis .alert {
+  margin-top: var(--hl-space-1);
+}
+
+.escrow-analysis__retry {
+  margin-top: var(--hl-space-3);
+}
+
+.escrow-analysis .skeleton {
+  display: block;
+}

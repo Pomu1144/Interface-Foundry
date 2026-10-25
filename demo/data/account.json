@@ -1,0 +1,68 @@
+{
+  "asOf": "2026-10-25",
+  "synthetic": true,
+  "borrower": {
+    "firstName": "Jordan",
+    "lastName": "Mercer",
+    "displayName": "Jordan Mercer",
+    "coBorrower": "Avery Mercer",
+    "username": "demo.borrower"
+  },
+  "loan": {
+    "last4": "4821",
+    "type": "30-year fixed",
+    "program": "Jumbo",
+    "originalPrincipal": 1600000,
+    "principalBalance": 1495798.83,
+    "interestRate": 6.375,
+    "originationDate": "2022-11-18",
+    "maturityDate": "2052-12-01",
+    "paymentsMade": 46,
+    "termMonths": 360,
+    "property": "18 Lantern Point Road, Port Harbor, ME 04999"
+  },
+  "nextPayment": {
+    "dueDate": "2026-11-01",
+    "graceEnds": "2026-11-16",
+    "amount": 11394.42,
+    "principal": 2035.49,
+    "interest": 7946.43,
+    "escrow": 1412.5,
+    "fees": 0,
+    "autopay": false
+  },
+  "escrow": {
+    "balance": 8214.66,
+    "monthly": 1412.5,
+    "nextDisbursement": {
+      "date": "2026-12-04",
+      "payee": "Harborline County Treasurer & Tax Collector",
+      "amount": 5140
+    }
+  },
+  "payment": {
+    "earliestDate": "2026-10-26",
+    "latestDate": "2026-11-16",
+    "defaultDate": "2026-10-28",
+    "estimatedPayoff": 1505157.76,
+    "cutoff": "8:00 p.m. Eastern time"
+  },
+  "paymentSources": [
+    {
+      "id": "chk-0193",
+      "name": "Harbor Checking",
+      "mask": "••••0193",
+      "kind": "Checking",
+      "institution": "Seawall Federal Credit Union (synthetic)",
+      "default": true
+    },
+    {
+      "id": "sav-7710",
+      "name": "Tidewater Savings",
+      "mask": "••••7710",
+      "kind": "Savings",
+      "institution": "Bayline Bank (synthetic)",
+      "default": false
+    }
+  ]
+}

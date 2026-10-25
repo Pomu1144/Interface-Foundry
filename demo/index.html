@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Sign in · Harborline Home Loans</title>
+    <meta
+      name="description"
+      content="Harborline Home Loans: a synthetic mortgage-servicing demo for Interface Foundry. Harborline is fictional and shows no real customer data."
+    />
+    <meta name="theme-color" content="#0b2545" />
+    <link rel="icon" type="image/png" href="assets/harborline-mark-64.png" />
+    <link rel="stylesheet" href="src/styles/tokens.css" />
+    <link rel="stylesheet" href="src/styles/base.css" />
+    <link rel="stylesheet" href="src/styles/layout.css" />
+    <link rel="stylesheet" href="src/styles/login.css" />
+    <link rel="stylesheet" href="src/styles/dashboard.css" />
+    <link rel="stylesheet" href="src/styles/statement.css" />
+    <link rel="stylesheet" href="src/styles/payment.css" />
+    <link rel="stylesheet" href="src/styles/profile.css" />
+    <link rel="stylesheet" href="src/styles/keyboard.css" />
+    <link rel="stylesheet" href="src/styles/modal.css" />
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <a class="skip-link" href="#main-content" data-testid="skip-link">Skip to main content</a>
+      <div id="site-header-slot"></div>
+      <main id="main-content" class="app__main" tabindex="-1" data-testid="main"></main>
+      <div id="site-footer-slot"></div>
+    </div>
+    <div id="modal-root"></div>
+    <noscript>
+      <p style="padding: 24px; font-family: system-ui, sans-serif">
+        Harborline Home Loans (synthetic demo) needs JavaScript to run.
+      </p>
+    </noscript>
+  </body>
+</html>

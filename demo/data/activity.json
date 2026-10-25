@@ -1,0 +1,50 @@
+{
+  "synthetic": true,
+  "items": [
+    {
+      "id": "act-1016",
+      "date": "2026-10-16",
+      "kind": "statement",
+      "title": "October statement is ready",
+      "detail": "Statement period Sep 17 – Oct 16, 2026",
+      "amount": null,
+      "status": "New"
+    },
+    {
+      "id": "act-1002",
+      "date": "2026-10-02",
+      "kind": "payment",
+      "title": "Monthly payment received",
+      "detail": "Harbor Checking ••••0193",
+      "amount": 11394.42,
+      "status": "Posted"
+    },
+    {
+      "id": "act-0901",
+      "date": "2026-09-01",
+      "kind": "payment",
+      "title": "Monthly payment received",
+      "detail": "Harbor Checking ••••0193",
+      "amount": 11394.42,
+      "status": "Posted"
+    },
+    {
+      "id": "act-0821",
+      "date": "2026-08-21",
+      "kind": "escrow",
+      "title": "Flood insurance paid from escrow",
+      "detail": "National Flood Insurance Program (synthetic servicer)",
+      "amount": -2808,
+      "status": "Paid"
+    },
+    {
+      "id": "act-0803",
+      "date": "2026-08-03",
+      "kind": "profile",
+      "title": "Paperless statements turned on",
+      "detail": "Changed by Jordan Mercer",
+      "amount": null,
+      "status": "Completed"
+    }
+  ]
+}
