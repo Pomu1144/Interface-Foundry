@@ -115,6 +115,8 @@ export function PaymentReview({ account, onEdit, onConfirmed }) {
       );
       qs(alertSlot, '[data-testid="payment-retry"]').addEventListener('click', send);
       setPending(false);
+      // Retry is now the single way forward; avoid two buttons doing the same thing.
+      submit.hidden = true;
       qs(alertSlot, '[data-testid="payment-retry"]').focus();
     }
   }

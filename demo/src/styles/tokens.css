@@ -87,7 +87,7 @@
   --hl-line-height-relaxed: 1.65;
   --hl-letter-spacing-tight: -0.02em;
   --hl-letter-spacing-wide: 0.06em;
-  --hl-measure: 68ch;
+  --hl-measure: 55ch; /* ≈ 75–80 characters of proportional body copy */
 
   /* Spacing (4px base) */
   --hl-space-0: 0;

@@ -1,0 +1,171 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.search {
+  padding: 8px 8px 4px;
+}
+.meta {
+  padding: 0 12px 6px;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 12px;
+}
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding-right: 6px;
+  color: var(--text-1);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: default;
+}
+.row:hover {
+  background: var(--bg-hover);
+}
+.selected,
+.selected:hover {
+  background: var(--accent-soft);
+  color: var(--text-0);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.invisible {
+  opacity: 0.45;
+}
+.guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-1);
+}
+.chevron {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-3);
+  flex: none;
+  transition: transform var(--dur-1) ease;
+}
+.chevron:hover {
+  color: var(--text-0);
+}
+.chevron[data-open='true'] {
+  transform: rotate(90deg);
+}
+.icon {
+  flex: none;
+  color: var(--text-2);
+}
+.selected .icon {
+  color: var(--accent-strong);
+}
+.iconComponent {
+  color: var(--violet);
+}
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.componentName {
+  color: #c9b8ff;
+  font-weight: 500;
+}
+.detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+.eye {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  opacity: 0;
+  flex: none;
+}
+.row:hover .eye,
+.eyeOn {
+  opacity: 1;
+}
+.eye:hover {
+  color: var(--text-0);
+  background: var(--bg-active);
+}
+.eyeOn {
+  color: var(--molten);
+}
+
+/* DOM syntax ---------------------------------------------------------- */
+.domRow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.domLine {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.punct {
+  color: var(--syn-punct);
+}
+.tag {
+  color: var(--syn-tag);
+}
+.attr {
+  color: var(--syn-attr);
+}
+.value {
+  color: var(--syn-string);
+}
+.domText {
+  color: var(--text-0);
+}
+.collapsed {
+  margin: 0 3px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--bg-4);
+  color: var(--text-2);
+  font-size: 10px;
+}
+.badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--bg-4);
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+.badgeComponent {
+  background: var(--violet-soft);
+  color: var(--violet);
+}

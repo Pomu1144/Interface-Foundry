@@ -7,6 +7,7 @@
 }
 
 html {
+  scroll-padding-top: calc(var(--hl-header-height) + var(--hl-space-4));
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   color-scheme: light;
@@ -491,6 +492,11 @@ button {
 .select[aria-invalid="true"] {
   border-color: var(--hl-color-danger);
   box-shadow: 0 0 0 1px var(--hl-color-danger);
+}
+
+.input[aria-invalid="true"]:focus,
+.select[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 1px var(--hl-color-danger), var(--hl-shadow-focus);
 }
 
 .input[readonly] {

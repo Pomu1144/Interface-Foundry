@@ -1,0 +1,125 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line-1);
+  flex: none;
+}
+.stat {
+  margin-left: 8px;
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+.stat b {
+  color: var(--text-0);
+  font-weight: 600;
+}
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 12px;
+}
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 4px;
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 600;
+}
+.groupHead span {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--line-1);
+}
+.row:hover {
+  background: var(--bg-hover);
+}
+.row[data-superseded='true'] {
+  opacity: 0.5;
+}
+.row[data-experiment='true'] {
+  background: linear-gradient(90deg, rgba(255, 122, 69, 0.06), transparent 40%);
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  flex: none;
+}
+.icon[data-origin='ai'] {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+.icon[data-origin='experiment'] {
+  background: var(--molten-soft);
+  color: var(--molten);
+}
+.icon[data-origin='canvas'] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.main {
+  flex: 1;
+  min-width: 0;
+}
+.desc {
+  overflow: hidden;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+.actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dur-1) ease;
+}
+.row:hover .actions {
+  opacity: 1;
+}
+.action {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+}
+.action:hover {
+  background: var(--bg-active);
+  color: var(--text-0);
+}
