@@ -430,6 +430,9 @@
   height: 0;
   transition: opacity var(--dur-2) ease;
 }
+.stage[data-moving] .layer {
+  will-change: transform;
+}
 .stage[data-hl] .layer:not([data-hl]) {
   opacity: 0.12;
 }
@@ -442,9 +445,12 @@
   background-origin: border-box;
   pointer-events: auto;
 }
-.plane[data-kind='image'],
-.plane[data-bgimg='true'] {
+.plane[data-kind='image'] {
   background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 42%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7));
+}
+/* CSS background images (gradients, photos): a slightly stronger tint, no hatch — they are often large containers. */
+.plane[data-bgimg='true'] {
+  background-color: color-mix(in oklch, var(--c) 9%, transparent);
 }
 .stage[data-shot] .plane[data-kind='image'] {
   background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7)), var(--shot);
@@ -458,7 +464,7 @@
 .stage[data-flat] .plane:not([data-state='sel']):not([data-hover]) {
   background-color: transparent;
 }
-.stage[data-wire] .plane:not([data-kind='image']):not([data-bgimg='true']) {
+.stage[data-wire] .plane:not([data-kind='image']) {
   background-image: none;
 }
 .stage[data-wire] .plane[data-kind='image'] {

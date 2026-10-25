@@ -32,7 +32,6 @@ export function ResponsiveIssuesPanel() {
   const statusError = useStudio((st) => st.auditStatus.error);
   const route = useStudio((st) => st.currentRoute);
   const ready = useStudio((st) => st.instances.primary?.status === 'ready');
-  const viewportState = useStudio((st) => st.viewport);
   const { progress, runs, durationMs, startedAt, route: auditedRoute } = useResponsiveAudit();
   const workerBusy = useAuditWorker((w) => w.busy);
 
@@ -59,10 +58,6 @@ export function ResponsiveIssuesPanel() {
     for (const i of issues) c[i.classification] = (c[i.classification] ?? 0) + 1;
     return c;
   }, [issues]);
-  const plannedCount = useMemo(() => {
-    void viewportState;
-    return defaultProfiles().length;
-  }, [viewportState, runs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = () => {
     void runResponsiveAudit().catch(() => {});
@@ -111,7 +106,7 @@ export function ResponsiveIssuesPanel() {
           <Button size="sm" variant="primary" icon={running ? <Spinner size={11} /> : hasRun ? <RefreshCw size={12} /> : <Play size={12} fill="currentColor" />} disabled={!ready || running} onClick={run} title={!ready ? 'Waiting for the preview' : undefined}>
             {running ? 'Auditing…' : hasRun ? 'Re-run' : 'Run audit'}
           </Button>
-          <ViewportPicker count={plannedCount} />
+          <ViewportPicker />
         </div>
         <span className={s.chips} role="group" aria-label="Severity filter">
           {SEVS.map((sev) => {
@@ -229,7 +224,7 @@ export function ResponsiveIssuesPanel() {
         </div>
       ) : (
         <div className={s.body}>
-          <div className={s.list} role="tree" aria-label="Responsive findings" onKeyDown={onListKey}>
+          <div className={s.list} aria-label="Responsive findings" onKeyDown={onListKey}>
             {!groups.length && (
               <EmptyState title="No findings match the filters">
                 <Button
@@ -276,7 +271,7 @@ export function ResponsiveIssuesPanel() {
                           </button>
                           {ropen &&
                             r.issues.map((i) => (
-                              <button key={i.id} className={s.row} data-issue-id={i.id} data-active={i.id === selectedId ? 'true' : undefined} onClick={() => pick(i)} role="treeitem" aria-selected={i.id === selectedId}>
+                              <button key={i.id} className={s.row} data-issue-id={i.id} data-active={i.id === selectedId ? 'true' : undefined} onClick={() => pick(i)} aria-current={i.id === selectedId ? 'true' : undefined}>
                                 <SevDot severity={i.severity} />
                                 <span className={s.rowMain}>
                                   <span className={s.rowTitle}>{i.title}</span>
@@ -416,9 +411,11 @@ function IssueDetail({ issue }: { issue: ResponsiveIssue }) {
   );
 }
 
-function ViewportPicker({ count }: { count: number }) {
+function ViewportPicker() {
   const [extras, setExtras] = useState<string[]>(() => loadExtraProfiles());
   const device = useStudio((st) => st.device());
+  useStudio((st) => st.viewport.orientation);
+  const count = defaultProfiles(extras).length;
   const toggle = (k: string, on: boolean) => {
     const next = on ? [...extras, k] : extras.filter((x) => x !== k);
     setExtras(next);

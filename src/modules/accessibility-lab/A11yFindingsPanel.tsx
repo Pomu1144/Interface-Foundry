@@ -6,7 +6,7 @@ import { bus } from '@/lib/events';
 import { studio, useStudio } from '@/store';
 import { describeViewport } from '@/modules/device-simulator/viewport';
 import { downloadText } from '@/modules/screenshots/capture';
-import { CodeLine, QaEmpty, SevDot, SEV_LABEL, timeAgo, useTick, useWidth } from '@/modules/responsive-audit/bits';
+import { QaEmpty, SevDot, SEV_LABEL, timeAgo, useTick, useWidth } from '@/modules/responsive-audit/bits';
 import { revealSelector } from '@/modules/responsive-audit/reveal';
 import { CHECKLIST, checklistProgress, loadChecklist, saveChecklist, type ChecklistState, type ChecklistStatus } from './checklist';
 import { isHeuristic, remediationFor, wcagRefs } from './heuristics';

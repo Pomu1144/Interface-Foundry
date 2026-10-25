@@ -105,19 +105,22 @@
 .summary {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 8px 14px;
+  gap: 4px 16px;
+  flex-wrap: wrap;
+  min-height: 40px;
+  padding: 6px 14px;
   border-bottom: 1px solid var(--line-1);
   flex: none;
 }
 .stat {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 5px;
+  white-space: nowrap;
 }
 .statValue {
   color: var(--text-0);
-  font-size: var(--fs-lg);
+  font-size: 14px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -137,8 +140,10 @@
 }
 .summaryNote {
   margin-left: auto;
+  overflow: hidden;
   color: var(--text-3);
   font-size: 11px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -334,7 +339,7 @@
 .side {
   display: flex;
   flex-direction: column;
-  width: 380px;
+  width: 344px;
   flex: none;
   min-height: 0;
   border-left: 1px solid var(--line-1);
@@ -384,8 +389,10 @@
 }
 .drillTabs {
   display: flex;
-  gap: 2px;
-  padding: 0 8px;
+  gap: 0;
+  padding: 0 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
   border-bottom: 1px solid var(--line-1);
   flex: none;
 }
@@ -393,8 +400,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  flex: none;
   height: 30px;
-  padding: 0 7px;
+  padding: 0 6px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;

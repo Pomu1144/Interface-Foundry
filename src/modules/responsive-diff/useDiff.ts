@@ -9,6 +9,7 @@ import { structuralDiff, type StructuralRow, type StructuralSummary } from './st
 /* Pixel diff (Web Worker)                                             */
 /* ------------------------------------------------------------------ */
 
+const CRASHED = 'The diff worker stopped unexpectedly.';
 let worker: Worker | null = null;
 let reqSeq = 0;
 const pending = new Map<number, (r: DiffResponse) => void>();
@@ -21,7 +22,7 @@ function getWorker(): Worker {
       pending.delete(e.data.id);
     };
     worker.onerror = (e) => {
-      for (const [id, done] of pending) done({ id, ok: false, error: e.message || 'Diff worker crashed.' });
+      for (const [id, done] of pending) done({ id, ok: false, error: e.message || CRASHED });
       pending.clear();
       worker?.terminate();
       worker = null;
@@ -48,10 +49,14 @@ export async function computePixelDiff(a: CaptureRef, b: CaptureRef, threshold: 
   const [ba, bb] = await Promise.all([blobFor(a), blobFor(b)]);
   const id = ++reqSeq;
   const req: DiffRequest = { id, a: ba, b: bb, scaleA: captureScale(a), scaleB: captureScale(b), threshold, ignore };
-  const res = await new Promise<DiffResponse>((resolve) => {
-    pending.set(id, resolve);
-    getWorker().postMessage(req);
-  });
+  const send = (rid: number) =>
+    new Promise<DiffResponse>((resolve) => {
+      pending.set(rid, resolve);
+      getWorker().postMessage({ ...req, id: rid });
+    });
+  let res = await send(id);
+  // A worker that failed to start (e.g. a dev-server dependency reload) is recreated once.
+  if (!res.ok && res.error === CRASHED) res = await send(++reqSeq);
   if (!res.ok) throw new Error(res.error);
   const canvas = document.createElement('canvas');
   canvas.width = res.width;

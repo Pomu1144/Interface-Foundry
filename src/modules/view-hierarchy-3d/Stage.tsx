@@ -13,30 +13,24 @@ import s from './hierarchy.module.css';
 type PlaneState = '' | 'sel' | 'path';
 const MAX_SPACING = 120;
 const MAX_LABELS = 28;
+/** Must match `.label` in hierarchy.module.css (10px mono, 18px tall, max 220px). */
+const LABEL_CHAR_W = 6.1;
+const LABEL_CHROME_W = 22;
+const LABEL_MAX_W = 220;
+const LABEL_H = 18;
 
 /* ------------------------------------------------------------------ */
 /* Planes                                                              */
 /* ------------------------------------------------------------------ */
 
-const Plane = memo(function Plane({ n, i, state }: { n: Hierarchy3DNode; i: number; state: PlaneState }) {
-  const style: Record<string, string | number> = {
-    left: n.rect.x,
-    top: n.rect.y,
-    width: n.rect.width,
-    height: n.rect.height,
-  };
+/** One element box. Selection / ancestor state is applied imperatively (see `engine.setMarks`). */
+const Plane = memo(function Plane({ n, i }: { n: Hierarchy3DNode; i: number }) {
+  const style: Record<string, string | number> = { left: n.rect.x, top: n.rect.y, width: n.rect.width, height: n.rect.height };
   const fill = fillFor(n.bg);
   if (fill) style['--fill'] = fill;
   if (n.isImage) style['--bp'] = `${-n.rect.x}px ${-n.rect.y}px`;
   return (
-    <div
-      className={s.plane}
-      data-i={i}
-      data-kind={n.isImage ? 'image' : n.text ? 'text' : 'box'}
-      data-bgimg={n.bg === 'image' ? 'true' : undefined}
-      data-state={state || undefined}
-      style={style as CSSProperties}
-    >
+    <div className={s.plane} data-i={i} data-kind={n.isImage ? 'image' : n.text ? 'text' : 'box'} data-bgimg={n.bg === 'image' ? 'true' : undefined} style={style as CSSProperties}>
       {n.text && (
         <span className={s.text} style={{ fontSize: textSizeFor(n.rect.height) }}>
           {n.text}
@@ -46,28 +40,13 @@ const Plane = memo(function Plane({ n, i, state }: { n: Hierarchy3DNode; i: numb
   );
 });
 
-const Layer = memo(function Layer({
-  depth,
-  t,
-  indices,
-  nodes,
-  selIndex,
-  path,
-  hidden,
-}: {
-  depth: number;
-  t: number;
-  indices: number[];
-  nodes: readonly Hierarchy3DNode[];
-  selIndex: number | null;
-  path: ReadonlySet<number>;
-  hidden: boolean;
-}) {
+/** All planes of one depth level: a single composited layer at translateZ(depth × spacing). */
+const Layer = memo(function Layer({ depth, t, indices, nodes, hidden }: { depth: number; t: number; indices: number[]; nodes: readonly Hierarchy3DNode[]; hidden: boolean }) {
   const ref = useCallback((el: HTMLDivElement | null) => engine.layerRef(depth, el), [depth]);
   return (
     <div ref={ref} className={s.layer} data-depth={depth} style={{ '--t': t, display: hidden ? 'none' : undefined } as CSSProperties}>
       {indices.map((i) => (
-        <Plane key={nodes[i].id} n={nodes[i]} i={i} state={i === selIndex ? 'sel' : path.has(i) ? 'path' : ''} />
+        <Plane key={nodes[i].id} n={nodes[i]} i={i} />
       ))}
     </div>
   );
@@ -179,6 +158,9 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visible, i
     engine.fit(live.current.visibleFrame);
   }, [isolateRoot]);
 
+  // Selected plane + ancestors: a handful of attribute writes instead of re-rendering 1500 planes.
+  useLayoutEffect(() => engine.setMarks(selIndex, path), [selIndex, path, byDepth]);
+
   /* Labels ---------------------------------------------------------- */
   const labelSpecs = useMemo<(LabelSpec & { label: string; t: number; state: PlaneState })[]>(() => {
     if (!labels) return [];
@@ -215,10 +197,11 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visible, i
   useLayoutEffect(() => {
     const host = labelsRef.current;
     const els = host ? ([...host.children] as HTMLElement[]) : [];
+    // Labels use a fixed 10px monospace face: size them arithmetically instead of forcing a layout.
     engine.setLabels(
       labelSpecs,
       els,
-      els.map((el) => ({ w: el.offsetWidth, h: el.offsetHeight })),
+      labelSpecs.map((l) => ({ w: Math.min(LABEL_MAX_W, LABEL_CHROME_W + l.label.length * LABEL_CHAR_W), h: LABEL_H })),
     );
   }, [labelSpecs]);
 
@@ -326,16 +309,7 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visible, i
             {shot ? <img src={shot.url} alt="" draggable={false} /> : <div className={s.baseEmpty} />}
           </div>
           {levels.map((l) => (
-            <Layer
-              key={l.depth}
-              depth={l.depth}
-              t={depthT(l.depth, tree.minDepth, tree.maxDepth)}
-              indices={byDepth.get(l.depth) ?? EMPTY}
-              nodes={nodes}
-              selIndex={selIndex}
-              path={path}
-              hidden={!isLevelVisible(l.depth, filter)}
-            />
+            <Layer key={l.depth} depth={l.depth} t={depthT(l.depth, tree.minDepth, tree.maxDepth)} indices={byDepth.get(l.depth) ?? EMPTY} nodes={nodes} hidden={!isLevelVisible(l.depth, filter)} />
           ))}
         </div>
       </div>

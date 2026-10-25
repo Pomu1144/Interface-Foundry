@@ -429,9 +429,8 @@
 .diffBox {
   position: absolute;
   border-radius: 3px;
-  box-shadow:
-    0 0 0 1.5px rgba(255, 46, 99, 0.95),
-    0 0 0 4px rgba(255, 46, 99, 0.16);
+  border: 1.5px dashed var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
   pointer-events: none;
 }
 .ignore {

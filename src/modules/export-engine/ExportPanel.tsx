@@ -115,13 +115,14 @@ export function ExportPanel() {
   if (!project) return <EmptyPanel icon={PackageCheck} title="Nothing to export">Open a project, make visual edits, then review them here as source patches.</EmptyPanel>;
 
   const canApply = access.kind === 'vfs' || access.kind === 'fs';
-  const applyDisabledReason = !canApply ? access.reason : !patch?.files.length ? 'No source changes to apply' : applying ? 'Applying…' : undefined;
+  const verifyOnly = Boolean(patch && !patch.files.length && patch.inSourceIds.length);
+  const applyDisabledReason = !canApply ? access.reason : !patch?.files.length && !verifyOnly ? 'No source changes to apply' : applying ? 'Applying…' : undefined;
   const name = slugify(project.name);
 
   const apply = async () => {
-    if (!patch || !patch.files.length) return;
+    if (!patch || (!patch.files.length && !verifyOnly)) return;
     try {
-      if (access.kind === 'vfs') {
+      if (access.kind === 'vfs' && patch.files.length) {
         const ok = await requestApproval<boolean>({
           title: `Apply ${patch.files.length} file change${patch.files.length === 1 ? '' : 's'} to “${project.name}”`,
           description: 'Updates the project copy stored in this browser and reloads the preview. Edits the reloaded source reproduces are marked committed and removed from the live override list; anything else stays live.',
@@ -198,6 +199,11 @@ export function ExportPanel() {
             {stat('appended', patch.stats.appended)}
             {stat('review', patch.stats.review)}
             {stat('unmapped', patch.stats.unmapped)}
+            {patch.stats.inSource > 0 && (
+              <Badge tone="outline" title="These edits are already expressed by the source files">
+                {patch.stats.inSource} already in source
+              </Badge>
+            )}
           </span>
         )}
         <span className={s.spacer} />
@@ -224,7 +230,7 @@ export function ExportPanel() {
             <Tooltip content={applyDisabledReason ?? (access.kind === 'fs' ? 'Review and approve each file write' : 'Write into the project copy and verify')}>
               <span>
                 <Button size="sm" variant="primary" icon={applying ? <Spinner /> : <Upload size={12} />} disabled={Boolean(applyDisabledReason)} onClick={apply} data-testid="apply-patch">
-                  {applying ?? 'Apply to project files…'}
+                  {applying ?? (verifyOnly ? 'Verify & commit…' : 'Apply to project files…')}
                 </Button>
               </span>
             </Tooltip>

@@ -193,3 +193,23 @@ describe('diff generation', () => {
     expect(relativeHref('pages/a.html', 'pages/x.css')).toBe('x.css');
   });
 });
+
+describe('idempotent re-export', () => {
+  it('does not rewrite what the source already says or re-append existing overrides', () => {
+    const changes = [
+      ch({ kind: 'style', property: 'margin-top', before: '0px', after: '24px', target: { selector: 'main > h1.title', label: 'h1' } }),
+      ch({ kind: 'token', property: '--hl-space-4', before: '16px', after: '20px', target: { selector: ':root', label: ':root' } }),
+    ];
+    const first = buildSourcePatch({ now: 0, files: FILES, entry: 'index.html', changes });
+    const applied = [...applyAll(first.unified).entries()].map(([path, text]) => ({ path, text }));
+    const second = buildSourcePatch({ now: 0, files: applied, entry: 'index.html', changes });
+    expect(second.files).toEqual([]);
+    expect(second.stats.inSource).toBe(2);
+    expect(second.mappedChangeIds.sort()).toEqual(changes.map((c) => c.id).sort());
+    // A changed value edits the existing override rule instead of appending a new block.
+    const third = buildSourcePatch({ now: 0, files: applied, entry: 'index.html', changes: [{ ...changes[0], after: '32px' }] });
+    expect(third.files.map((f) => f.path)).toEqual(['ifdy-overrides.css']);
+    expect(third.files[0].after.match(/main > h1\.title/g)).toHaveLength(1);
+    expect(third.files[0].after).toContain('margin-top: 32px;');
+  });
+});

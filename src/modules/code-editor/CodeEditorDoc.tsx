@@ -1,6 +1,6 @@
 import { EditorView } from '@codemirror/view';
 import { ChevronRight, CopyPlus, FileWarning, Lock, RotateCcw, Save, ShieldCheck, FileImage } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { Badge, Button, Spinner, Tooltip } from '@/ui';
 import { studio, useStudio, type DocTab } from '@/store';
@@ -8,7 +8,7 @@ import { EmptyPanel } from '@/modules/export-engine/EmptyPanel';
 import { approveFsWrite } from '@/modules/export-engine/approval';
 import { buffers } from './open';
 import { createEditorState, revealLine, themeCompartment, type EditorHooks } from './setup';
-import { duplicateDemoAsProject, invalidateSources, readSourceFile, saveVfsFiles, sourceAccess, sourceKey, type SourceRead } from './sources';
+import { duplicateDemoAsProject, invalidateSources, lastSourceChange, onSourcesChanged, readSourceFile, reloadSourcePreviews, saveVfsFiles, sourceAccess, sourceKey, sourcesVersion, type SourceRead } from './sources';
 import { LANGUAGE_LABEL, languageFor } from './syntax';
 import s from './editor.module.css';
 
@@ -34,6 +34,8 @@ export default function CodeEditorDoc({ doc }: { doc: DocTab }) {
   const [dirty, setDirty] = useState(Boolean(doc.dirty));
   const [saving, setSaving] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [external, setExternal] = useState<{ text: string; sha256?: string } | null>(null);
+  const ver = useSyncExternalStore(onSourcesChanged, sourcesVersion);
 
   const markDirty = (next: boolean) => {
     setDirty(next);
@@ -65,7 +67,7 @@ export default function CodeEditorDoc({ doc }: { doc: DocTab }) {
       }
       buf.original = text;
       markDirty(false);
-      studio().reloadPreview();
+      reloadSourcePreviews();
       toast.success(`Saved ${path.split('/').pop()}`, { description: 'The preview reloaded with the new source; your live edits were re-applied.' });
     } catch (err) {
       toast.error('Save failed', { description: err instanceof Error ? err.message : String(err) });
@@ -138,6 +140,33 @@ export default function CodeEditorDoc({ doc }: { doc: DocTab }) {
     if (v && line && status === 'ready') revealLine(v, line);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reveal]);
+
+  // Follow changes made elsewhere (apply patch, git): refresh a clean buffer, flag a dirty one.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const changed = lastSourceChange();
+    if (changed.paths && !changed.paths.includes(path)) return;
+    let cancelled = false;
+    readSourceFile(source, path)
+      .then((r) => {
+        const v = viewRef.current;
+        const buf = buffers.get(doc.id);
+        if (cancelled || r.text === null || !v || !buf || r.text === buf.original) return;
+        const current = v.state.doc.toString();
+        if (r.text === current || current === buf.original) {
+          if (r.text !== current) v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: r.text } });
+          buf.original = r.text;
+          buf.sha256 = r.sha256;
+          markDirty(false);
+          setExternal(null);
+        } else setExternal({ text: r.text, sha256: r.sha256 });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ver]);
 
   useEffect(() => {
     viewRef.current?.dispatch({ effects: themeCompartment.reconfigure(EditorView.darkTheme.of(theme !== 'light')) });
@@ -216,6 +245,44 @@ export default function CodeEditorDoc({ doc }: { doc: DocTab }) {
           </span>
           <Button size="sm" icon={duplicating ? <Spinner /> : <CopyPlus size={12} />} disabled={duplicating} onClick={duplicate} data-testid="duplicate-demo-editor">
             Duplicate as editable project
+          </Button>
+        </div>
+      )}
+      {external && (
+        <div className={s.banner} data-tone="warning">
+          <RotateCcw size={13} />
+          <span>
+            <b>This file changed in the project</b> while you had unsaved edits.
+          </span>
+          <Button
+            size="sm"
+            onClick={() => {
+              const v = viewRef.current;
+              const buf = buffers.get(doc.id);
+              if (v && buf) {
+                v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: external.text } });
+                buf.original = external.text;
+                buf.sha256 = external.sha256;
+                markDirty(false);
+              }
+              setExternal(null);
+            }}
+          >
+            Load project version
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const buf = buffers.get(doc.id);
+              if (buf) {
+                buf.original = external.text;
+                buf.sha256 = external.sha256;
+              }
+              setExternal(null);
+            }}
+          >
+            Keep mine
           </Button>
         </div>
       )}

@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Badge, Button, Checkbox, IconButton, Notice, Select, Spinner, TextField, Tooltip } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { api } from '@/modules/project-adapter/server-api';
-import { invalidateSources } from '@/modules/code-editor/sources';
+import { invalidateSources, reloadSourcePreviews } from '@/modules/code-editor/sources';
 import { approveGitOp } from '@/modules/export-engine/approval';
 import { DiffView, parseUnifiedDiff } from '@/modules/export-engine/DiffView';
 import { EmptyPanel } from '@/modules/export-engine/EmptyPanel';
@@ -137,7 +137,7 @@ function GitRepo({ rootId, patch, changeCount }: { rootId: string; patch: Source
       const r = await approveGitOp(rootId, 'branch.switch', { name }, { confirmLabel: `Switch to ${name}` });
       if (r) {
         toast.success(`Switched to ${name}`);
-        studio().reloadPreview();
+        reloadSourcePreviews();
       }
       return r;
     });
@@ -158,7 +158,7 @@ function GitRepo({ rootId, patch, changeCount }: { rootId: string; patch: Source
       if (r) {
         toast.success('Patch applied to the working tree', { description: 'Reloading the preview from source.' });
         recordExport({ kind: 'git', label: 'Applied IFDY patch with git apply', detail: `${patch.files.length} file(s)`, changeCount, files: patch.files.map((f) => f.path) });
-        studio().reloadPreview();
+        reloadSourcePreviews();
       }
       return r;
     });
@@ -260,6 +260,7 @@ function GitRepo({ rootId, patch, changeCount }: { rootId: string; patch: Source
             <GitPullRequestArrow size={13} /> Publish — run these yourself
             <Badge tone="outline">IFDY never pushes</Badge>
           </div>
+          {/^(main|master|trunk|develop)$/.test(branch) && <div className={s.hint}>You are on {branch}. Create a branch above before opening a pull request.</div>}
           <Command text={pushCmd} />
           <Command text={prCmd} />
         </div>

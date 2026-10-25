@@ -354,7 +354,9 @@ const LOGIN: Scenario[] = [
         .screenshot('Unfolded mid-input')
         .fold('folded', { description: 'Fold back' })
         .value(login.username, USERNAME, { expect: 'The value survives folding back' })
-        .focused(login.username),
+        .focused(login.username)
+        .inViewport(login.submit, { expect: 'Sign in is still reachable after the round trip' })
+        .noOverflow({ expect: 'The sign-in page fits the screen without sideways scrolling' }),
   ),
 ];
 

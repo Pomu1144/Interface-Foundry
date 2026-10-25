@@ -65,6 +65,12 @@
   flex: 1;
   min-width: 0;
 }
+.banner[data-tone='warning'] {
+  background: var(--warning-soft);
+}
+.banner[data-tone='warning'] > svg {
+  color: var(--warning);
+}
 .banner b {
   color: var(--text-0);
   font-weight: 600;

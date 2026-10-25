@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { AlertTriangle, Camera, Check, CircleSlash, Crosshair, Lock, Maximize2, RefreshCw, ShieldAlert, Unplug } from 'lucide-react';
+import { AlertTriangle, Camera, Check, CircleSlash, Crosshair, Lock, Maximize2, RefreshCw, ShieldAlert, Smartphone, TabletSmartphone, Unplug } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { NodeId, ResponsiveIssue } from '@shared/types';
 import { IconButton, Popover, Spinner, Tooltip } from '@/ui';
@@ -129,7 +129,7 @@ function IssuesChip({ tile, issues, state }: { tile: TileSpec; issues: Responsiv
   if (state === 'error' && !issues) {
     return (
       <span className={s.chip} data-tone="neutral" title="The responsive audit could not run in this preview">
-        <CircleSlash size={10} /> Audit n/a
+        <CircleSlash size={10} />
       </span>
     );
   }
@@ -137,7 +137,7 @@ function IssuesChip({ tile, issues, state }: { tile: TileSpec; issues: Responsiv
   if (!issues.length) {
     return (
       <span className={s.chip} data-tone="success" title="Heuristic responsive checks found nothing at this viewport. This is not a certification.">
-        <Check size={10} /> Clean
+        <Check size={10} /> 0
       </span>
     );
   }
@@ -149,10 +149,9 @@ function IssuesChip({ tile, issues, state }: { tile: TileSpec; issues: Responsiv
       align="start"
       width={340}
       trigger={
-        <button className={s.chip} data-tone={tone} title="Responsive issues (heuristic)">
-          <AlertTriangle size={10} />
-          {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
-          {state === 'running' && <Spinner size={8} />}
+        <button className={s.chip} data-tone={tone} aria-label={`${issues.length} responsive ${issues.length === 1 ? 'issue' : 'issues'} (heuristic)`} title={`${issues.length} responsive ${issues.length === 1 ? 'issue' : 'issues'} (heuristic)`}>
+          {state === 'running' ? <Spinner size={9} /> : <AlertTriangle size={10} />}
+          {issues.length}
         </button>
       }
     >
@@ -250,6 +249,7 @@ export const WallTile = memo(function WallTile({
   const leader = useWall((w) => w.leader === instanceId);
   const mirroring = useWall((w) => w.mirrorScroll || w.mirrorInput);
   const box = frameBox(device, g);
+  const narrow = cell.width + labelOverhang < 200;
   const { issues, state } = useTileIssues(tile, issuesOn && engine !== 'embed', status === 'ready');
   const fold = foldInViewport(g);
   const dims = `${g.viewport.width}×${g.viewport.height}`;
@@ -292,12 +292,21 @@ export const WallTile = memo(function WallTile({
           <Tooltip content={statusText}>
             <span className={s.dot} data-tone={statusTone} />
           </Tooltip>
-          <span className={s.name}>{device.name}</span>
-          {device.expanded && (
-            <span className={s.posture} data-expanded={posture === 'expanded' ? 'true' : undefined}>
-              {posture === 'expanded' ? 'Expanded' : 'Folded'}
-            </span>
-          )}
+          <span className={s.name} title={device.name}>
+            {device.name}
+          </span>
+          {device.expanded &&
+            (narrow ? (
+              <Tooltip content={posture === 'expanded' ? 'Expanded posture' : 'Folded posture'}>
+                <span className={s.posture} data-expanded={posture === 'expanded' ? 'true' : undefined} aria-label={posture === 'expanded' ? 'Expanded' : 'Folded'}>
+                  {posture === 'expanded' ? <TabletSmartphone size={10} /> : <Smartphone size={10} />}
+                </span>
+              </Tooltip>
+            ) : (
+              <span className={s.posture} data-expanded={posture === 'expanded' ? 'true' : undefined}>
+                {posture === 'expanded' ? 'Expanded' : 'Folded'}
+              </span>
+            ))}
           {device.verification.level === 'provisional' && (
             <Tooltip content={`Provisional profile — ${device.verification.source}${device.verification.note ? ` ${device.verification.note}` : ''}`}>
               <span className={s.provisional} aria-label="Provisional profile" />
@@ -308,8 +317,12 @@ export const WallTile = memo(function WallTile({
         </div>
         <div className={s.meta}>
           <span className={s.dims}>{dims}</span>
-          <span className={s.metaSep}>·</span>
-          <span>@{device.pixelRatio}x</span>
+          {!narrow && (
+            <>
+              <span className={s.metaSep}>·</span>
+              <span>@{device.pixelRatio}x</span>
+            </>
+          )}
           {orientation === 'landscape' && (
             <>
               <span className={s.metaSep}>·</span>

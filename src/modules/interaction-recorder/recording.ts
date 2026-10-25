@@ -63,6 +63,8 @@ export async function stopRecording(): Promise<TestStep[]> {
   flushViewport();
   const steps = studio().stopRecording();
   useRecorderUi.setState({ saveOpen: steps.length > 0 });
+  // The Timeline hosts the save dialog; make sure it is mounted (e.g. after Mod+Shift+R).
+  if (steps.length) studio().setBottomTab('timeline');
   if (!steps.length) toast('Recording stopped', { description: 'No steps were captured. Switch to Interact mode and use the page while recording.' });
   return steps;
 }

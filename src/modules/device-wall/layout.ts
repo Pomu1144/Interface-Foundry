@@ -63,6 +63,95 @@ export function wallLayout(frames: Box[], containerWidth: number, frameHeight: n
   return { cells, width: maxW, height: y, frameHeight };
 }
 
+/** Split `weights` (in order) into `k` contiguous groups minimising the largest group sum. */
+export function linearPartition(weights: number[], k: number): number[][] {
+  const n = weights.length;
+  if (k <= 1 || n <= 1) return [weights.map((_, i) => i)];
+  if (k >= n) return weights.map((_, i) => [i]);
+  const prefix = [0];
+  for (const w of weights) prefix.push(prefix[prefix.length - 1] + w);
+  const sum = (a: number, b: number) => prefix[b] - prefix[a];
+  // cost[i][j]: best max-sum splitting the first i items into j groups.
+  const cost: number[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(Infinity));
+  const cut: number[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(0));
+  for (let i = 1; i <= n; i++) cost[i][1] = sum(0, i);
+  for (let j = 2; j <= k; j++) {
+    for (let i = j; i <= n; i++) {
+      for (let x = j - 1; x < i; x++) {
+        const c = Math.max(cost[x][j - 1], sum(x, i));
+        if (c < cost[i][j]) {
+          cost[i][j] = c;
+          cut[i][j] = x;
+        }
+      }
+    }
+  }
+  const groups: number[][] = [];
+  let i = n;
+  for (let j = k; j >= 1; j--) {
+    const x = j === 1 ? 0 : cut[i][j];
+    groups.unshift(Array.from({ length: i - x }, (_, q) => x + q));
+    i = x;
+  }
+  return groups;
+}
+
+/**
+ * "Fit" layout: justified rows. Frames keep their order; each row is scaled so it
+ * spans the width, then everything shrinks uniformly if it is too tall. The row
+ * count that shows the most device area wins, so the wall fills the screen.
+ */
+export function fitWallLayout(frames: Box[], container: Box, opts: WallOptions = WALL_DEFAULTS, maxFrameHeight = 900): WallLayout {
+  if (!frames.length) return { cells: [], width: 0, height: 0, frameHeight: 0 };
+  const W = Math.max(1, container.width);
+  const H = Math.max(1, container.height);
+  const aspects = frames.map((f) => f.width / f.height);
+  let best: WallLayout | null = null;
+  let bestArea = -1;
+  for (let k = 1; k <= frames.length; k++) {
+    const rows = linearPartition(aspects, k);
+    // Row height that makes the row exactly as wide as the container.
+    let heights = rows.map((r) => {
+      const a = r.reduce((sum, i) => sum + aspects[i], 0);
+      const cap = Math.min(maxFrameHeight, ...r.map((i) => frames[i].height * opts.maxScale));
+      return Math.min(cap, (W - opts.gap * (r.length - 1)) / a);
+    });
+    const chrome = k * opts.labelHeight + (k - 1) * opts.rowGap;
+    const total = heights.reduce((a, b) => a + b, 0);
+    if (total + chrome > H) {
+      const k2 = Math.max(0.01, (H - chrome) / total);
+      heights = heights.map((h) => h * k2);
+    }
+    const cells: WallCell[] = [];
+    let y = 0;
+    let maxW = 0;
+    let area = 0;
+    rows.forEach((r, ri) => {
+      const h = heights[ri];
+      const widths = r.map((i) => aspects[i] * h);
+      const rowW = widths.reduce((a, b) => a + b, 0) + opts.gap * (r.length - 1);
+      maxW = Math.max(maxW, rowW);
+      let x = (W - rowW) / 2;
+      r.forEach((i, q) => {
+        const scale = h / frames[i].height;
+        cells.push({ index: i, x, y: y + opts.labelHeight, scale, width: widths[q], height: h });
+        area += widths[q] * h;
+        x += widths[q] + opts.gap;
+      });
+      y += opts.labelHeight + h + (ri < rows.length - 1 ? opts.rowGap : 0);
+    });
+    // Penalise layouts whose smallest tile gets too small to read.
+    const minH = Math.min(...heights);
+    const score = area * (minH < 140 ? minH / 140 : 1);
+    if (score > bestArea) {
+      bestArea = score;
+      cells.sort((a, b) => a.index - b.index);
+      best = { cells, width: maxW, height: y, frameHeight: Math.max(...heights) };
+    }
+  }
+  return best!;
+}
+
 /** Largest common frame height (within bounds) whose layout fits in the container. */
 export function fitFrameHeight(frames: Box[], container: Box, opts: WallOptions = WALL_DEFAULTS, bounds = { min: 160, max: 900 }): number {
   if (!frames.length) return bounds.max;

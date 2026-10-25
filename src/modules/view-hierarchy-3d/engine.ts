@@ -140,6 +140,8 @@ export class HierarchyEngine {
   private hoverEl: HTMLElement | null = null;
   private hlDepth: number | null = null;
   private spaceDown = false;
+  private moving = false;
+  private marked: HTMLElement[] = [];
   private ro: ResizeObserver | null = null;
   private detach: (() => void) | null = null;
 
@@ -172,6 +174,7 @@ export class HierarchyEngine {
       angles: '',
     };
     this.labelState = [];
+    this.moving = false;
     const stage = els.stage;
     const measure = () => {
       const r = stage.getBoundingClientRect();
@@ -439,6 +442,20 @@ export class HierarchyEngine {
     const cur = this.settled();
     const my = (STAGE_INSETS.top - STAGE_INSETS.bottom) / 2;
     this.animateTo({ ...cur, ...zoomAbout(cur, factor, 0, my) });
+  }
+
+  /** Mark the selected plane (`sel`) and its ancestors (`path`). */
+  setMarks(sel: number | null, path: ReadonlySet<number>) {
+    for (const el of this.marked) el.removeAttribute('data-state');
+    this.marked = [];
+    const world = this.world;
+    if (!world) return;
+    for (const i of path) {
+      const el = world.querySelector<HTMLElement>(`[data-i="${i}"]`);
+      if (!el) continue;
+      el.setAttribute('data-state', i === sel ? 'sel' : 'path');
+      this.marked.push(el);
+    }
   }
 
   /** Hover-highlight one depth level (from the rail). */
@@ -727,12 +744,14 @@ export class HierarchyEngine {
     }
 
     this.cam.zoom = clampZoom(this.cam.zoom);
-    this.write();
-    if (active || this.drag) {
-      if (active) this.kick();
-    } else {
-      this.lastT = 0;
+    if ((active || this.drag) && !this.moving && this.stage) {
+      // Freeze layer raster scale while moving; released on settle for a crisp re-raster.
+      this.moving = true;
+      this.stage.setAttribute('data-moving', '');
     }
+    this.write();
+    if (active) this.kick();
+    else this.lastT = 0;
     this.scheduleSettle();
   };
 
@@ -741,6 +760,10 @@ export class HierarchyEngine {
     this.settleTimer = setTimeout(() => {
       this.settleTimer = null;
       if (this.raf || this.drag) return this.scheduleSettle();
+      if (this.moving) {
+        this.moving = false;
+        this.stage?.removeAttribute('data-moving');
+      }
       this.writeHairline();
     }, 140);
   }

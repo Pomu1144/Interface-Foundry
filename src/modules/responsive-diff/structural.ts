@@ -79,7 +79,7 @@ export function crossesFold(r: Rect, fold: FoldGeometry): boolean {
 const toViewport = (r: Rect, side: SnapshotSide): Rect => ({ ...r, x: r.x - (side.scroll?.x ?? 0), y: r.y - (side.scroll?.y ?? 0) });
 
 /** Problems an entry has on one side, independent of the other side. */
-function sideProblems(e: LayoutSnapshotEntry, side: SnapshotSide, name: string, minTap: number): string[] {
+function sideProblems(e: LayoutSnapshotEntry, side: SnapshotSide, name: string): string[] {
   const out: string[] = [];
   if (!e.visible) return out;
   const r = toViewport(e.rect, side);
@@ -150,8 +150,8 @@ export function structuralDiff(a: SnapshotSide, b: SnapshotSide, opts: { toleran
       if (smallB && !smallA) reasons.push(`Shrinks below the ${minTap}px tap size in ${nameB} (${Math.round(eb.rect.width)}×${Math.round(eb.rect.height)})`);
       if (smallA && !smallB) reasons.push(`Below the ${minTap}px tap size in ${nameA} (${Math.round(ea.rect.width)}×${Math.round(ea.rect.height)})`);
     }
-    if (ea) reasons.push(...sideProblems(ea, a, nameA, minTap));
-    if (eb) reasons.push(...sideProblems(eb, b, nameB, minTap));
+    if (ea) reasons.push(...sideProblems(ea, a, nameA));
+    if (eb) reasons.push(...sideProblems(eb, b, nameB));
 
     const row: StructuralRow = {
       selector: sel,

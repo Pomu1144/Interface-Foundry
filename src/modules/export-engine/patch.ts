@@ -70,7 +70,9 @@ export type SourcePatch = {
   reliabilityById: Record<string, Reliability>;
   overridesPath: string;
   noSources: boolean;
-  stats: { files: number; additions: number; deletions: number; exact: number; appended: number; review: number; unmapped: number };
+  stats: { files: number; additions: number; deletions: number; exact: number; appended: number; review: number; unmapped: number; inSource: number };
+  /** Change ids the source already expresses (nothing to write). */
+  inSourceIds: string[];
 };
 
 export type PatchOptions = {
@@ -183,6 +185,9 @@ export function buildSourcePatch(opts: PatchOptions): SourcePatch {
 
   const unmapped: UnmappedChange[] = [];
   const reliabilityById: Record<string, Reliability> = {};
+  /** Changes the source already expresses (no edit needed). */
+  const inSource = new Set<string>();
+  const sameValue = (a: string, b: string) => a.replace(/\s+/g, ' ').trim().toLowerCase() === b.replace(/\s+/g, ' ').trim().toLowerCase();
   const mark = (ids: string[], r: Reliability) => {
     for (const id of ids) {
       const prev = reliabilityById[id];
@@ -228,7 +233,10 @@ export function buildSourcePatch(opts: PatchOptions): SourcePatch {
       mark([c.id], 'exact');
       return true;
     }
-    if (d) {
+    if (d && sameValue(d.value, value)) {
+      // Already what the source says (e.g. applied earlier): nothing to change.
+      inSource.add(c.id);
+    } else if (d) {
       const e = editDeclaration(hit.region.text, d, value);
       fs.addEdit({ start: e.start + off, end: e.end + off, text: e.text, changeIds: [c.id], reliability: 'exact', label }, superseded);
     } else {
@@ -335,6 +343,14 @@ export function buildSourcePatch(opts: PatchOptions): SourcePatch {
             req.changeIds.push(c.id);
             fs.appends.set(key, req);
             mark([c.id], 'appended');
+            break;
+          }
+        }
+        // An overrides file from an earlier export is searched like any stylesheet.
+        if (!noSources && states.has(overridesPath)) {
+          const hit = pickHit(findSelector([overridesPath], c.target.selector, c.media ? [c.media] : undefined), property);
+          if (hit) {
+            editInRule(hit, c, property, value, `exact — override rule matched (${basename(overridesPath)}:${hit.rule.line})`);
             break;
           }
         }
@@ -544,6 +560,7 @@ export function buildSourcePatch(opts: PatchOptions): SourcePatch {
       fs.addEdit({ ...e, changeIds: req.changeIds, reliability: req.reliability, label: req.label }, superseded);
     }
     if (!fs.edits.length) continue;
+    if (fs.edits.every((e) => fs.text.slice(e.start, e.end) === e.text)) continue;
     let after: string;
     try {
       after = applyEdits(fs.text, fs.edits);
@@ -574,7 +591,9 @@ export function buildSourcePatch(opts: PatchOptions): SourcePatch {
       additions: files.reduce((n, f) => n + f.additions, 0),
       deletions: files.reduce((n, f) => n + f.deletions, 0),
       ...counts,
+      inSource: inSource.size,
     },
+    inSourceIds: [...inSource],
   };
 }
 

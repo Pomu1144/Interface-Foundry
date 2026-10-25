@@ -6,7 +6,7 @@ import { studio, useStudio, type CaptureRef } from '@/store';
 import { buildOverrideCss, buildPatchSet, changeSummaryMarkdown, effectiveChanges, isNoop, replaceAll } from '@/modules/change-manager/changes';
 import { previews } from '@/modules/preview-runtime/registry';
 import { currentPatchSet } from '@/modules/preview-runtime/sync';
-import { loadTextSources, onSourcesChanged, saveVfsFiles, sourceAccess, sourceHash, sourceKey, sourcesVersion } from '@/modules/code-editor/sources';
+import { loadTextSources, onSourcesChanged, reloadSourcePreviews, saveVfsFiles, sourceAccess, sourceHash, sourceKey, sourcesVersion } from '@/modules/code-editor/sources';
 import { toCssVariables, toDtcg } from '@/modules/design-tokens/dtcg';
 import { buildSourcePatch, type SourcePatch } from './patch';
 import { approveFsWrite } from './approval';
@@ -284,7 +284,7 @@ export async function applyPatchToProject(patch: SourcePatch, opts: { onStatus?:
   const source = s.source;
   const access = sourceAccess(source);
   if (!source || access.kind === 'none' || access.kind === 'demo') throw new Error(access.reason ?? 'This project cannot be written.');
-  const ids = new Set(patch.mappedChangeIds);
+  const ids = new Set([...patch.mappedChangeIds, ...patch.inSourceIds]);
   const applied = s.changes.filter((c) => ids.has(c.id));
   const probes = probesFor(applied);
 
@@ -294,7 +294,9 @@ export async function applyPatchToProject(patch: SourcePatch, opts: { onStatus?:
 
   // 2. Write.
   const files = patch.files.map((f) => ({ path: f.path, before: f.isNew ? null : f.before, after: f.after, patch: f }));
-  if (source.kind === 'vfs') {
+  if (!files.length) {
+    /* verify only: the source already contains these edits */
+  } else if (source.kind === 'vfs') {
     opts.onStatus?.(`Saving ${files.length} file(s)…`);
     await saveVfsFiles(source.projectId, files.map((f) => ({ path: f.path, text: f.after })));
   } else if (source.kind === 'fs') {
@@ -308,7 +310,7 @@ export async function applyPatchToProject(patch: SourcePatch, opts: { onStatus?:
   // 3. Reload and compare without the applied overrides.
   opts.onStatus?.('Reloading the preview from source…');
   const hello = waitForPrimaryHello();
-  studio().reloadPreview();
+  reloadSourcePreviews();
   const loaded = await hello;
   const verified: string[] = [];
   const kept: string[] = [];
@@ -347,6 +349,12 @@ export async function applyPatchToProject(patch: SourcePatch, opts: { onStatus?:
   // 4. Update the change list: verified edits are committed and leave the live override list.
   const st = studio();
   if (verified.length) {
+    // Committed token values become the library's base values.
+    for (const c of applied) {
+      if (c.kind !== 'token' || !verified.includes(c.id) || c.after === null) continue;
+      const t = studio().tokens.find((x) => x.cssVar === c.property);
+      if (t && t.value !== c.after) studio().upsertToken({ ...t, value: c.after });
+    }
     st.setExportStatus(verified, 'committed');
     const after = studio();
     const left = after.changes.filter((c) => !verified.includes(c.id));

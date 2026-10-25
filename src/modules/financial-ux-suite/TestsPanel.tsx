@@ -161,7 +161,7 @@ export function TestsPanel() {
             </Button>
           </Tooltip>
         )}
-        <Select ariaLabel="Scenarios to run" value={scopeOptions.some((o) => o.value === scope) ? scope : 'all'} onChange={(v) => useRunner.setState({ scope: v, testsSelection: null })} options={scopeOptions} style={{ maxWidth: 220 }} />
+        <Select ariaLabel="Scenarios to run" value={scopeOptions.some((o) => o.value === scope) ? scope : 'all'} onChange={(v) => useRunner.setState({ scope: v, testsSelection: null })} options={scopeOptions} style={{ width: 196 }} />
         <span className={s.divider} />
         <Segmented
           ariaLabel="Run on"
@@ -257,7 +257,7 @@ export function TestsPanel() {
               </span>
             </div>
             <div className={s.gridWrap}>
-              <div className={s.grid} style={{ gridTemplateColumns: `minmax(220px, 1.3fr) repeat(${columns.length}, minmax(120px, 1fr))` }} role="grid" aria-label="Results by scenario and viewport">
+              <div className={s.grid} style={{ gridTemplateColumns: `minmax(190px, 1.2fr) repeat(${columns.length}, minmax(108px, 1fr))` }} role="grid" aria-label="Results by scenario and viewport">
                 <div className={s.corner}>Scenario</div>
                 {columns.map((c) => {
                   const d = devices.find((x) => x.id === c.ctx.deviceId);

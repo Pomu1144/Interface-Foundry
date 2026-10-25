@@ -182,7 +182,7 @@ export const DiffView = memo(function DiffView({
   const hunkHeader = (hunk: PatchHunk, index: number) => (
     <div className={s.hunk} key={`h${index}`}>
       <span className={s.hunkRange}>
-        @@ −{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@
+        @@ −{hunk.oldLines === 0 ? Math.max(0, hunk.oldStart - 1) : hunk.oldStart},{hunk.oldLines} +{hunk.newLines === 0 ? Math.max(0, hunk.newStart - 1) : hunk.newStart},{hunk.newLines} @@
       </span>
       {labels && (
         <span className={s.hunkLabels}>

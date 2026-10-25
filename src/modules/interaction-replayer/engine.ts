@@ -12,14 +12,14 @@
  */
 import type { A11yIssue, ResponsiveIssue, Scenario, ScenarioRun, StepResult, TestStep, ViewportState } from '@shared/types';
 import type { AgentEvent } from '@shared/protocol';
-import { studio } from '@/store';
+import { studio, useStudio } from '@/store';
 import { previews } from '@/modules/preview-runtime/registry';
 import type { PreviewConnection } from '@/modules/preview-runtime/connection';
 import { canFold } from '@/modules/device-simulator/viewport';
 import { currentFold, currentViewportContext } from '@/modules/device-simulator/context';
 import { isSoftStep, newId, redactSecrets, resolveActionSecrets } from '@/modules/interaction-recorder/steps';
 import { useRunner, type PauseDecision } from './runner-store';
-import { contextFor, viewportLabel } from './matrix';
+import { contextFor, viewportKey, viewportLabel } from './matrix';
 
 export const PRIMARY = 'primary';
 
@@ -299,7 +299,29 @@ function collectConsoleErrors(since: number, used: Record<string, string>): stri
   return [...out].slice(0, 50);
 }
 
+type AuditModule = { runAllAudits?: (o?: { profiles?: ViewportState[]; responsive?: boolean; a11y?: boolean }) => Promise<{ errors: string[] }> };
+
+/**
+ * Audit the run's end state. Prefers the project audit module (responsive rules plus
+ * the accessibility lab's extra heuristics) scoped to the canvas viewport; falls back
+ * to the raw agent audits when that module is unavailable.
+ */
 async function auditEndState(signal?: AbortSignal): Promise<(ResponsiveIssue | A11yIssue)[]> {
+  try {
+    const mod = (await import('@/modules/responsive-audit')) as AuditModule;
+    if (typeof mod.runAllAudits === 'function') {
+      await withAbort(mod.runAllAudits({ profiles: [] }), signal);
+      const st = studio();
+      const key = viewportKey(currentViewportContext());
+      return [...st.responsiveIssues.filter((i) => viewportKey(i.viewport) === key), ...st.a11yIssues];
+    }
+  } catch (e) {
+    if (e instanceof RunAborted) throw e;
+  }
+  return agentAudits(signal);
+}
+
+async function agentAudits(signal?: AbortSignal): Promise<(ResponsiveIssue | A11yIssue)[]> {
   const c = conn();
   const s = studio().settings;
   const viewport = currentViewportContext();
@@ -471,6 +493,9 @@ export async function runBatch(scenarios: Scenario[], opts: BatchOptions = {}): 
   const devices = s0.allDevices();
   const matrix = (opts.matrix ?? []).filter((v) => devices.some((d) => d.id === v.deviceId));
   const prevViewport = { ...s0.viewport };
+  // Per-run audits reuse the project audit module, which publishes to the Responsive and
+  // Accessibility panels; keep whatever those panels showed before the batch.
+  const savedAudits = opts.audits ? { responsiveIssues: s0.responsiveIssues, a11yIssues: s0.a11yIssues, auditStatus: s0.auditStatus } : null;
   // "Current device" pins the viewport the user had, so posture steps in one run never leak into the next.
   const entries: ViewportState[] = matrix.length ? matrix : [prevViewport];
   const prevInteraction = s0.interaction;
@@ -510,6 +535,7 @@ export async function runBatch(scenarios: Scenario[], opts: BatchOptions = {}): 
   } finally {
     const aborted = signal.aborted;
     controller = null;
+    if (savedAudits) useStudio.setState(savedAudits);
     if (studio().interaction !== prevInteraction) studio().setInteraction(prevInteraction);
     const cur = studio().viewport;
     if (cur.deviceId !== prevViewport.deviceId || cur.posture !== prevViewport.posture || cur.orientation !== prevViewport.orientation) studio().setViewport(prevViewport);

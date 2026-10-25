@@ -1,5 +1,6 @@
 import { studio, useStudio, type PreviewSource, type RouteEntry } from '@/store';
 import { api } from '@/modules/project-adapter/server-api';
+import { previews } from '@/modules/preview-runtime/registry';
 import { DEMO_ROUTES } from '@/modules/project-adapter/projects';
 import { getProjectFiles, updateProjectFile } from '@/modules/project-storage/storage';
 import type { SourceFile } from '@/modules/export-engine/patch';
@@ -64,7 +65,13 @@ export function onSourcesChanged(fn: () => void) {
 }
 const listingCache = new Map<string, Promise<{ entries: SourceEntry[]; truncated: boolean }>>();
 const readCache = new Map<string, Promise<SourceRead>>();
+let lastChange: { version: number; paths: string[] | null } = { version: 0, paths: null };
+/** Paths touched by the latest invalidation (null = everything). */
+export function lastSourceChange() {
+  return lastChange;
+}
 export function invalidateSources(path?: string) {
+  lastChange = { version: version + 1, paths: path ? [path] : null };
   if (path) {
     for (const k of [...readCache.keys()]) if (k.endsWith(`\u0000${path}`)) readCache.delete(k);
   } else readCache.clear();
@@ -202,6 +209,23 @@ export async function saveVfsFiles(projectId: string, files: { path: string; tex
   }
   await api(`/api/vfs/${projectId}?replace=0`, { method: 'PUT', json: { files: files.map((f) => ({ path: f.path, text: f.text })) } });
   for (const f of files) invalidateSources(f.path);
+}
+
+/**
+ * Reload every visible preview so it picks up changed source files. Uses the
+ * agent (`location.reload()`), which keeps the session and re-applies live
+ * edits on hello; falls back to the canvas reload when nothing is connected.
+ */
+export function reloadSourcePreviews() {
+  const conns = previews.ready().filter((c) => studio().instances[c.id]?.role !== 'worker');
+  if (!conns.length) {
+    studio().reloadPreview();
+    return;
+  }
+  for (const c of conns) {
+    studio().upsertInstance(c.id, { status: 'loading', error: undefined });
+    c.tell('nav.reload');
+  }
 }
 
 /* ------------------------------------------------------------------ */

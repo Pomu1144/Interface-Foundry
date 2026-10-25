@@ -295,6 +295,8 @@
 }
 .posture {
   flex: none;
+  display: inline-flex;
+  align-items: center;
   height: 17px;
   padding: 0 6px;
   border-radius: var(--r-xs);

@@ -32,7 +32,7 @@ import { previews } from '@/modules/preview-runtime/registry';
 import { chromiumAvailable } from '@/modules/preview-runtime/remote/capture';
 import { browserSocket } from '@/modules/preview-runtime/remote/socket';
 import { captureTiles, composeContactSheet, downloadBlob, type CaptureMode } from './capture';
-import { fitFrameHeight, wallLayout, WALL_DEFAULTS } from './layout';
+import { fitWallLayout, wallLayout, WALL_DEFAULTS } from './layout';
 import { useMirrorFeedback, useMirroring } from './mirror';
 import { buildTiles, frameBox, isWallInstance, matchingPreset, parseKey, presetKeys, PRESETS, tileKey, type PresetId, type TileSpec } from './presets';
 import { useWall, type Density } from './state';
@@ -86,8 +86,10 @@ export default function WallDoc({ doc }: { doc: DocTab }) {
 
   const boxes = useMemo(() => tiles.map((t) => frameBox(t.device, t.geometry)), [tiles]);
   const avail = { width: Math.max(200, size.width - PAD * 2), height: Math.max(200, size.height - PAD * 2) };
-  const frameH = wall.density === 'fit' ? fitFrameHeight(boxes, avail, WALL_OPTS, { min: 220, max: 900 }) : DENSITY_HEIGHT[wall.density];
-  const layout = useMemo(() => wallLayout(boxes, avail.width, frameH, WALL_OPTS), [boxes, avail.width, frameH]);
+  const layout = useMemo(
+    () => (wall.density === 'fit' ? fitWallLayout(boxes, avail, WALL_OPTS) : wallLayout(boxes, avail.width, DENSITY_HEIGHT[wall.density], WALL_OPTS)),
+    [boxes, avail.width, avail.height, wall.density], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   /* --------------------- staggered mounting + budget --------------------- */
   const [mountedCount, setMountedCount] = useState(0);
@@ -384,7 +386,10 @@ export default function WallDoc({ doc }: { doc: DocTab }) {
             inline
           />
         ) : (
-          <div className={s.grid} style={{ width: Math.max(avail.width, layout.width), height: layout.height, margin: `${PAD}px` }}>
+          <div
+            className={s.grid}
+            style={{ width: Math.max(avail.width, layout.width), height: layout.height, margin: `${Math.max(PAD, Math.floor((size.height - layout.height) / 2))}px ${PAD}px ${PAD}px` }}
+          >
             {tiles.map((t, i) => (
               <WallTile
                 key={t.key}
@@ -452,7 +457,7 @@ function EngineBadge({ engine }: { engine: TileEngine }) {
 function Toggle({ icon, label, on, onChange, disabled, hint }: { icon: ReactNode; label: string; on: boolean; onChange: (v: boolean) => void; disabled?: boolean; hint: string }) {
   return (
     <Tooltip content={hint}>
-      <button className={s.toggle} data-on={on && !disabled ? 'true' : undefined} aria-pressed={on && !disabled} disabled={disabled} onClick={() => onChange(!on)}>
+      <button className={s.toggle} aria-label={label} data-on={on && !disabled ? 'true' : undefined} aria-pressed={on && !disabled} disabled={disabled} onClick={() => onChange(!on)}>
         {icon}
         <span>{label}</span>
       </button>

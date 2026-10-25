@@ -223,7 +223,7 @@ export function describeAssertion(a: Assertion): string {
     case 'in-viewport':
       return `${locatorLabel(a.locator)} fits inside the viewport`;
     case 'count':
-      return `Exactly ${a.count} × ${a.locator.css}`;
+      return `Exactly ${a.count} element${a.count === 1 ? '' : 's'} match ${a.locator.css}`;
     case 'enabled':
       return `${locatorLabel(a.locator)} is ${a.enabled ? 'enabled' : 'disabled'}`;
   }

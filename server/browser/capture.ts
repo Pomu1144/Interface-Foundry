@@ -2,7 +2,8 @@ import { randomBytes } from 'node:crypto';
 import type { Browser } from 'playwright-core';
 import { HttpError } from '../http';
 import { AgentChannel } from './agent-channel';
-import { defaultUserAgent, displayFeatureFor, sanitizeDevice, sanitizeFold } from './emulation';
+import { applyCdpEmulation, freshEmulation } from './cdp-emulation';
+import { sanitizeEmulation } from './emulation';
 import type { BrowserManager } from './manager';
 
 export type CaptureRequest = {
@@ -57,21 +58,16 @@ export async function runCapture(manager: BrowserManager, browser: Browser, req:
   const forbidden = manager.isForbiddenUrl(req.url);
   if (forbidden) throw new HttpError(403, forbidden);
   const warnings: string[] = [];
-  const d = sanitizeDevice({ ...req.viewport, screen: undefined, orientation: undefined });
-  const fold = sanitizeFold(req.fold ?? null, d);
-  const ua = d.userAgent ?? defaultUserAgent(browser.version());
-  const context = await browser.newContext({
-    viewport: { width: d.width, height: d.height },
-    screen: { width: d.width, height: d.height },
-    deviceScaleFactor: d.dpr,
-    isMobile: d.mobile,
-    hasTouch: d.touch,
-    userAgent: ua,
-    colorScheme: req.colorScheme ?? 'no-preference',
-    reducedMotion: req.freezeAnimations ? 'reduce' : 'no-preference',
-    acceptDownloads: false,
-    serviceWorkers: 'block',
+  const emu = sanitizeEmulation({
+    device: { ...req.viewport, screen: undefined, orientation: undefined },
+    fold: req.fold ?? null,
+    colorScheme: req.colorScheme ?? null,
+    reducedMotion: Boolean(req.freezeAnimations),
   });
+  const d = emu.device;
+  // Emulation is applied through CDP only (viewport: null): Playwright's own viewport emulation
+  // re-applies device metrics while screenshotting, which would drop the fold.
+  const context = await browser.newContext({ viewport: null, acceptDownloads: false, serviceWorkers: 'block' });
   const deadline = setTimeout(() => void context.close().catch(() => {}), 60_000);
   try {
     const page = await context.newPage();
@@ -81,19 +77,9 @@ export async function runCapture(manager: BrowserManager, browser: Browser, req:
     await agent.install();
     page.on('dialog', (dlg) => void dlg.dismiss().catch(() => {}));
 
-    if (fold) {
-      const { method } = await manager.displayFeatureSupport();
-      if (method === 'none') warnings.push('This Chromium build cannot emulate display features; the fold is not reflected in viewport-segment media queries.');
-      else if (method === 'displayFeaturesOverride') await cdp.send('Emulation.setDisplayFeaturesOverride', { features: [displayFeatureFor(fold)] });
-      else
-        await cdp.send('Emulation.setDeviceMetricsOverride', {
-          width: d.width,
-          height: d.height,
-          deviceScaleFactor: d.dpr,
-          mobile: d.mobile,
-          displayFeature: displayFeatureFor(fold),
-        });
-    }
+    const { method } = await manager.displayFeatureSupport();
+    if (emu.fold && method === 'none') warnings.push('This Chromium build cannot emulate display features; the fold is not reflected in viewport-segment media queries.');
+    await applyCdpEmulation(cdp, emu, { method, browserVersion: browser.version() }, freshEmulation());
 
     let response;
     try {
@@ -120,6 +106,18 @@ export async function runCapture(manager: BrowserManager, browser: Browser, req:
     await page
       .evaluate(() => Promise.race([(document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready.then(() => true), new Promise((r) => setTimeout(r, 5000))]))
       .catch(() => {});
+    if (req.freezeAnimations) {
+      // Deterministic frames (CSP-proof, unlike injected styles): finish finite animations, cancel infinite ones.
+      await page
+        .evaluate(() => {
+          for (const a of document.getAnimations()) {
+            const t = a.effect?.getComputedTiming();
+            if (t && t.endTime !== Infinity && Number.isFinite(Number(t.endTime))) a.finish();
+            else a.cancel();
+          }
+        })
+        .catch(() => {});
+    }
     if (req.hideSelectors?.length) {
       const missed = await page.evaluate((sels) => {
         const bad: string[] = [];
@@ -138,25 +136,25 @@ export async function runCapture(manager: BrowserManager, browser: Browser, req:
     // Two animation frames so style/layout changes above are painted.
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).catch(() => {});
 
-    let clip: { x: number; y: number; width: number; height: number } | undefined;
+    let shot: { data: string };
     if (req.fullPage) {
-      const h = await page.evaluate(() => Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0)).catch(() => 0);
+      const m = (await cdp.send('Page.getLayoutMetrics')) as { cssContentSize: { width: number; height: number } };
+      let h = Math.ceil(m.cssContentSize.height);
       if (h > MAX_FULL_PAGE_HEIGHT) {
         warnings.push(`The page is ${h}px tall; the capture is limited to the first ${MAX_FULL_PAGE_HEIGHT}px.`);
-        clip = { x: 0, y: 0, width: d.width, height: MAX_FULL_PAGE_HEIGHT };
+        h = MAX_FULL_PAGE_HEIGHT;
       }
+      shot = (await cdp.send('Page.captureScreenshot', {
+        format: 'png',
+        captureBeyondViewport: true,
+        clip: { x: 0, y: 0, width: d.width, height: Math.max(d.height, h), scale: 1 },
+      })) as { data: string };
+    } else {
+      shot = (await cdp.send('Page.captureScreenshot', { format: 'png' })) as { data: string };
     }
-    const png = await page.screenshot({
-      type: 'png',
-      fullPage: Boolean(req.fullPage),
-      animations: req.freezeAnimations ? 'disabled' : 'allow',
-      caret: 'hide',
-      scale: 'device',
-      clip,
-      timeout: 20_000,
-    });
+    const png = Buffer.from(shot.data, 'base64');
     const { width, height } = pngSize(png);
-    return { dataUrl: `data:image/png;base64,${png.toString('base64')}`, width, height, capturedAt: Date.now(), ...(warnings.length ? { warnings } : {}) };
+    return { dataUrl: `data:image/png;base64,${shot.data}`, width, height, capturedAt: Date.now(), ...(warnings.length ? { warnings } : {}) };
   } finally {
     clearTimeout(deadline);
     await context.close().catch(() => {});

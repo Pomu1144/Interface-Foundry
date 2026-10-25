@@ -82,6 +82,7 @@ function ApprovalDialog() {
   useEffect(() => {
     setBusy(false);
     setError(null);
+    setNow(Date.now());
   }, [req]);
   useEffect(() => {
     if (!req?.expiresAt) return;

@@ -12,7 +12,8 @@ import type {
 } from '../../src/modules/preview-runtime/remote/protocol';
 import type { AgentBundle } from '../agent-bundle';
 import { AgentChannel, type EnvelopeLike } from './agent-channel';
-import { defaultUserAgent, deviceMetricsParams, displayFeatureFor, emulationKey, mediaFeatures, sanitizeEmulation, userAgentMetadataFor } from './emulation';
+import { applyCdpEmulation, freshEmulation } from './cdp-emulation';
+import { sanitizeEmulation } from './emulation';
 import { redactText, redactUrl } from './redact';
 
 /** What a page needs from its owning session. */
@@ -50,7 +51,7 @@ export class RemotePage {
   private agent!: AgentChannel;
   private closed = false;
   private emu: EmulationParams;
-  private applied = { metrics: '', ua: '', media: '', touch: null as boolean | null, feature: '' };
+  private applied = freshEmulation();
   private emulating: Promise<void> | null = null;
   private pendingEmu: EmulationParams | null = null;
   private screencast: Required<ScreencastOptions> = { enabled: false, quality: 70, maxWidth: 800, maxHeight: 1600 };
@@ -133,36 +134,8 @@ export class RemotePage {
     const d = e.device;
     const { method, detail } = await this.host.displayFeatureMethod();
     const fold = e.fold;
-    const metricsKey = emulationKey.metrics(d, fold) + method;
-    if (metricsKey !== this.applied.metrics) {
-      await this.cdp.send('Emulation.setDeviceMetricsOverride', deviceMetricsParams(d, fold, method));
-      this.applied.metrics = metricsKey;
-    }
-    if (method === 'displayFeaturesOverride') {
-      const fk = fold ? `${fold.axis}:${fold.offset}:${fold.maskLength}` : '';
-      if (fk !== this.applied.feature) {
-        if (fold) await this.cdp.send('Emulation.setDisplayFeaturesOverride', { features: [displayFeatureFor(fold)] });
-        else await this.cdp.send('Emulation.clearDisplayFeaturesOverride');
-        this.applied.feature = fk;
-      }
-    }
-    const uaKey = emulationKey.ua(d);
-    if (uaKey !== this.applied.ua) {
-      const userAgent = d.userAgent ?? defaultUserAgent(this.host.browserVersion);
-      await this.cdp.send('Emulation.setUserAgentOverride', { userAgent, userAgentMetadata: userAgentMetadataFor(userAgent, this.host.browserVersion, d.mobile) });
-      this.applied.ua = uaKey;
-    }
-    let touchNeedsReload = false;
-    if (this.applied.touch !== d.touch) {
-      await this.cdp.send('Emulation.setTouchEmulationEnabled', d.touch ? { enabled: true, maxTouchPoints: 5 } : { enabled: false });
-      touchNeedsReload = this.applied.touch !== null;
-      this.applied.touch = d.touch;
-    }
-    const mediaKey = emulationKey.media(e);
-    if (mediaKey !== this.applied.media) {
-      await this.cdp.send('Emulation.setEmulatedMedia', { media: '', features: mediaFeatures(e.colorScheme, e.reducedMotion) });
-      this.applied.media = mediaKey;
-    }
+    const { touchChanged } = await applyCdpEmulation(this.cdp, e, { method, browserVersion: this.host.browserVersion }, this.applied);
+    const touchNeedsReload = touchChanged;
     this.host.send({
       t: 'emulated',
       pageId: this.id,

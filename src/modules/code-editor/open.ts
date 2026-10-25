@@ -1,7 +1,7 @@
 import type { EditorState } from '@codemirror/state';
 import { toast } from 'sonner';
 import { studio, useStudio } from '@/store';
-import { listSourceFiles, projectPathFor, sourceAccess, sourceKey } from './sources';
+import { lastSourceChange, listSourceFiles, onSourcesChanged, projectPathFor, sourceAccess, sourceKey } from './sources';
 
 /** Document id for a project file. */
 export const fileDocId = (path: string) => `file:${path}`;
@@ -50,3 +50,13 @@ useStudio.subscribe(
   (s) => sourceKey(s.source),
   () => buffers.clear(),
 );
+
+// Clean buffers of files rewritten elsewhere (apply, git) are dropped so they reload on open.
+onSourcesChanged(() => {
+  const { paths } = lastSourceChange();
+  for (const [id, b] of buffers) {
+    const path = id.replace(/^file:/, '');
+    if (paths && !paths.includes(path)) continue;
+    if (b.state.doc.toString() === b.original && !useStudio.getState().documents.some((d) => d.id === id && d.kind === 'file' && useStudio.getState().activeDocId === id)) buffers.delete(id);
+  }
+});
