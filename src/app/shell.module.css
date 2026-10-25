@@ -95,9 +95,23 @@
   border-radius: var(--r-sm);
   background: transparent;
   min-width: 0;
-  max-width: 220px;
+  max-width: 240px;
   overflow: hidden;
   flex: 0 1 auto;
+}
+/* Below 1800px the Inspect/Interact labels collapse to icons (still named for assistive tech). */
+@media (max-width: 1799px) {
+  .modeSwitch [data-segment-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .modeSwitch [role='radio'] {
+    padding: 0 6px;
+  }
 }
 .brand:hover {
   background: var(--bg-hover);
@@ -112,10 +126,11 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  overflow: hidden;
   line-height: 1.15;
 }
 .brandProject {
-  max-width: 180px;
+  max-width: 100%;
   overflow: hidden;
   color: var(--text-0);
   font-size: 12.5px;
@@ -125,8 +140,11 @@
   white-space: nowrap;
 }
 .brandSource {
+  max-width: 100%;
+  overflow: hidden;
   color: var(--text-3);
   font-size: 10.5px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .toolbarDivider {

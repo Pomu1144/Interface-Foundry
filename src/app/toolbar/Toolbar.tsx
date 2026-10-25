@@ -105,6 +105,7 @@ function LeftCluster() {
       <span className={s.toolbarDivider} />
       <Segmented
         ariaLabel="Preview mode"
+        className={s.modeSwitch}
         value={interaction}
         onChange={(v) => studio().setInteraction(v)}
         options={[

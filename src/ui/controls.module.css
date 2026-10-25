@@ -216,16 +216,49 @@
 .tabs {
   display: flex;
   align-items: stretch;
-  gap: 2px;
   height: 32px;
   padding: 0 6px;
   border-bottom: 1px solid var(--line-1);
+  flex: none;
+  min-width: 0;
+}
+.tabList {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
-  flex: none;
 }
-.tabs::-webkit-scrollbar {
+.tabList::-webkit-scrollbar {
   display: none;
+}
+.tabMore {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  margin: 5px 0 5px 2px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+}
+.tabMore:hover,
+.tabMore[data-state='open'] {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+.tabMore[data-active='true'] {
+  color: var(--accent-strong);
+}
+.tabTrailing {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  flex: none;
 }
 .tab {
   position: relative;

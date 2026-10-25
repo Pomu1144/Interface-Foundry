@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { forwardRef, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { Tooltip } from './overlay';
+import { ChevronsRight } from 'lucide-react';
+import { Menu, Tooltip } from './overlay';
 import s from './controls.module.css';
 
 type ButtonVariant = 'secondary' | 'ghost' | 'primary' | 'molten' | 'danger' | 'violet';
@@ -80,8 +81,15 @@ export function Segmented<T extends string>({
   useLayoutEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const btn = root.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(value)}"]`);
-    if (btn) setThumb({ left: btn.offsetLeft, width: btn.offsetWidth });
+    const measure = () => {
+      const btn = root.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(value)}"]`);
+      if (btn) setThumb((t) => (t && t.left === btn.offsetLeft && t.width === btn.offsetWidth ? t : { left: btn.offsetLeft, width: btn.offsetWidth }));
+    };
+    measure();
+    // Segments can change width without a value change (responsive labels, fonts loading).
+    const ro = new ResizeObserver(measure);
+    ro.observe(root);
+    return () => ro.disconnect();
   }, [value, options.length]);
   return (
     <div ref={ref} role="radiogroup" aria-label={ariaLabel} className={clsx(s.segmented, className)}>
@@ -101,7 +109,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
           >
             {o.icon}
-            {o.label}
+            {typeof o.label === 'string' ? <span data-segment-label="">{o.label}</span> : o.label}
           </button>
         );
         return o.title ? (
@@ -133,32 +141,83 @@ export function Tabs<T extends string>({
   className?: string;
   trailing?: ReactNode;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [hidden, setHidden] = useState<T[]>([]);
+
+  // Tabs that do not fit stay reachable from an overflow menu (narrow panels).
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const measure = () => {
+      const box = list.getBoundingClientRect();
+      const out: T[] = [];
+      list.querySelectorAll<HTMLElement>('[role="tab"]').forEach((tab) => {
+        const r = tab.getBoundingClientRect();
+        if (r.right > box.right + 1 || r.left < box.left - 1) out.push(tab.dataset.tab as T);
+      });
+      setHidden((prev) => (prev.length === out.length && prev.every((x, i) => x === out[i]) ? prev : out));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(list);
+    list.addEventListener('scroll', measure, { passive: true });
+    return () => {
+      ro.disconnect();
+      list.removeEventListener('scroll', measure);
+    };
+  }, [items]);
+
+  useLayoutEffect(() => {
+    listRef.current?.querySelector<HTMLElement>(`[data-tab="${CSS.escape(value)}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [value]);
+
   return (
-    <div role="tablist" aria-label={ariaLabel} className={clsx(s.tabs, className)}>
-      {items.map((t) => (
-        <button
-          key={t.id}
-          role="tab"
-          type="button"
-          aria-selected={t.id === value}
-          className={s.tab}
-          onClick={() => onChange(t.id)}
-          onKeyDown={(e) => {
-            const i = items.findIndex((x) => x.id === value);
-            if (e.key === 'ArrowRight') onChange(items[(i + 1) % items.length].id);
-            if (e.key === 'ArrowLeft') onChange(items[(i - 1 + items.length) % items.length].id);
-          }}
-        >
-          {t.icon}
-          {t.label}
-          {t.count !== undefined && t.count > 0 && (
-            <span className={s.tabCount} data-tone={t.tone}>
-              {t.count > 999 ? '999+' : t.count}
-            </span>
-          )}
-        </button>
-      ))}
-      {trailing && <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>{trailing}</div>}
+    <div className={clsx(s.tabs, className)}>
+      <div ref={listRef} role="tablist" aria-label={ariaLabel} className={s.tabList}>
+        {items.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            type="button"
+            data-tab={t.id}
+            aria-selected={t.id === value}
+            className={s.tab}
+            onClick={() => onChange(t.id)}
+            onKeyDown={(e) => {
+              const i = items.findIndex((x) => x.id === value);
+              if (e.key === 'ArrowRight') onChange(items[(i + 1) % items.length].id);
+              if (e.key === 'ArrowLeft') onChange(items[(i - 1 + items.length) % items.length].id);
+            }}
+          >
+            {t.icon}
+            {t.label}
+            {t.count !== undefined && t.count > 0 && (
+              <span className={s.tabCount} data-tone={t.tone}>
+                {t.count > 999 ? '999+' : t.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      {hidden.length > 0 && (
+        <Menu
+          align="end"
+          trigger={
+            <button type="button" className={s.tabMore} aria-label={`More tabs (${hidden.length})`} data-active={hidden.includes(value) ? 'true' : undefined}>
+              <ChevronsRight size={13} />
+            </button>
+          }
+          items={items
+            .filter((t) => hidden.includes(t.id))
+            .map((t) => ({
+              label: typeof t.label === 'string' ? t.label : t.id,
+              checked: t.id === value,
+              hint: t.count ? String(t.count) : undefined,
+              onSelect: () => onChange(t.id),
+            }))}
+        />
+      )}
+      {trailing && <div className={s.tabTrailing}>{trailing}</div>}
     </div>
   );
 }
