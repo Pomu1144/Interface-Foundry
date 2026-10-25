@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { DeviceProfile, Orientation, Posture, PostureGeometry } from '@shared/types';
+import type { DeviceProfile, Orientation, Posture, PostureGeometry, PreviewEngine } from '@shared/types';
 import { studio, useStudio } from '@/store';
 import { resolveTransition, resolveViewport, fitScale } from '@/modules/device-simulator/viewport';
 import { RESPONSIVE_ID, BUILT_IN_DEVICES } from '@/modules/device-simulator/devices';
@@ -29,6 +29,7 @@ type BoardSpec = {
   animating: boolean;
   /** Set for "Duplicate into" copies of the view. */
   duplicateId?: string;
+  engine: PreviewEngine;
   /** Width reserved in the layout (max of folded/expanded) so boards never overlap mid-animation. */
   slotWidth: number;
   frameHeight: number;
@@ -77,6 +78,7 @@ export function CanvasView() {
     list.push({
       instanceId: 'primary',
       role: 'primary',
+      engine: viewport.engine ?? 'auto',
       device,
       posture: viewport.posture,
       orientation: viewport.orientation,
@@ -97,6 +99,7 @@ export function CanvasView() {
       list.push({
         instanceId: 'compare',
         role: 'compare',
+        engine: compare.partner.engine ?? 'auto',
         device: pd,
         posture: pd.expanded ? compare.partner.posture : 'folded',
         orientation: compare.partner.orientation,
@@ -122,6 +125,7 @@ export function CanvasView() {
         instanceId: `dup-${dup.id}`,
         role: 'compare',
         duplicateId: dup.id,
+        engine: dup.engine ?? 'auto',
         device: dd,
         posture,
         orientation: dup.orientation,

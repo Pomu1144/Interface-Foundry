@@ -10,7 +10,7 @@ import { previews } from '../registry';
 import { wireConnection } from '../wire';
 import { remoteEmulation } from './emulation';
 import { buttonName, ClickTracker, isComposingKey, isPasteShortcut, mapPoint, modifiersOf, normalizeWheel, screencastSize } from './input';
-import type { EmulationParams, FrameHeader, RemoteInput, ScreencastOptions, TouchPoint, VisualViewport } from './protocol';
+import type { EmulationParams, FrameHeader, RemoteEngine, RemoteInput, ScreencastOptions, TouchPoint, VisualViewport } from './protocol';
 import { useRemoteInfo, type RemoteInfo } from './remote-store';
 import { browserSocket, type PageEvent } from './socket';
 import { createRemoteTransport, type RemoteTransport } from './transport';
@@ -29,6 +29,9 @@ function useMedia(query: string): boolean {
   );
 }
 
+/** Short engine name for labels and log sources. */
+const ENGINE_NAME: Record<RemoteEngine, string> = { chromium: 'Chromium', webkit: 'WebKit', 'ios-simulator': 'iOS Simulator' };
+
 const hostOf = (url: string) => {
   try {
     return new URL(url).host;
@@ -38,9 +41,10 @@ const hostOf = (url: string) => {
 };
 
 /**
- * Controlled-browser preview: a page running in the companion's Chromium,
- * streamed into a canvas sized exactly to the CSS viewport. Input is forwarded
- * through CDP (mouse, wheel, keyboard + IME, touch on touch devices) and the
+ * Controlled-browser preview: a page running in one of the companion's engines
+ * (Chromium, WebKit, iOS Simulator), streamed into a canvas sized exactly to the
+ * CSS viewport. Input is forwarded (mouse, wheel, keyboard + IME, touch on touch
+ * devices) and the
  * injected agent makes the page fully inspectable through the regular
  * PreviewConnection. Viewport, fold and orientation changes re-emulate in
  * place, so page state survives folding and rotation.
@@ -56,7 +60,10 @@ export function RemoteFrame({
   orientation,
   colorScheme,
   interactive,
+  engine = 'chromium',
 }: {
+  /** Engine that renders the page (see protocol.ts RemoteEngine). */
+  engine?: RemoteEngine;
   instanceId: string;
   role: PreviewRole;
   url: string;
@@ -71,8 +78,17 @@ export function RemoteFrame({
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const available = useStudio((st) => st.server.capabilities?.browser.available ?? null);
-  const unavailableReason = useStudio((st) => st.server.capabilities?.browser.reason ?? '');
+  const engineName = ENGINE_NAME[engine] ?? engine;
+  // The companion socket needs its Chromium; other engines can additionally be unavailable on their own.
+  const chromiumAvailable = useStudio((st) => st.server.capabilities?.browser.available ?? null);
+  const engineUnavailable = useStudio((st) => {
+    if (engine === 'chromium') return '';
+    const info = st.server.engines?.find((e) => e.id === engine);
+    return info && !info.available ? info.detail || `${ENGINE_NAME[engine]} is not available on this companion.` : '';
+  });
+  const available = chromiumAvailable === false || engineUnavailable ? false : chromiumAvailable;
+  const chromiumReason = useStudio((st) => st.server.capabilities?.browser.reason ?? '');
+  const unavailableReason = engineUnavailable || chromiumReason;
   const serverStatus = useStudio((st) => st.server.status);
   const reloadNonce = useStudio((st) => st.reloadNonce);
   const instrumentEvents = useStudio((st) => st.settings.instrumentEvents);
@@ -82,7 +98,14 @@ export function RemoteFrame({
   const [phase, setPhaseState] = useState<Phase>('connecting');
   const [hasFrame, setHasFrame] = useState(false);
   const [visual, setVisual] = useState<VisualViewport | null>(null);
+  /** Frames larger than the board (iOS Simulator full-screen fallback): shown scaled to fit. */
+  const [oversize, setOversize] = useState<{ width: number; height: number } | null>(null);
   const [imePos, setImePos] = useState({ x: 0, y: 0 });
+  // iOS Simulator: the page may be view-only (mirrored without idb) and its viewport is the simulator's own.
+  const engineNoInput = useStudio((st) => engine !== 'chromium' && st.server.engines?.find((e) => e.id === engine)?.features.input === false);
+  const [pageNoInput, setPageNoInput] = useState(false);
+  const [engineDetail, setEngineDetail] = useState('');
+  const viewOnly = engineNoInput || pageNoInput;
   const flags = useMemo(() => [instrumentEvents ? 'ev' : '', instrumentNetwork ? 'net' : ''].filter(Boolean), [instrumentEvents, instrumentNetwork]);
 
   // Previewed pages follow the studio's own OS preferences unless the studio overrides them
@@ -135,7 +158,7 @@ export function RemoteFrame({
         status: 'error',
         url,
         engine: 'remote',
-        error: `The controlled Chromium is unavailable: ${unavailableReason || 'the companion did not report a browser.'}`,
+        error: `The controlled ${engineUnavailable ? engineName : 'Chromium'} is unavailable: ${unavailableReason || 'the companion did not report a browser.'}`,
       });
       setPhase('unavailable');
       return () => {
@@ -171,10 +194,10 @@ export function RemoteFrame({
       if (disposed || browserSocket.state !== 'open' || L.openedGen === browserSocket.generation) return;
       const reopening = L.openedGen !== -1;
       L.openedGen = browserSocket.generation;
-      if (reopening) conn.resetPending('Reconnected to Chromium');
+      if (reopening) conn.resetPending(`Reconnected to ${engineName}`);
       setPhase('opening');
       studio().upsertInstance(instanceId, { status: 'loading', error: undefined });
-      browserSocket.send({ t: 'open', pageId, url: L.url, session, flags, ...L.emu, screencast: L.screencast });
+      browserSocket.send({ t: 'open', pageId, url: L.url, session, flags, ...L.emu, screencast: L.screencast, engine, deviceId: device.id });
     };
     L.open = () => {
       L.openedGen = -1;
@@ -244,6 +267,13 @@ export function RemoteFrame({
         case 'emulated':
           useRemoteInfo.getState().patch(instanceId, { displayFeature: e.displayFeature, detail: e.detail, touchNeedsReload: e.touchNeedsReload });
           if (!conn.ready) studio().upsertInstance(instanceId, { viewport: e.viewport });
+          if (engine === 'ios-simulator') {
+            setPageNoInput(e.input === false);
+            setEngineDetail(e.detail ?? '');
+          }
+          if (e.reloaded && (role === 'primary' || role === 'compare')) {
+            toast(`${engineName} reloaded the page`, { id: `ifdy-reloaded-${instanceId}`, description: e.detail });
+          }
           return;
         case 'metrics':
           L.visual = e.visual;
@@ -256,7 +286,7 @@ export function RemoteFrame({
           transport.deliver(e.env as Envelope);
           return;
         case 'console':
-          ev('console', { level: e.entry.level, args: e.entry.args, ts: e.entry.ts, source: e.entry.source ? `chromium · ${e.entry.source}` : 'chromium' });
+          ev('console', { level: e.entry.level, args: e.entry.args, ts: e.entry.ts, source: e.entry.source ? `${engine} · ${e.entry.source}` : engine });
           return;
         case 'pageerror':
           ev('error', { message: e.error.message, stack: e.error.stack, ts: e.error.ts, kind: 'runtime', source: e.error.source });
@@ -265,7 +295,7 @@ export function RemoteFrame({
           ev('network', { entries: e.entries });
           return;
         case 'dialog':
-          ev('console', { level: 'info', args: [`${e.dialogType}(): “${e.message}” — dismissed automatically by the controlled browser`], ts: Date.now(), source: 'chromium' });
+          ev('console', { level: 'info', args: [`${e.dialogType}(): “${e.message}” — dismissed automatically by the controlled browser`], ts: Date.now(), source: engine });
           return;
         case 'popup':
           if (role === 'primary' || role === 'compare') {
@@ -305,7 +335,7 @@ export function RemoteFrame({
       L.transport = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instanceId, role, flags, available]);
+  }, [instanceId, role, flags, available, engine]);
 
   /* ------------------------------------------------------------------ */
   /* Navigation, reload, emulation                                       */
@@ -399,7 +429,9 @@ export function RemoteFrame({
       return;
     }
     L.decoding = true;
-    createImageBitmap(new Blob([image as BlobPart], { type: 'image/jpeg' }))
+    // Chromium/WebKit stream JPEG; the iOS Simulator may send PNG (WebDriver screenshots).
+    const png = image[0] === 0x89 && image[1] === 0x50;
+    createImageBitmap(new Blob([image as BlobPart], { type: png ? 'image/png' : 'image/jpeg' }))
       .then((bmp) => {
         const c = canvasRef.current;
         const ctx = c?.getContext('2d', { alpha: false });
@@ -407,8 +439,12 @@ export function RemoteFrame({
           // Backing store at the image's own density; the frame is drawn at its natural CSS size so a
           // stale frame during a resize is never stretched.
           const k = bmp.width / Math.max(1, header.width);
-          const bw = Math.max(1, Math.round(L.width * k));
-          const bh = Math.max(1, Math.round(L.height * k));
+          // A frame bigger than the board (e.g. a whole simulator screen with Safari's UI) is
+          // kept whole and scaled to fit instead of being cropped by the board.
+          const over = header.width > L.width + 2 || header.height > L.height + 2;
+          setOversize((o) => (over ? (o && o.width === header.width && o.height === header.height ? o : { width: header.width, height: header.height }) : null));
+          const bw = Math.max(1, Math.round((over ? header.width : L.width) * k));
+          const bh = Math.max(1, Math.round((over ? header.height : L.height) * k));
           if (c.width !== bw || c.height !== bh) {
             c.width = bw;
             c.height = bh;
@@ -437,9 +473,11 @@ export function RemoteFrame({
   const moveRaf = useRef<{ raf: number; ev: RemoteInput | null }>({ raf: 0, ev: null }).current;
   const composing = useRef(false);
 
-  const scaled = visual && Math.abs(visual.scale - 1) > 0.01 && visual.scale > 0 ? visual.scale : 1;
-  const cssW = width / scaled;
-  const cssH = height / scaled;
+  const fit = oversize ? Math.min(width / oversize.width, height / oversize.height) : 1;
+  const scaled = oversize ? fit : visual && Math.abs(visual.scale - 1) > 0.01 && visual.scale > 0 ? visual.scale : 1;
+  const cssW = oversize ? oversize.width : width / scaled;
+  const cssH = oversize ? oversize.height : height / scaled;
+  const fitOffset = oversize ? Math.max(0, (width - oversize.width * fit) / 2) : 0;
 
   const opened = () => L.openedGen === browserSocket.generation && Boolean(L.pageId);
   const send = (event: RemoteInput) => {
@@ -572,8 +610,8 @@ export function RemoteFrame({
       ? 'Companion offline'
       : phase === 'connecting'
         ? browserSocket.state === 'reconnecting'
-          ? 'Reconnecting to Chromium…'
-          : 'Starting controlled Chromium…'
+          ? `Reconnecting to ${engineName}…`
+          : `Starting controlled ${engineName}…`
         : phase === 'opening'
           ? 'Opening page…'
           : `Loading ${hostOf(url)}…`;
@@ -584,12 +622,12 @@ export function RemoteFrame({
         ref={canvasRef}
         data-instance={instanceId}
         className={s.canvas}
-        aria-label={`Live page on ${device.name} (controlled Chromium)`}
+        aria-label={`Live page on ${device.name} (controlled ${engineName})`}
         style={{
           width: cssW,
           height: cssH,
-          transform: scaled !== 1 ? `scale(${scaled})` : undefined,
-          pointerEvents: interactive ? 'auto' : 'none',
+          transform: scaled !== 1 ? `${fitOffset ? `translateX(${fitOffset}px) ` : ''}scale(${scaled})` : undefined,
+          pointerEvents: interactive && !viewOnly ? 'auto' : 'none',
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -636,10 +674,19 @@ export function RemoteFrame({
             <Spinner size={14} />
             <span>{label}</span>
           </div>
-          <div className={s.engineNote}>Chromium · {device.name} emulation</div>
+          <div className={s.engineNote}>
+            {engine === 'ios-simulator'
+              ? `Real Safari · iOS Simulator · ${device.name}`
+              : `${engineName} · ${device.name} emulation${engine === 'webkit' ? ' · not iOS Safari' : ''}`}
+          </div>
         </div>
       )}
       {hasFrame && phase === 'loading' && <div className={s.progress} aria-hidden />}
+      {hasFrame && engine === 'ios-simulator' && (
+        <div className={s.engineBadge} title={engineDetail || undefined}>
+          Real Safari · iOS Simulator{viewOnly ? ' · view only' : ''}
+        </div>
+      )}
     </div>
   );
 }

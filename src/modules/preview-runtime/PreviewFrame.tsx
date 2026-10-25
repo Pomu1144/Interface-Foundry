@@ -119,15 +119,22 @@ export function PreviewFrame({
   }, [flags, session]);
 
   // Detect pages that load without the agent answering.
+  // The agent watchdog must not outlive this frame: the same instance id may be
+  // reused by another engine (e.g. the board switched to WebKit) meanwhile.
+  const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (watchdog.current) clearTimeout(watchdog.current);
+  }, []);
   const onLoad = () => {
     const inst = studio().instances[instanceId];
     if (engine === 'embed') {
       studio().upsertInstance(instanceId, { status: 'ready' });
       return;
     }
-    setTimeout(() => {
+    if (watchdog.current) clearTimeout(watchdog.current);
+    watchdog.current = setTimeout(() => {
       const now = studio().instances[instanceId];
-      if (now && now.status === 'loading' && inst) {
+      if (now && now.status === 'loading' && now.engine === 'frame' && inst) {
         studio().upsertInstance(instanceId, {
           status: 'error',
           error: 'The page loaded, but the IFDY agent did not respond. Inspection requires a page served through IFDY (demo, imported project, or a connected local dev server).',

@@ -518,3 +518,36 @@
   background: var(--danger-soft);
   color: var(--danger);
 }
+
+.engineChip {
+  height: 18px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 10.5px;
+  font-weight: 600;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.engineChip:hover {
+  color: var(--text-0);
+}
+.engineChip[data-engine='webkit'] {
+  color: var(--info);
+}
+.engineChip[data-engine='ios-simulator'] {
+  color: var(--accent-strong);
+}
+.engineChip[data-suggest='webkit']::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--info);
+  vertical-align: 1px;
+}

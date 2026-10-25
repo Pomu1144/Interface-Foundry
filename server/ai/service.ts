@@ -18,7 +18,7 @@ export const PER_MINUTE = 10;
 export const MAX_CONCURRENT = 2;
 
 export const NOT_CONFIGURED = {
-  anthropic: 'Anthropic is not configured: set ANTHROPIC_API_KEY for the companion and restart.',
+  anthropic: 'Anthropic is not configured: set ANTHROPIC_API_KEY and IFDY_AI_MODEL for the companion and restart.',
   local: 'No local model is configured: set IFDY_LOCAL_AI_URL (and IFDY_LOCAL_AI_MODEL) and restart.',
 };
 
@@ -28,7 +28,7 @@ export function aiStatus(config: IfdyServerConfig): AiStatus {
   return {
     providers: {
       heuristic: { available: true },
-      anthropic: { configured: Boolean(config.ai.anthropicKey), model: config.ai.model },
+      anthropic: { configured: Boolean(config.ai.anthropicKey && config.ai.model), model: config.ai.model },
       local: { configured: Boolean(config.ai.localUrl), model: config.ai.localUrl ? config.ai.localModel ?? 'default' : null, endpoint: localEndpointLabel(config.ai.localUrl) },
     },
     limits: { maxBodyBytes: MAX_REQUEST_BYTES, perMinute: PER_MINUTE },
@@ -82,7 +82,7 @@ export function createAiService(deps: AiServiceDeps) {
     /** Why a provider cannot run (null when it is configured). */
     unconfigured(provider: DiagnoseRequest['provider']): string | null {
       const { ai } = deps.config;
-      if (provider === 'anthropic' && !ai.anthropicKey && !deps.anthropic) return NOT_CONFIGURED.anthropic;
+      if (provider === 'anthropic' && !(ai.anthropicKey && ai.model) && !deps.anthropic) return NOT_CONFIGURED.anthropic;
       if (provider === 'local' && !ai.localUrl) return NOT_CONFIGURED.local;
       return null;
     },
@@ -90,7 +90,7 @@ export function createAiService(deps: AiServiceDeps) {
     async diagnose(req: DiagnoseRequest, emit: Emit, signal?: AbortSignal): Promise<ProviderResult> {
       const { ai } = deps.config;
       if (req.provider === 'anthropic') {
-        if (!ai.anthropicKey && !deps.anthropic) throw new ProviderError('not_configured', NOT_CONFIGURED.anthropic, 412);
+        if (!(ai.anthropicKey && ai.model) && !deps.anthropic) throw new ProviderError('not_configured', NOT_CONFIGURED.anthropic, 412);
         client ??= createAnthropicClient(ai.anthropicKey!);
         try {
           return await runAnthropic(client, req, ai.model, emit, signal);

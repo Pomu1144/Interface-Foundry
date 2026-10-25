@@ -11,8 +11,8 @@ const MAX_ENVELOPE = 48 * 1024 * 1024;
  *  - `__IFDY_REMOTE__` hands the agent its session nonce + flags,
  *  - `__ifdyBridgeSend` forwards agent envelopes to the companion through a Playwright binding
  *    (queued until the binding is installed, so script order never matters),
- *  - `__ifdyLoadAxe` loads axe-core through the companion via CDP, which works on any origin and
- *    under strict Content-Security-Policies,
+ *  - `__ifdyLoadAxe` loads axe-core through the companion (CDP, or Playwright's evaluate on engines
+ *    without CDP), which works on any origin and under strict Content-Security-Policies,
  *  - followed by the agent bundle itself.
  */
 export function buildInitScript(opts: { session: string; flags: string[]; agent: string }): string {
@@ -66,7 +66,8 @@ export class AgentChannel {
 
   constructor(
     private readonly page: Page,
-    private readonly cdp: CDPSession,
+    /** Chromium only; engines without CDP (WebKit) evaluate through Playwright instead. */
+    private readonly cdp: CDPSession | null,
     private readonly opts: {
       session: string;
       flags: string[];
@@ -97,7 +98,13 @@ export class AgentChannel {
       if (source.frame !== page.mainFrame()) return { ok: false, error: 'axe-core can only be loaded into the top document.' };
       try {
         const code = await this.opts.agent.getAxe();
-        const r = (await this.cdp.send('Runtime.evaluate', { expression: `${code}\n;typeof window.axe === 'object' || typeof window.axe === 'function'`, returnByValue: true })) as {
+        const expression = `${code}\n;typeof window.axe === 'object' || typeof window.axe === 'function'`;
+        if (!this.cdp) {
+          // Playwright evaluates through the engine's inspector protocol, so page CSP does not apply.
+          const ok = await page.mainFrame().evaluate(expression);
+          return ok ? { ok: true } : { ok: false, error: 'axe-core did not register on window (the page may redefine "axe" or "module").' };
+        }
+        const r = (await this.cdp.send('Runtime.evaluate', { expression, returnByValue: true })) as {
           result?: { value?: unknown };
           exceptionDetails?: { text?: string; exception?: { description?: string } };
         };

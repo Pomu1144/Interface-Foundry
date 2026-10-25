@@ -5,14 +5,27 @@ import {
   encodeFrame,
   isAllowedRemoteUrl,
   type ClientMessage,
+  type EngineInfo,
   type FrameHeader,
   type OpenMessage,
+  type RemoteEngine,
   type ServerMessage,
 } from '../../src/modules/preview-runtime/remote/protocol';
 import type { BrowserManager } from './manager';
 import { RemotePage, type PageHost } from './remote-page';
+import type { LivePage } from './live-page';
+import { createWebKitPage, webkitStatus } from './webkit-page';
+import { createSimulatorPage, iosSimulatorStatus } from '../ios/simulator-page';
 
 const PAGE_ID = /^[\w.:~-]{1,96}$/;
+
+const unavailableEngine = (id: RemoteEngine, label: string, err: unknown): EngineInfo => ({
+  id,
+  available: false,
+  label,
+  detail: `Status check failed: ${(err as Error)?.message?.split('\n')[0] ?? String(err)}`,
+  features: { inspect: false, input: false, touch: false, foldEmulation: false, rotate: false },
+});
 /** Frame-rate budget shared by every streaming page of one studio tab. */
 const TOTAL_FPS = 150;
 const MAX_FPS_PER_PAGE = 40;
@@ -26,10 +39,10 @@ const MAX_BUFFERED = 3 * 1024 * 1024;
 export class BrowserSession implements PageHost {
   private context: BrowserContext | null = null;
   private contextPromise: Promise<BrowserContext> | null = null;
-  private pages = new Map<string, RemotePage>();
+  private pages = new Map<string, LivePage>();
   /** Lifecycle messages for a pageId are applied strictly in order. */
   private chains = new Map<string, Promise<void>>();
-  private nextAck = new WeakMap<RemotePage, number>();
+  private nextAck = new WeakMap<LivePage, number>();
   private disposed = false;
   private alive = true;
   private heartbeat: ReturnType<typeof setInterval>;
@@ -92,6 +105,17 @@ export class BrowserSession implements PageHost {
           screencast: true,
           userAgentOverride: true,
         },
+        engines: [
+          {
+            id: 'chromium',
+            available: true,
+            label: `Chromium ${this.browserVersion}`,
+            features: { inspect: true, input: true, touch: true, foldEmulation: df.method !== 'none', rotate: true },
+          },
+          // Other engines report their own availability; a failure there never blocks Chromium.
+          await webkitStatus(this.manager).catch((err) => unavailableEngine('webkit', 'WebKit', err)),
+          await iosSimulatorStatus(this.manager).catch((err) => unavailableEngine('ios-simulator', 'Safari (iOS Simulator)', err)),
+        ],
       });
     } catch (err) {
       this.send({ t: 'error', code: 'launch-failed', message: `Could not start Chromium: ${(err as Error).message.split('\n')[0]}` });
@@ -194,20 +218,41 @@ export class BrowserSession implements PageHost {
       });
     }
     this.send({ t: 'status', pageId, status: 'opening', url: msg.url });
-    const page = new RemotePage(pageId, this, msg);
+    const engine = msg.engine ?? 'chromium';
+    let page: LivePage;
     try {
-      const context = await this.ensureContext();
+      page = this.createPage(pageId, msg);
+    } catch (err) {
+      this.send({ t: 'status', pageId, status: 'error', url: msg.url, error: (err as Error).message.split('\n')[0] });
+      return;
+    }
+    try {
       if (this.disposed) return;
-      await page.start(context);
+      await page.start();
     } catch (err) {
       await page.close();
-      this.send({ t: 'status', pageId, status: 'error', url: msg.url, error: `Chromium could not open the page: ${(err as Error).message.split('\n')[0]}` });
+      const name = engine === 'webkit' ? 'WebKit' : engine === 'ios-simulator' ? 'The iOS Simulator' : 'Chromium';
+      this.send({ t: 'status', pageId, status: 'error', url: msg.url, error: `${name} could not open the page: ${(err as Error).message.split('\n')[0]}` });
       return;
     }
     // Registered only once started: live messages sent meanwhile were queued behind the open.
     if (this.disposed) return void page.close();
     this.pages.set(pageId, page);
     this.manager.touch();
+  }
+
+  /** Build the page for the requested engine (see live-page.ts). */
+  private createPage(pageId: string, msg: OpenMessage): LivePage {
+    switch (msg.engine ?? 'chromium') {
+      case 'chromium':
+        return new RemotePage(pageId, this, msg, () => this.ensureContext());
+      case 'webkit':
+        return createWebKitPage(pageId, this, msg, this.manager);
+      case 'ios-simulator':
+        return createSimulatorPage(pageId, this, msg, this.manager);
+      default:
+        throw new Error(`Unknown engine "${String(msg.engine)}".`);
+    }
   }
 
   private ensureContext(): Promise<BrowserContext> {
@@ -229,11 +274,11 @@ export class BrowserSession implements PageHost {
           if (this.context === ctx) {
             this.context = null;
             this.contextPromise = null;
-            for (const [id, p] of this.pages) {
+            for (const [id, p] of this.chromiumPages()) {
               void p.close();
+              this.pages.delete(id);
               this.send({ t: 'status', pageId: id, status: 'closed', error: 'Chromium closed this page (the browser restarted).' });
             }
-            this.pages.clear();
           }
         });
         this.context = ctx;
@@ -269,7 +314,7 @@ export class BrowserSession implements PageHost {
    * so delaying acks is the throttle: each page gets an equal share of the session's
    * frame budget, and acks pause while the socket is backed up (slow client / many tiles).
    */
-  scheduleAck(page: RemotePage, ack: () => void) {
+  scheduleAck(page: LivePage, ack: () => void) {
     const streams = Math.max(1, [...this.pages.values()].filter((p) => p.isStreaming).length);
     const minInterval = 1000 / Math.min(MAX_FPS_PER_PAGE, TOTAL_FPS / streams);
     const now = Date.now();
@@ -294,15 +339,19 @@ export class BrowserSession implements PageHost {
     return this.manager.isForbiddenUrl(url);
   }
 
-  /** The browser went away (crash or idle shutdown). */
+  /** Chromium went away (crash or idle shutdown). Pages of other engines keep running. */
   onBrowserGone() {
     this.context = null;
     this.contextPromise = null;
-    for (const [id, p] of this.pages) {
+    for (const [id, p] of this.chromiumPages()) {
       void p.close();
+      this.pages.delete(id);
       this.send({ t: 'status', pageId: id, status: 'closed', error: 'Chromium exited. Reload to start it again.' });
     }
-    this.pages.clear();
+  }
+
+  private chromiumPages() {
+    return [...this.pages].filter(([, p]) => p instanceof RemotePage);
   }
 
   async dispose() {

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { DeviceProfile, Orientation, Posture } from '@shared/types';
+import type { DeviceProfile, Orientation, Posture, PreviewEngine } from '@shared/types';
 import type { PreviewSource } from '@/store';
 import { sourceUrl } from '@/modules/project-adapter/source';
 import { PreviewFrame, type PreviewRole } from './PreviewFrame';
@@ -24,7 +24,9 @@ export function PreviewSurface({
   colorScheme,
   interactive,
   style,
+  engine = 'auto',
 }: {
+  engine?: PreviewEngine;
   source: PreviewSource;
   route: string;
   instanceId: string;
@@ -40,9 +42,13 @@ export function PreviewSurface({
 }) {
   const src = sourceUrl(source, route);
   const title = `Preview on ${device.name}`;
-  if (source.kind === 'url' && source.engine === 'remote') {
+  // An explicit engine streams the page from the companion: any source, rendered by
+  // Chromium, WebKit or Safari in the iOS Simulator.
+  const remoteEngine = engine !== 'auto' ? engine : source.kind === 'url' && source.engine === 'remote' ? 'chromium' : null;
+  if (remoteEngine) {
     return (
       <RemoteFrame
+        engine={remoteEngine}
         instanceId={instanceId}
         role={role}
         url={src}

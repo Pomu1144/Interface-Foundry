@@ -1,4 +1,5 @@
 import type { BrowserContext, CDPSession, ConsoleMessage, Dialog, Page, Request } from 'playwright-core';
+import type { LivePage } from './live-page';
 import type {
   DisplayFeatureMethod,
   EmulationParams,
@@ -22,7 +23,7 @@ export type PageHost = {
   sendRaw(json: string): void;
   sendFrame(header: FrameHeader, jpeg: Buffer): void;
   /** Throttles screencast acknowledgements across every streaming page of the session. */
-  scheduleAck(page: RemotePage, ack: () => void): void;
+  scheduleAck(page: LivePage, ack: () => void): void;
   agent: AgentBundle;
   browserVersion: string;
   displayFeatureMethod(): Promise<{ method: DisplayFeatureMethod; detail: string }>;
@@ -45,7 +46,7 @@ const CONSOLE_BUFFER = 200;
  * reloading), screencast, input dispatch, agent relay and passive network /
  * lifecycle reporting.
  */
-export class RemotePage {
+export class RemotePage implements LivePage {
   page!: Page;
   private cdp!: CDPSession;
   private agent!: AgentChannel;
@@ -80,6 +81,7 @@ export class RemotePage {
     readonly id: string,
     private readonly host: PageHost,
     private readonly open: OpenMessage,
+    private readonly getContext: () => Promise<BrowserContext>,
   ) {
     this.emu = sanitizeEmulation(open);
   }
@@ -88,7 +90,8 @@ export class RemotePage {
     return this.streaming;
   }
 
-  async start(context: BrowserContext) {
+  async start() {
+    const context = await this.getContext();
     this.page = await context.newPage();
     this.cdp = await context.newCDPSession(this.page);
     this.agent = new AgentChannel(this.page, this.cdp, {
@@ -540,13 +543,13 @@ export class RemotePage {
  * The page's own address is reported as-is (like the agent's hello), so the studio can
  * navigate and capture it; only network entries and logs are redacted.
  */
-const pageUrl = (u: string) => (u.length > 4096 ? u.slice(0, 4096) : u);
+export const pageUrl = (u: string) => (u.length > 4096 ? u.slice(0, 4096) : u);
 
 const num = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
 
 const LEVELS: Record<string, WireConsoleEntry['level']> = { log: 'log', info: 'info', warning: 'warn', error: 'error', debug: 'debug', trace: 'debug', assert: 'error' };
 
-function consoleMessage(pageId: string, msg: ConsoleMessage): ServerMessage {
+export function consoleMessage(pageId: string, msg: ConsoleMessage): ServerMessage {
   const loc = msg.location();
   let source: string | undefined;
   if (loc.url) {

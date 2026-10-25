@@ -12,7 +12,8 @@ import { DIAGNOSIS_JSON_SCHEMA, type DiagnoseEvent, type DiagnoseRequest } from 
 import { heuristicDiagnosis } from '../../src/modules/ai-debugger/heuristics';
 import { rateBannerContext } from './ai-fixtures';
 
-const config = loadConfig({ dev: true, studioPort: 5187 });
+const loaded = loadConfig({ dev: true, studioPort: 5187 });
+const config = { ...loaded, ai: { ...loaded.ai, model: 'test-model' } };
 
 function request(over: Partial<DiagnoseRequest> = {}): DiagnoseRequest {
   return { provider: 'anthropic', question: 'Why is this overflowing?', intent: 'overflow', context: rateBannerContext(), history: [], ...over };
@@ -155,6 +156,10 @@ describe('AI service', () => {
     expect(st.providers.anthropic).toEqual({ configured: true, model: config.ai.model });
     expect(st.providers.local).toEqual({ configured: true, model: 'qwen', endpoint: 'localhost:11434/v1' });
     expect(JSON.stringify(st)).not.toMatch(/sk-ant|pw@/);
+    // A key alone is not enough: there is no built-in model id.
+    const noModel = { ...config, ai: { ...config.ai, anthropicKey: 'sk-ant-secret', model: '' } };
+    expect(aiStatus(noModel).providers.anthropic.configured).toBe(false);
+    expect(createAiService({ config: noModel }).unconfigured('anthropic')).toMatch(/IFDY_AI_MODEL/);
   });
 
   it('runs through an injected client and refuses unconfigured providers', async () => {

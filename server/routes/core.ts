@@ -21,7 +21,7 @@ export function registerCoreRoutes(router: Router) {
         preview: { available: true },
         browser,
         ai: {
-          anthropic: Boolean(config.ai.anthropicKey),
+          anthropic: Boolean(config.ai.anthropicKey && config.ai.model),
           model: config.ai.model,
           local: Boolean(config.ai.localUrl),
           localModel: config.ai.localModel ?? null,

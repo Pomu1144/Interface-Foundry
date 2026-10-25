@@ -1,4 +1,5 @@
 import { wsUrl } from '@/modules/project-adapter/server-api';
+import { studio } from '@/store';
 import { BROWSER_WS_PATH, decodeFrame, type ClientMessage, type FrameHeader, type ServerHello, type ServerMessage } from './protocol';
 
 export type SocketState = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'failed';
@@ -105,6 +106,7 @@ class BrowserSocket {
       }
       if (msg.t === 'hello') {
         this.hello = msg;
+        if (msg.engines) studio().setServer({ engines: msg.engines });
         this.generation++;
         this.lastError = '';
         this.setState('open');

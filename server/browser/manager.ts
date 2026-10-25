@@ -6,6 +6,7 @@ import type { IfdyServices } from '../services';
 import { runCapture, type CaptureRequest, type CaptureResult } from './capture';
 import { BrowserSession } from './session';
 import { getBrowserStatus } from './status';
+import { WebKitBrowser } from './webkit-browser';
 
 export type DisplayFeatureSupport = { method: DisplayFeatureMethod; detail: string };
 
@@ -27,9 +28,12 @@ export class BrowserManager {
   private captureQueue: (() => void)[] = [];
   private closing = false;
   readonly maxPages: number;
+  /** The WebKit engine has its own lifecycle (launched only for WebKit boards). */
+  readonly webkit: WebKitBrowser;
 
   constructor(private readonly services: IfdyServices) {
     this.maxPages = Math.max(1, Math.min(32, Number(process.env.IFDY_BROWSER_MAX_PAGES) || 12));
+    this.webkit = new WebKitBrowser(services);
   }
 
   get agent() {
@@ -199,6 +203,7 @@ export class BrowserManager {
       pages: this.totalPages(),
       maxPages: this.maxPages,
       activeCaptures: this.activeCaptures,
+      webkit: { running: this.webkit.isRunning(), version: this.webkit.version || null, pages: this.webkit.pages, maxPages: this.webkit.maxPages },
     };
   }
 
@@ -208,7 +213,7 @@ export class BrowserManager {
     await Promise.all([...this.sessions].map((s) => s.dispose()));
     const b = this.instance ?? (await this.launching?.catch(() => null)) ?? null;
     this.instance = null;
-    await b?.close().catch(() => {});
+    await Promise.all([b?.close().catch(() => {}), this.webkit.close()]);
   }
 }
 
