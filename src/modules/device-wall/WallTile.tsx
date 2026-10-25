@@ -102,22 +102,39 @@ function TileOverlay({ id, scale }: { id: string; scale: number }) {
   );
 }
 
-function TileStatus({ id, engine, scale, onReload }: { id: string; engine: TileEngine; scale: number; onReload: () => void }) {
+/** Loading shimmer, drawn inside the device viewport. */
+function TileShimmer({ id }: { id: string }) {
+  const loading = useStudio((st) => st.instances[id]?.status === 'loading');
+  return loading ? <div className={s.shimmer} /> : null;
+}
+
+/** Error / paused notices, drawn in screen space over the device so they stay readable at any tile scale. */
+function TileNotice({ id, engine, budgetBlocked, onReload }: { id: string; engine: TileEngine; budgetBlocked: boolean; onReload: () => void }) {
   const inst = useStudio((st) => st.instances[id]);
-  if (!inst) return null;
-  if (inst.status === 'loading') return <div className={s.shimmer} />;
-  if (inst.status === 'ready' || inst.status === 'idle') return null;
-  const k = 1 / Math.max(0.05, scale);
+  if (budgetBlocked) {
+    return (
+      <div className={s.notice} data-tone="neutral">
+        <div className={s.noticeCard}>
+          <span className={s.noticeIcon}>
+            <CircleSlash size={14} />
+          </span>
+          <div className={s.noticeTitle}>Not started</div>
+          <div className={s.noticeText}>Over the controlled Chromium page budget for this tab. Remove a device or close other previews.</div>
+        </div>
+      </div>
+    );
+  }
+  if (!inst || inst.status === 'ready' || inst.status === 'idle' || inst.status === 'loading') return null;
   const crashed = inst.status === 'crashed';
   return (
-    <div className={s.tileError} role="alert">
-      <div className={s.tileErrorInner} style={{ transform: `scale(${Math.min(2.6, k * 0.9)})` }}>
-        <span className={s.tileErrorIcon} data-tone={crashed ? 'warning' : 'danger'}>
-          {inst.status === 'blocked' ? <ShieldAlert size={16} /> : engine === 'remote' && /unavailable|connect/i.test(inst.error ?? '') ? <Unplug size={16} /> : <AlertTriangle size={16} />}
+    <div className={s.notice} role="alert">
+      <div className={s.noticeCard}>
+        <span className={s.noticeIcon} data-tone={crashed ? 'warning' : 'danger'}>
+          {inst.status === 'blocked' ? <ShieldAlert size={14} /> : engine === 'remote' && /unavailable|connect/i.test(inst.error ?? '') ? <Unplug size={14} /> : <AlertTriangle size={14} />}
         </span>
-        <div className={s.tileErrorTitle}>{crashed ? 'Page stopped responding' : inst.status === 'blocked' ? 'Site refuses to be embedded' : 'Could not load the page'}</div>
-        {inst.error && <div className={s.tileErrorText}>{inst.error}</div>}
-        <button className={s.tileErrorBtn} onClick={onReload}>
+        <div className={s.noticeTitle}>{crashed ? 'Page stopped responding' : inst.status === 'blocked' ? 'Site refuses to be embedded' : 'Could not load the page'}</div>
+        {inst.error && <div className={s.noticeText}>{inst.error}</div>}
+        <button className={s.noticeBtn} onClick={onReload}>
           <RefreshCw size={11} /> Retry
         </button>
       </div>
@@ -370,7 +387,7 @@ export const WallTile = memo(function WallTile({
               viewportOverlay={
                 <>
                   <TileOverlay id={instanceId} scale={cell.scale} />
-                  <TileStatus id={instanceId} engine={engine} scale={cell.scale} onReload={() => onReload(tile)} />
+                  <TileShimmer id={instanceId} />
                 </>
               }
             >
@@ -391,15 +408,7 @@ export const WallTile = memo(function WallTile({
                 />
               ) : (
                 <div className={s.parked} style={{ width: g.viewport.width, height: g.viewport.height }}>
-                  {budgetBlocked ? (
-                    <div className={s.parkedInner} style={{ transform: `scale(${Math.min(2.6, 0.9 / Math.max(0.05, cell.scale))})` }}>
-                      <CircleSlash size={16} />
-                      <div className={s.parkedTitle}>Not started</div>
-                      <div className={s.parkedText}>Over the controlled Chromium page budget for this tab. Remove a tile or close other previews.</div>
-                    </div>
-                  ) : (
-                    <Spinner size={14} />
-                  )}
+                  {!budgetBlocked && <Spinner size={14} />}
                 </div>
               )}
             </DeviceFrame>
@@ -416,6 +425,7 @@ export const WallTile = memo(function WallTile({
             <Maximize2 size={12} />
           </IconButton>
         </div>
+        <TileNotice id={instanceId} engine={engine} budgetBlocked={budgetBlocked} onReload={() => onReload(tile)} />
         <Feedback id={instanceId} />
         {leader && mirroring && <span className={s.leadTag}>Leading</span>}
       </div>

@@ -416,7 +416,7 @@ export default function WallDoc({ doc }: { doc: DocTab }) {
           <span className={s.footDot} data-tone={live === tiles.length && tiles.length ? 'ready' : 'loading'} />
           {tiles.length} {tiles.length === 1 ? 'device' : 'devices'} · {live} live
         </span>
-        {presetActive && <span className={s.footItem}>{PRESETS.find((p) => p.id === presetActive)?.label}</span>}
+        {presetActive && <span className={clsx(s.footItem, s.footPreset)}>{PRESETS.find((p) => p.id === presetActive)?.label}</span>}
         {engine === 'remote' && (
           <span className={s.footItem} title={hello?.capabilities.displayFeatures.detail}>
             {hello ? hello.browser : serverStatus === 'online' ? 'Starting Chromium…' : 'Companion offline'}
@@ -426,7 +426,7 @@ export default function WallDoc({ doc }: { doc: DocTab }) {
         {engine === 'remote' && Number.isFinite(budget) && tiles.length > budget && <span className={s.footWarn}>{tiles.length - budget} paused (page budget {hello?.maxPages ?? 12})</span>}
         <span className={s.footSpacer} />
         {(wall.mirrorScroll || wall.mirrorInput) && engine !== 'embed' && <LeaderNote tiles={tiles} />}
-        <span className={s.footItem}>{interaction === 'inspect' ? 'Inspect — click selects, mirrored across devices' : 'Interact — use the pages'}</span>
+        <span className={clsx(s.footItem, s.footHint)}>{interaction === 'inspect' ? 'Inspect — click selects, mirrored across devices' : 'Interact — use the pages'}</span>
       </footer>
     </div>
   );

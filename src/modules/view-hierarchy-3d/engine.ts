@@ -59,7 +59,7 @@ type Callbacks = {
 };
 
 const TAU_CAMERA = 120;
-const TAU_SPACING = 140;
+const TAU_SPACING = 190;
 const TAU_INERTIA = 340;
 const ORBIT_SPEED = 0.32; // degrees per px
 const DEFAULT_SPACING = 44;

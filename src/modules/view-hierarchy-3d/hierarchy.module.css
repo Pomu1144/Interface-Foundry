@@ -3,6 +3,7 @@
 .root {
   position: absolute;
   inset: 0;
+  container: h3d-root / inline-size;
   display: flex;
   flex-direction: column;
   background: var(--bg-canvas);
@@ -823,6 +824,16 @@
 @container h3d-stage (max-width: 520px) {
   .spacingCtl,
   .hudAngles {
+    display: none;
+  }
+}
+
+@container h3d-root (max-width: 760px) {
+  .rail {
+    width: 148px;
+  }
+  .railNote,
+  .meta {
     display: none;
   }
 }

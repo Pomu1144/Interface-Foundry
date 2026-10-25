@@ -545,71 +545,6 @@ button.chip:hover {
   background-size: 200% 100%;
   animation: ifdy-shimmer 1.2s linear infinite;
 }
-.tileError {
-  position: absolute;
-  inset: 0;
-  z-index: 25;
-  display: grid;
-  place-items: center;
-  padding: 12px;
-  background: rgba(12, 13, 16, 0.94);
-  text-align: center;
-  overflow: hidden;
-}
-.tileErrorInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  max-width: 230px;
-  transform-origin: center;
-  color: #b4b7c0;
-  font-family: var(--font-ui);
-  font-size: 11px;
-  line-height: 1.4;
-}
-.tileErrorIcon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-.tileErrorIcon[data-tone='warning'] {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-.tileErrorTitle {
-  color: #eceef2;
-  font-weight: 600;
-  font-size: 12px;
-}
-.tileErrorText {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-.tileErrorBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  margin-top: 2px;
-  padding: 0 9px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: #1b1c21;
-  color: #eceef2;
-  font-size: 11px;
-  pointer-events: auto;
-}
-.tileErrorBtn:hover {
-  background: #222329;
-}
 .parked {
   display: grid;
   place-items: center;
@@ -618,24 +553,77 @@ button.chip:hover {
     #101114;
   color: #81848e;
 }
-.parkedInner {
+.notice {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  pointer-events: none;
+}
+.noticeCard {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  max-width: 220px;
+  width: min(100%, 240px);
+  padding: 12px 12px 11px;
+  border-radius: var(--r-lg);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: var(--shadow-pop);
   text-align: center;
-  font-size: 11px;
-  line-height: 1.4;
-  font-family: var(--font-ui);
+  pointer-events: auto;
+  animation: ifdy-pop-in 220ms var(--ease-out) both;
 }
-.parkedTitle {
-  color: #eceef2;
+.noticeIcon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--bg-active);
+  color: var(--text-1);
+}
+.noticeIcon[data-tone='danger'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.noticeIcon[data-tone='warning'] {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.noticeTitle {
+  color: var(--text-0);
+  font-size: var(--fs-sm);
   font-weight: 600;
-  font-size: 12px;
 }
-.parkedText {
-  color: #81848e;
+.noticeText {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.noticeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  margin-top: 3px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  background: var(--bg-3);
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+}
+.noticeBtn:hover {
+  background: var(--bg-4);
 }
 
 /* Issues popover ------------------------------------------------------------ */
@@ -1039,6 +1027,16 @@ button.chip:hover {
     display: none;
   }
   .devicesBtn > span:not(.count) {
+    display: none;
+  }
+}
+@container wall (max-width: 1180px) {
+  .footHint {
+    display: none;
+  }
+}
+@container wall (max-width: 900px) {
+  .footPreset {
     display: none;
   }
 }
