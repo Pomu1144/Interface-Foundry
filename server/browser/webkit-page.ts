@@ -221,7 +221,7 @@ export class WebKitPage implements LivePage {
       this.timer = null;
       return;
     }
-    // Shown again (or resized): the studio needs a fresh frame even if the page did not change.
+    // Shown again: the studio needs a fresh frame even if the page did not change.
     if (!was) this.lastJpeg = null;
     this.wake();
   }
@@ -536,11 +536,6 @@ export class WebKitPage implements LivePage {
   toAgent(env: unknown) {
     this.lastActivity = Date.now();
     void this.agent?.deliver(env).then(() => this.wake());
-  }
-
-  /** Agent hellos received by the current page (one per document). */
-  get agentHellos() {
-    return this.agent?.helloCount ?? 0;
   }
 
   /* ------------------------------------------------------------------ */
