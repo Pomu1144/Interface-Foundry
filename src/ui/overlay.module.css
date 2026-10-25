@@ -1,0 +1,193 @@
+.tooltip {
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+  background: #1f2026;
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.35;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.7);
+  animation: ifdy-pop-in var(--dur-2) var(--ease-out);
+  user-select: none;
+}
+:root[data-theme='light'] .tooltip {
+  background: #1d1f25;
+  color: #f2f3f5;
+}
+.tooltipShortcut {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--text-2);
+}
+
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.07);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Menus ------------------------------------------------------------- */
+.menu {
+  z-index: 900;
+  min-width: 200px;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: var(--r-md);
+  background: rgba(24, 25, 30, 0.96);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--shadow-pop);
+  animation: ifdy-pop-in var(--dur-2) var(--ease-out);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+:root[data-theme='light'] .menu {
+  background: rgba(255, 255, 255, 0.97);
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 5px;
+  color: var(--text-0);
+  font-size: var(--fs-sm);
+  outline: none;
+  cursor: default;
+}
+.item[data-highlighted] {
+  background: var(--accent);
+  color: #fff;
+}
+.item[data-highlighted] .itemHint,
+.item[data-highlighted] .itemIcon {
+  color: rgba(255, 255, 255, 0.85);
+}
+.item[data-disabled] {
+  opacity: 0.4;
+}
+.itemIcon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  color: var(--text-2);
+}
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.itemHint {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.menuLabel {
+  padding: 6px 8px 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line-1);
+}
+
+/* Popover ----------------------------------------------------------- */
+.popover {
+  z-index: 900;
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-pop);
+  animation: ifdy-pop-in var(--dur-2) var(--ease-out);
+  outline: none;
+}
+
+/* Dialog ------------------------------------------------------------ */
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(6px);
+  animation: ifdy-fade-in var(--dur-2) ease;
+}
+.dialog {
+  position: fixed;
+  z-index: 951;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  border-radius: var(--r-xl);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-pop), var(--shadow-3);
+  animation: ifdy-dialog-in var(--dur-3) var(--ease-out);
+  outline: none;
+  overflow: hidden;
+}
+@keyframes ifdy-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--line-1);
+}
+.dialogTitle {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dialogDescription {
+  margin: 3px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.dialogBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+.dialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line-1);
+  background: var(--bg-0);
+}

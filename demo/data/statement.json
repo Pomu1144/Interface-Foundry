@@ -1,0 +1,556 @@
+{
+  "statementDate": "2026-10-16",
+  "period": {
+    "start": "2026-09-17",
+    "end": "2026-10-16"
+  },
+  "loan": {
+    "last4": "4821",
+    "type": "30-year fixed · Jumbo",
+    "interestRate": 6.375,
+    "maturityDate": "2052-12-01",
+    "prepaymentPenalty": "None",
+    "originalPrincipal": 1600000
+  },
+  "borrower": {
+    "names": [
+      "Jordan Mercer",
+      "Avery Mercer"
+    ],
+    "mailingAddress": [
+      "18 Lantern Point Road",
+      "Port Harbor, ME 04999"
+    ]
+  },
+  "property": "18 Lantern Point Road, Port Harbor, ME 04999",
+  "amountDue": {
+    "dueDate": "2026-11-01",
+    "principal": 2035.49,
+    "interest": 7946.43,
+    "escrow": 1412.5,
+    "fees": 0,
+    "overdue": 0,
+    "total": 11394.42
+  },
+  "lateFee": {
+    "assessedAfter": "2026-11-16",
+    "amount": 399.28,
+    "totalIfLate": 11793.7
+  },
+  "accountInfo": {
+    "outstandingPrincipal": 1495798.83,
+    "escrowBalance": 8214.66,
+    "suspense": 0,
+    "interestRate": 6.375,
+    "maturityDate": "2052-12-01"
+  },
+  "pastPayments": {
+    "lastMonth": {
+      "principal": 2024.73,
+      "interest": 7957.19,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "date": "2026-10-02"
+    },
+    "yearToDate": {
+      "principal": 19772.56,
+      "interest": 80046.64,
+      "escrow": 14125,
+      "fees": 0,
+      "total": 113944.2
+    }
+  },
+  "transactionsRange": {
+    "start": "2024-07-01",
+    "end": "2026-10-02"
+  },
+  "transactions": [
+    {
+      "date": "2026-10-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 2024.73,
+      "interest": 7957.19,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1495798.83
+    },
+    {
+      "date": "2026-09-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 2014.03,
+      "interest": 7967.89,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1497823.56
+    },
+    {
+      "date": "2026-08-21",
+      "type": "disbursement",
+      "description": "Escrow disbursement — National Flood Insurance Program (synthetic servicer), annual flood policy renewal, zone AE",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -2808,
+      "fees": 0,
+      "total": -2808,
+      "balance": 1499837.59
+    },
+    {
+      "date": "2026-08-04",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 2003.39,
+      "interest": 7978.53,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1499837.59
+    },
+    {
+      "date": "2026-07-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1992.8,
+      "interest": 7989.12,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1501840.98
+    },
+    {
+      "date": "2026-06-05",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Harborline County Treasurer & Tax Collector, second-half real property tax installment, parcel 12-0457-889-0021 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -5140,
+      "fees": 0,
+      "total": -5140,
+      "balance": 1503833.78
+    },
+    {
+      "date": "2026-06-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1982.27,
+      "interest": 7999.65,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1503833.78
+    },
+    {
+      "date": "2026-05-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1971.8,
+      "interest": 8010.12,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1505816.05
+    },
+    {
+      "date": "2026-04-10",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Tidewater Mutual Insurance Co., homeowners policy HO-3 renewal premium, policy TMI-HO-55821907 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -3862,
+      "fees": 0,
+      "total": -3862,
+      "balance": 1507787.85
+    },
+    {
+      "date": "2026-04-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1961.38,
+      "interest": 8020.54,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1507787.85
+    },
+    {
+      "date": "2026-03-03",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1951.01,
+      "interest": 8030.91,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1509749.23
+    },
+    {
+      "date": "2026-02-09",
+      "type": "escrow-refund",
+      "description": "Escrow surplus refund — annual escrow analysis, check no. 004417 mailed to the address on file",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -642.18,
+      "fees": 0,
+      "total": -642.18,
+      "balance": 1511700.24
+    },
+    {
+      "date": "2026-02-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1940.7,
+      "interest": 8041.22,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1511700.24
+    },
+    {
+      "date": "2026-01-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1930.45,
+      "interest": 8051.47,
+      "escrow": 1412.5,
+      "fees": 0,
+      "total": 11394.42,
+      "balance": 1513640.94
+    },
+    {
+      "date": "2025-12-05",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Harborline County Treasurer & Tax Collector, first-half real property tax installment, parcel 12-0457-889-0021 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -5140,
+      "fees": 0,
+      "total": -5140,
+      "balance": 1515571.39
+    },
+    {
+      "date": "2025-12-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1920.25,
+      "interest": 8061.67,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1515571.39
+    },
+    {
+      "date": "2025-11-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1910.1,
+      "interest": 8071.82,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1517491.64
+    },
+    {
+      "date": "2025-10-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1900,
+      "interest": 8081.92,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1519401.74
+    },
+    {
+      "date": "2025-09-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1889.96,
+      "interest": 8091.96,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1521301.74
+    },
+    {
+      "date": "2025-08-19",
+      "type": "disbursement",
+      "description": "Escrow disbursement — National Flood Insurance Program (synthetic servicer), annual flood policy renewal, zone AE",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -2712,
+      "fees": 0,
+      "total": -2712,
+      "balance": 1523191.7
+    },
+    {
+      "date": "2025-08-04",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1879.98,
+      "interest": 8101.94,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1523191.7
+    },
+    {
+      "date": "2025-07-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1870.04,
+      "interest": 8111.88,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1525071.68
+    },
+    {
+      "date": "2025-06-14",
+      "type": "curtailment",
+      "description": "Additional principal payment (curtailment) — applied to principal only, per borrower instructions received by secure message",
+      "principal": 25000,
+      "interest": 0,
+      "escrow": 0,
+      "fees": 0,
+      "total": 25000,
+      "balance": 1526941.72
+    },
+    {
+      "date": "2025-06-06",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Harborline County Treasurer & Tax Collector, second-half real property tax installment, parcel 12-0457-889-0021 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -4905,
+      "fees": 0,
+      "total": -4905,
+      "balance": 1551941.72
+    },
+    {
+      "date": "2025-06-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1728.05,
+      "interest": 8253.87,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1551941.72
+    },
+    {
+      "date": "2025-05-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1718.92,
+      "interest": 8263,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1553669.77
+    },
+    {
+      "date": "2025-04-11",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Tidewater Mutual Insurance Co., homeowners policy HO-3 renewal premium, policy TMI-HO-55821907 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -3688,
+      "fees": 0,
+      "total": -3688,
+      "balance": 1555388.69
+    },
+    {
+      "date": "2025-04-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1709.83,
+      "interest": 8272.09,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1555388.69
+    },
+    {
+      "date": "2025-03-04",
+      "type": "fee-reversal",
+      "description": "Late charge reversed — one-time courtesy waiver approved by Borrower Assistance (case BA-20250304-118)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": 0,
+      "fees": -399.28,
+      "total": -399.28,
+      "balance": 1557098.52
+    },
+    {
+      "date": "2025-03-03",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1700.8,
+      "interest": 8281.12,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1557098.52
+    },
+    {
+      "date": "2025-02-18",
+      "description": "Regular monthly payment — received after the grace period via Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1691.81,
+      "interest": 8290.11,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1558799.32
+    },
+    {
+      "date": "2025-02-17",
+      "type": "fee",
+      "description": "Late charge assessed — payment not received within the 15-day grace period",
+      "principal": 0,
+      "interest": 0,
+      "escrow": 0,
+      "fees": 399.28,
+      "total": 399.28,
+      "balance": 1560491.13
+    },
+    {
+      "date": "2025-01-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1682.87,
+      "interest": 8299.05,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1560491.13
+    },
+    {
+      "date": "2024-12-06",
+      "type": "disbursement",
+      "description": "Escrow disbursement — Harborline County Treasurer & Tax Collector, first-half real property tax installment, parcel 12-0457-889-0021 (synthetic)",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -4905,
+      "fees": 0,
+      "total": -4905,
+      "balance": 1562174
+    },
+    {
+      "date": "2024-12-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1673.98,
+      "interest": 8307.94,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1562174
+    },
+    {
+      "date": "2024-11-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1665.13,
+      "interest": 8316.79,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1563847.98
+    },
+    {
+      "date": "2024-10-02",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1656.33,
+      "interest": 8325.59,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1565513.11
+    },
+    {
+      "date": "2024-09-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1647.58,
+      "interest": 8334.34,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1567169.44
+    },
+    {
+      "date": "2024-08-20",
+      "type": "disbursement",
+      "description": "Escrow disbursement — National Flood Insurance Program (synthetic servicer), annual flood policy renewal, zone AE",
+      "principal": 0,
+      "interest": 0,
+      "escrow": -2640,
+      "fees": 0,
+      "total": -2640,
+      "balance": 1568817.02
+    },
+    {
+      "date": "2024-08-04",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1638.87,
+      "interest": 8343.05,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1568817.02
+    },
+    {
+      "date": "2024-07-01",
+      "description": "Regular monthly payment — Harbor Checking ••••0193",
+      "type": "payment",
+      "principal": 1630.21,
+      "interest": 8351.71,
+      "escrow": 1356.25,
+      "fees": 0,
+      "total": 11338.17,
+      "balance": 1570455.89
+    }
+  ],
+  "sections": [
+    {
+      "id": "escrow-explained",
+      "title": "Understanding your escrow account",
+      "paragraphs": [
+        "Your monthly payment includes $1,412.50 for escrow. We hold these funds in an escrow account and use them to pay your property taxes, homeowners insurance and flood insurance on your behalf when they come due.",
+        "Once a year we complete an escrow analysis to compare what we expect to pay over the next 12 months with what we collect. If the account is projected to have a surplus of $50 or more, we refund it to you. If it is projected to have a shortage, you can pay the shortage in one lump sum or spread it over the next 12 payments.",
+        "Your most recent analysis (January 2026) found a surplus of $642.18, which was refunded by check on February 9, 2026. Your monthly escrow amount increased from $1,356.25 to $1,412.50 because your property tax installments increased by 4.8% and your homeowners insurance premium increased by 4.7%."
+      ]
+    },
+    {
+      "id": "late-fee",
+      "title": "Late fee notice",
+      "paragraphs": [
+        "If we do not receive your full payment by November 16, 2026, we will charge a late fee of $399.28. That is 4% of the principal and interest portion of your payment, as allowed by your note.",
+        "Payments made online before 8:00 p.m. Eastern time on a business day are credited the same day. Payments that are not enough to cover a full monthly payment are held in a suspense account and are not applied to your loan until the remaining funds are received."
+      ]
+    },
+    {
+      "id": "assistance",
+      "title": "If you are having trouble making payments",
+      "paragraphs": [
+        "Call Borrower Assistance at 1-800-555-0142 (synthetic number), Monday to Friday, 8:00 a.m. to 8:00 p.m. Eastern time. You may be eligible for a repayment plan, forbearance or a loan modification. Housing counselors approved by the U.S. Department of Housing and Urban Development can also help at no cost."
+      ]
+    },
+    {
+      "id": "important",
+      "title": "Important messages",
+      "paragraphs": [
+        "Partial payments: any partial payment we receive will not be applied to your mortgage but will be held in a separate suspense account. Once there are enough funds in suspense to cover a full monthly payment, we will apply them to your loan.",
+        "Credit reporting: we may report information about your account to credit bureaus. Late payments, missed payments or other defaults on your account may be reflected in your credit report.",
+        "This is a synthetic statement produced for the Interface Foundry demo. Harborline Home Loans is fictional; no real customer, account or property data is shown."
+      ]
+    }
+  ]
+}
