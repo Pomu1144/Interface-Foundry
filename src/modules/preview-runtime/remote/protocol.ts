@@ -164,6 +164,12 @@ export type ServerMessage =
       /** Touch support changed: touch event APIs only appear after the next load. */
       touchNeedsReload?: boolean;
     }
+  /**
+   * Visual viewport in CSS px. Differs from the device viewport when a mobile page has no
+   * `<meta name=viewport>` (980px layout shown at scale ≈ 0.4) — the studio sizes the canvas
+   * box accordingly so agent rects and input coordinates (both layout CSS px) line up.
+   */
+  | { t: 'metrics'; pageId: string; visual: VisualViewport }
   | { t: 'agent'; pageId: string; env: unknown }
   /** Chromium console, only for documents where the injected agent is not running. */
   | { t: 'console'; pageId: string; entry: WireConsoleEntry }
@@ -175,6 +181,8 @@ export type ServerMessage =
   | { t: 'dialog'; pageId: string; dialogType: string; message: string }
   | { t: 'error'; pageId?: string; code: ServerErrorCode; message: string }
   | { t: 'pong'; ts: number };
+
+export type VisualViewport = { width: number; height: number; scale: number; offsetX: number; offsetY: number };
 
 export type FrameHeader = {
   t: 'frame';

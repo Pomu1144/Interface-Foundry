@@ -17,6 +17,11 @@ import { ProviderError, type Emit, type ProviderResult } from './types';
 export const PER_MINUTE = 10;
 export const MAX_CONCURRENT = 2;
 
+export const NOT_CONFIGURED = {
+  anthropic: 'Anthropic is not configured: set ANTHROPIC_API_KEY for the companion and restart.',
+  local: 'No local model is configured: set IFDY_LOCAL_AI_URL (and IFDY_LOCAL_AI_MODEL) and restart.',
+};
+
 const INTENTS: DiagnoseIntent[] = ['overflow', 'posture', 'a11y', 'layout', 'general'];
 
 export function aiStatus(config: IfdyServerConfig): AiStatus {
@@ -74,11 +79,18 @@ export function createAiService(deps: AiServiceDeps) {
   return {
     limiter,
     status: () => aiStatus(deps.config),
+    /** Why a provider cannot run (null when it is configured). */
+    unconfigured(provider: DiagnoseRequest['provider']): string | null {
+      const { ai } = deps.config;
+      if (provider === 'anthropic' && !ai.anthropicKey && !deps.anthropic) return NOT_CONFIGURED.anthropic;
+      if (provider === 'local' && !ai.localUrl) return NOT_CONFIGURED.local;
+      return null;
+    },
     /** Run one diagnosis; progress and the result are reported through `emit`. Never logs the context. */
     async diagnose(req: DiagnoseRequest, emit: Emit, signal?: AbortSignal): Promise<ProviderResult> {
       const { ai } = deps.config;
       if (req.provider === 'anthropic') {
-        if (!ai.anthropicKey && !deps.anthropic) throw new ProviderError('not_configured', 'Claude is not configured: set ANTHROPIC_API_KEY for the companion and restart.', 412);
+        if (!ai.anthropicKey && !deps.anthropic) throw new ProviderError('not_configured', NOT_CONFIGURED.anthropic, 412);
         client ??= createAnthropicClient(ai.anthropicKey!);
         try {
           return await runAnthropic(client, req, ai.model, emit, signal);
@@ -86,7 +98,7 @@ export function createAiService(deps: AiServiceDeps) {
           throw describeAnthropicError(err);
         }
       }
-      if (!ai.localUrl) throw new ProviderError('not_configured', 'No local model is configured: set IFDY_LOCAL_AI_URL (and IFDY_LOCAL_AI_MODEL) and restart.', 412);
+      if (!ai.localUrl) throw new ProviderError('not_configured', NOT_CONFIGURED.local, 412);
       try {
         return await runLocal(fetchImpl, { url: ai.localUrl, model: ai.localModel ?? 'default' }, req, emit, signal);
       } catch (err) {

@@ -5,7 +5,7 @@ import { buildConversation, SYSTEM_PROMPT } from './prompt';
 import { ProviderError, type Emit, type ProviderResult } from './types';
 
 /**
- * Anthropic provider: Claude via the official SDK, streamed, with structured
+ * Anthropic provider: the official Anthropic SDK, streamed, with structured
  * outputs (output_config.format = JSON schema) and server-side validation.
  * The API key only ever lives in the companion process.
  */
@@ -53,7 +53,7 @@ export async function runAnthropic(client: AnthropicClientLike, req: DiagnoseReq
   };
   for await (const event of stream) {
     if (event.type === 'content_block_start') {
-      if (event.content_block.type === 'thinking') emit({ type: 'progress', stage: 'thinking', message: 'Claude is reasoning about the layout' });
+      if (event.content_block.type === 'thinking') emit({ type: 'progress', stage: 'thinking', message: 'The Anthropic model is reasoning about the layout' });
       else if (event.content_block.type === 'text') emit({ type: 'progress', stage: 'writing', message: 'Writing the diagnosis', chars });
     } else if (event.type === 'content_block_delta') {
       if (event.delta.type === 'text_delta') {
@@ -61,14 +61,14 @@ export async function runAnthropic(client: AnthropicClientLike, req: DiagnoseReq
         throttled(() => emit({ type: 'progress', stage: 'writing', message: 'Writing the diagnosis', chars }));
       } else if (event.delta.type === 'thinking_delta') {
         thinking = (thinking + event.delta.thinking).slice(-280);
-        throttled(() => emit({ type: 'progress', stage: 'thinking', message: 'Claude is reasoning about the layout', thinking }));
+        throttled(() => emit({ type: 'progress', stage: 'thinking', message: 'The Anthropic model is reasoning about the layout', thinking }));
       }
     }
   }
   const message = await stream.finalMessage();
   if (message.stop_reason === 'refusal') {
     const category = message.stop_details?.category;
-    throw new ProviderError('refusal', `Claude declined this request${category ? ` (${category})` : ''}. Try rephrasing or use the offline engine.`);
+    throw new ProviderError('refusal', `The Anthropic model declined this request${category ? ` (${category})` : ''}. Try rephrasing or use the offline engine.`);
   }
   if (message.stop_reason === 'max_tokens') throw new ProviderError('truncated', 'The response reached the output limit before the diagnosis was complete.');
   const text = message.content

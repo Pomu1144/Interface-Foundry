@@ -30,10 +30,10 @@ export function makeStep(action: StepAction, description?: string, opts: { expec
 /** Short human label for a locator, mirroring the agent's strategy order. */
 export function locatorLabel(l: Locator | undefined): string {
   if (!l) return 'the focused element';
-  if (l.testId) return `[data-testid="${l.testId}"]`;
-  if (l.role && l.name) return `${l.role} “${l.name}”`;
+  if (l.role && l.name) return `${l.role} “${l.name.length > 48 ? `${l.name.slice(0, 47)}…` : l.name}”`;
   if (l.label) return `field “${l.label}”`;
   if (l.placeholder) return `placeholder “${l.placeholder}”`;
+  if (l.testId) return `[data-testid="${l.testId}"]`;
   if (l.text) return `text “${l.text}”`;
   return l.css;
 }

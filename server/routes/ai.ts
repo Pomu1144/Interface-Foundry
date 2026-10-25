@@ -40,6 +40,8 @@ export function registerAiRoutes(router: Router, services: IfdyServices) {
       } catch (err) {
         throw new HttpError(err instanceof ProviderError ? err.status : 400, (err as Error).message);
       }
+      const missing = ai.unconfigured(parsed.provider);
+      if (missing) throw new HttpError(412, missing);
       await streamDiagnosis(ai, parsed, res);
     } finally {
       slot.release();

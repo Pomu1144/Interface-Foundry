@@ -43,7 +43,7 @@ export function parseSse(buffer: string): { events: DiagnoseEvent[]; rest: strin
 /** POST a diagnosis and stream its events. Resolves when the stream ends. */
 export async function streamDiagnose(req: DiagnoseRequest, onEvent: (e: DiagnoseEvent) => void, signal: AbortSignal): Promise<void> {
   const t = await token();
-  if (!t) throw new Error('The IFDY companion is not running, so Claude and local models are unavailable. The offline engine still works.');
+  if (!t) throw new Error('The IFDY companion is not running, so Anthropic and local models are unavailable. The offline engine still works.');
   const res = await fetch('/api/ai/diagnose', {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'text/event-stream', 'x-ifdy-token': t },

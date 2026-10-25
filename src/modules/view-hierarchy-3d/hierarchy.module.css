@@ -337,7 +337,7 @@
   container: h3d-stage / inline-size;
 }
 .stage:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--line-focus);
+  box-shadow: inset 0 0 0 1px var(--line-2);
 }
 .stage[data-drag='orbit'] {
   cursor: grabbing;
@@ -382,10 +382,8 @@
   position: absolute;
   transform-origin: 0 0;
   background-image:
-    linear-gradient(var(--line-2) var(--bw), transparent var(--bw)),
-    linear-gradient(90deg, var(--line-2) var(--bw), transparent var(--bw)),
-    linear-gradient(var(--line-1) var(--bw), transparent var(--bw)),
-    linear-gradient(90deg, var(--line-1) var(--bw), transparent var(--bw));
+    linear-gradient(var(--line-2) var(--bw), transparent var(--bw)), linear-gradient(90deg, var(--line-2) var(--bw), transparent var(--bw)),
+    linear-gradient(var(--line-1) var(--bw), transparent var(--bw)), linear-gradient(90deg, var(--line-1) var(--bw), transparent var(--bw));
   background-size:
     200px 200px,
     200px 200px,
@@ -449,19 +447,19 @@
   background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 42%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7));
 }
 .stage[data-shot] .plane[data-kind='image'] {
-  background-image:
-    repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7)),
-    var(--shot);
-  background-size:
-    auto,
-    var(--shot-size);
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7)), var(--shot);
+  background-size: auto, var(--shot-size);
   background-position:
     0 0,
     var(--bp);
   background-repeat: repeat, no-repeat;
 }
-.stage[data-wire] .plane {
-  background: none;
+.stage[data-wire] .plane,
+.stage[data-flat] .plane:not([data-state='sel']):not([data-hover]) {
+  background-color: transparent;
+}
+.stage[data-wire] .plane:not([data-kind='image']):not([data-bgimg='true']) {
+  background-image: none;
 }
 .stage[data-wire] .plane[data-kind='image'] {
   background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--c) 30%, transparent) 0 calc(var(--bw) * 1.2), transparent calc(var(--bw) * 1.2) calc(var(--bw) * 7));
@@ -869,6 +867,33 @@
   50% {
     transform: rotateX(52deg) rotateZ(-38deg) translateZ(calc(var(--t) * 46px));
   }
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 340px;
+}
+.empty > :last-child {
+  padding-top: 14px;
+}
+.empty > :last-child > div:nth-child(2) {
+  max-width: 300px;
+}
+.emptyMark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background:
+    linear-gradient(var(--bg-2), var(--bg-2)) padding-box,
+    linear-gradient(135deg, color-mix(in oklch, var(--accent) 70%, transparent), color-mix(in oklch, var(--molten) 70%, transparent)) border-box;
+  border: 1px solid transparent;
+  box-shadow:
+    0 8px 28px -10px color-mix(in srgb, var(--accent) 45%, transparent),
+    var(--highlight-top);
+  color: var(--text-0);
 }
 .errorCard {
   display: flex;

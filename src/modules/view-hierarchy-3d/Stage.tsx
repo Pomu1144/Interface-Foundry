@@ -6,20 +6,25 @@ import { studio, useStudio } from '@/store';
 import { previews } from '@/modules/preview-runtime/registry';
 import { refreshSelection, watchOverlayIds } from '@/modules/preview-runtime/sync';
 import { DEFAULT_SPACING, engine, type LabelSpec } from './engine';
-import { depthT, fillFor, isLevelVisible, perspectiveFor, PRESETS, textSizeFor, unionBounds, type Bounds, type DepthFilter, type PresetName, type Tree } from './math';
+import { depthT, fillFor, frameOf, isLevelVisible, labelPriority, perspectiveFor, PRESETS, textSizeFor, type DepthFilter, type LevelRect, type PresetName, type Tree } from './math';
 import { setView, useH3D } from './state';
 import s from './hierarchy.module.css';
 
 type PlaneState = '' | 'sel' | 'path';
 const MAX_SPACING = 120;
-const MAX_LABELS = 56;
+const MAX_LABELS = 28;
 
 /* ------------------------------------------------------------------ */
 /* Planes                                                              */
 /* ------------------------------------------------------------------ */
 
 const Plane = memo(function Plane({ n, i, state }: { n: Hierarchy3DNode; i: number; state: PlaneState }) {
-  const style: Record<string, string | number> = { left: n.rect.x, top: n.rect.y, width: n.rect.width, height: n.rect.height };
+  const style: Record<string, string | number> = {
+    left: n.rect.x,
+    top: n.rect.y,
+    width: n.rect.width,
+    height: n.rect.height,
+  };
   const fill = fillFor(n.bg);
   if (fill) style['--fill'] = fill;
   if (n.isImage) style['--bp'] = `${-n.rect.x}px ${-n.rect.y}px`;
@@ -79,11 +84,12 @@ export type StageProps = {
   filter: DepthFilter;
   selIndex: number | null;
   path: ReadonlySet<number>;
-  /** Bounds of what is currently shown (fit / double-click on empty space). */
-  visibleBounds: Bounds;
+  /** Indices currently shown (fit / double-click on empty space frame these). */
+  visible: number[];
+  isolateRoot: number | null;
 };
 
-export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBounds }: StageProps) {
+export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visible, isolateRoot }: StageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -96,45 +102,57 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
   const labels = useH3D((st) => st.labels);
   const wireframe = useH3D((st) => st.wireframe);
   const route = useH3D((st) => st.route);
+  const projectId = useStudio((st) => st.project?.id ?? '');
   const reduced = useStudio((st) => st.settings.reducedMotion);
   const gridRef = useCallback((el: HTMLDivElement | null) => engine.gridRef(el), []);
   const baseRef = useCallback((el: HTMLDivElement | null) => engine.baseRef(el), []);
 
-  // Latest values for imperative callbacks.
-  const live = useRef({ selIndex, visibleBounds });
-  live.current = { selIndex, visibleBounds };
+  // Honour the studio's reduced-motion setting before the scene is framed (idempotent).
+  engine.noMotion = reduced;
 
   useLayoutEffect(() => {
     const stage = stageRef.current!;
     engine.attach(
-      { stage, pan: panRef.current!, world: worldRef.current!, tip: tipRef.current!, hudZoom: hudZoomRef.current, hudAngles: hudAnglesRef.current },
+      {
+        stage,
+        pan: panRef.current!,
+        world: worldRef.current!,
+        tip: tipRef.current!,
+        hudZoom: hudZoomRef.current,
+        hudAngles: hudAnglesRef.current,
+      },
       {
         onPick: (i) => pick(i),
-        onFocusRequest: (i) => (i === null ? engine.fit(live.current.visibleBounds) : engine.focusNode(i)),
+        onFocusRequest: (i) => (i === null ? engine.fit(live.current.visibleFrame) : engine.focusNode(i)),
         onHover: () => {},
       },
     );
     return () => engine.release();
   }, []);
 
-  useEffect(() => {
-    engine.noMotion = reduced;
-  }, [reduced]);
-
   useLayoutEffect(() => engine.setNodes(nodes), [nodes]);
 
-  // Scene bounds: every box plus the screenshot plate one level below the root.
+  // Scene: every box plus the screenshot plate one level below the root.
   const baseDepth = tree.minDepth - 1;
-  const sceneBounds = useMemo(() => {
-    const b = { ...tree.bounds, d0: baseDepth };
-    return shot ? unionBounds(b, { x0: 0, y0: 0, x1: shot.docW, y1: shot.docH, d0: baseDepth, d1: baseDepth }) : b;
-  }, [tree, baseDepth, shot]);
+  const plate = useMemo<LevelRect[]>(() => [{ d: baseDepth, x0: 0, y0: 0, x1: shot?.docW ?? Math.max(1, tree.bounds.x1), y1: shot?.docH ?? Math.max(1, tree.bounds.y1) }], [baseDepth, shot, tree]);
+  const sceneFrame = useMemo(() => frameOf(nodes, undefined, plate), [nodes, plate]);
+  const sceneBounds = sceneFrame.bounds;
   const perspective = useMemo(() => perspectiveFor(sceneBounds, MAX_SPACING), [sceneBounds]);
+  // What "fit" frames: the visible boxes (plus the plate unless a subtree is isolated).
+  const visibleFrame = useMemo(() => (visible.length ? frameOf(nodes, visible, isolateRoot === null ? plate : []) : sceneFrame), [nodes, visible, isolateRoot, plate, sceneFrame]);
+
+  // Latest values for imperative callbacks.
+  const live = useRef({ selIndex, visibleFrame });
+  live.current = { selIndex, visibleFrame };
 
   useLayoutEffect(() => {
     const st = useH3D.getState();
-    engine.setScene(sceneBounds, baseDepth, route || 'page', perspective, { intro: true, exploded: st.exploded, spacing: st.spacing });
-  }, [sceneBounds, baseDepth, perspective, route]);
+    engine.setScene(sceneFrame, baseDepth, `${projectId}|${route}`, perspective, {
+      intro: true,
+      exploded: st.exploded,
+      spacing: st.spacing,
+    });
+  }, [sceneFrame, baseDepth, perspective, route, projectId]);
 
   useEffect(() => {
     const offEx = useH3D.subscribe(
@@ -153,16 +171,13 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
     };
   }, []);
 
-  // Isolate / filter changes re-frame what is visible.
-  const boundsKey = `${visibleBounds.x0}|${visibleBounds.y0}|${visibleBounds.x1}|${visibleBounds.y1}|${visibleBounds.d0}|${visibleBounds.d1}`;
-  const firstBounds = useRef(true);
+  // Entering / leaving isolation re-frames what is visible (data refreshes never move the camera).
+  const lastIsolate = useRef(isolateRoot);
   useEffect(() => {
-    if (firstBounds.current) {
-      firstBounds.current = false;
-      return;
-    }
-    engine.fit(live.current.visibleBounds);
-  }, [boundsKey]);
+    if (lastIsolate.current === isolateRoot) return;
+    lastIsolate.current = isolateRoot;
+    engine.fit(live.current.visibleFrame);
+  }, [isolateRoot]);
 
   /* Labels ---------------------------------------------------------- */
   const labelSpecs = useMemo<(LabelSpec & { label: string; t: number; state: PlaneState })[]>(() => {
@@ -175,13 +190,25 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
         const area = r.width * r.height;
         const onPath = path.has(i);
         if (!onPath && (area < 1600 || r.width < 40)) continue;
-        cands.push({ i, prio: (i === selIndex ? 4e9 : onPath ? 2e9 : 0) + area / Math.sqrt(1 + nodes[i].depth * 0.15) });
+        cands.push({
+          i,
+          prio: (i === selIndex ? 4e9 : onPath ? 2e9 : 0) + labelPriority(nodes[i]),
+        });
       }
     }
     cands.sort((a, b) => b.prio - a.prio);
     return cands.slice(0, MAX_LABELS).map(({ i }) => {
       const n = nodes[i];
-      return { i, x: n.rect.x, y: n.rect.y, w: n.rect.width, depth: n.depth, label: n.label, t: depthT(n.depth, tree.minDepth, tree.maxDepth), state: i === selIndex ? 'sel' : path.has(i) ? 'path' : '' };
+      return {
+        i,
+        x: n.rect.x,
+        y: n.rect.y,
+        w: n.rect.width,
+        depth: n.depth,
+        label: n.label,
+        t: depthT(n.depth, tree.minDepth, tree.maxDepth),
+        state: i === selIndex ? 'sel' : path.has(i) ? 'path' : '',
+      };
     });
   }, [labels, byDepth, filter, nodes, path, selIndex, tree]);
 
@@ -232,19 +259,19 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
           engine.reset();
           break;
         case '!':
-          engine.fit(live.current.visibleBounds);
+          engine.fit(live.current.visibleFrame);
           break;
         case '1':
         case '2':
         case '3':
         case '4':
-          if (e.shiftKey) engine.fit(live.current.visibleBounds);
+          if (e.shiftKey) engine.fit(live.current.visibleFrame);
           else engine.preset((['front', 'left', 'right', 'top'] as const)[Number(e.key) - 1]);
           break;
         case 'f':
         case 'F':
           if (live.current.selIndex !== null) engine.focusNode(live.current.selIndex);
-          else engine.fit(live.current.visibleBounds);
+          else engine.fit(live.current.visibleFrame);
           break;
         case 'e':
         case 'E':
@@ -257,7 +284,12 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
   };
 
   const levels = tree.levels;
-  const stageStyle = shot ? ({ '--shot': `url("${shot.url}")`, '--shot-size': `${shot.docW}px ${shot.docH}px` } as CSSProperties) : undefined;
+  const stageStyle = shot
+    ? ({
+        '--shot': `url("${shot.url}")`,
+        '--shot-size': `${shot.docW}px ${shot.docH}px`,
+      } as CSSProperties)
+    : undefined;
   const gridRect = {
     left: sceneBounds.x0 - (sceneBounds.x1 - sceneBounds.x0) * 0.9,
     top: sceneBounds.y0 - (sceneBounds.y1 - sceneBounds.y0) * 0.35,
@@ -286,7 +318,10 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
           <div
             ref={baseRef}
             className={s.base}
-            style={{ width: shot?.docW ?? Math.max(1, tree.bounds.x1), height: shot?.docH ?? Math.max(1, tree.bounds.y1) }}
+            style={{
+              width: shot?.docW ?? Math.max(1, tree.bounds.x1),
+              height: shot?.docH ?? Math.max(1, tree.bounds.y1),
+            }}
           >
             {shot ? <img src={shot.url} alt="" draggable={false} /> : <div className={s.baseEmpty} />}
           </div>
@@ -339,7 +374,7 @@ export function Stage({ nodes, tree, byDepth, filter, selIndex, path, visibleBou
         <IconButton size="sm" label="Zoom in" shortcut="+" tooltipSide="top" onClick={() => engine.zoomBy(1.25)}>
           <Plus size={13} />
         </IconButton>
-        <IconButton size="sm" label="Fit to view" shortcut="Shift+1" tooltipSide="top" onClick={() => engine.fit(live.current.visibleBounds)}>
+        <IconButton size="sm" label="Fit to view" shortcut="Shift+1" tooltipSide="top" onClick={() => engine.fit(live.current.visibleFrame)}>
           <Maximize size={12} />
         </IconButton>
       </div>
@@ -402,21 +437,24 @@ function Dock() {
         value={exploded ? 'explode' : 'flat'}
         onChange={(v) => setView({ exploded: v === 'explode' })}
         options={[
-          { value: 'flat', label: 'Flatten', icon: <Square size={12} />, title: 'Flatten to 2D (E)' },
-          { value: 'explode', label: 'Explode', icon: <Layers3 size={12} />, title: 'Explode layers (E)' },
+          {
+            value: 'flat',
+            label: 'Flatten',
+            icon: <Square size={12} />,
+            title: 'Flatten to 2D (E)',
+          },
+          {
+            value: 'explode',
+            label: 'Explode',
+            icon: <Layers3 size={12} />,
+            title: 'Explode layers (E)',
+          },
         ]}
       />
       <span className={s.dockDiv} />
       <div className={s.spacingCtl} title="Distance between depth levels">
         <div className={s.spacingSlider}>
-          <Slider
-            ariaLabel="Layer spacing"
-            min={4}
-            max={MAX_SPACING}
-            step={1}
-            value={exploded ? spacing : 4}
-            onChange={(v) => setView(exploded ? { spacing: v } : { spacing: v, exploded: true })}
-          />
+          <Slider ariaLabel="Layer spacing" min={4} max={MAX_SPACING} step={1} value={exploded ? spacing : 4} onChange={(v) => setView(exploded ? { spacing: v } : { spacing: v, exploded: true })} />
         </div>
         <span className={s.dockValue}>{exploded ? `${Math.round(spacing)}px` : 'flat'}</span>
       </div>
@@ -427,7 +465,11 @@ function Dock() {
         shortcut="0"
         tooltipSide="top"
         onClick={() => {
-          if (!useH3D.getState().exploded) setView({ exploded: true, spacing: useH3D.getState().spacing || DEFAULT_SPACING });
+          if (!useH3D.getState().exploded)
+            setView({
+              exploded: true,
+              spacing: useH3D.getState().spacing || DEFAULT_SPACING,
+            });
           engine.reset();
         }}
       >
@@ -447,9 +489,23 @@ function PresetButtons() {
           <Tooltip key={p.value} content={p.title} side="top">
             <button type="button" className={s.presetBtn} onClick={() => engine.preset(p.value)} aria-label={p.title}>
               <span className={s.glyph} aria-hidden>
-                <span className={s.glyphWorld} style={{ transform: `rotateX(${a.pitch}deg) rotateY(${a.yaw}deg)` }}>
+                <span
+                  className={s.glyphWorld}
+                  style={{
+                    transform: `rotateX(${a.pitch}deg) rotateY(${a.yaw}deg)`,
+                  }}
+                >
                   {[0, 1, 2].map((k) => (
-                    <span key={k} className={s.glyphPlane} style={{ '--t': k / 2, transform: `translateZ(${(k - 1) * 3.2}px)` } as CSSProperties} />
+                    <span
+                      key={k}
+                      className={s.glyphPlane}
+                      style={
+                        {
+                          '--t': k / 2,
+                          transform: `translateZ(${(k - 1) * 3.2}px)`,
+                        } as CSSProperties
+                      }
+                    />
                   ))}
                 </span>
               </span>

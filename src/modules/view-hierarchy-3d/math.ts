@@ -40,8 +40,8 @@ export const MAX_PITCH = 89;
 
 export const PRESETS = {
   front: { yaw: 0, pitch: 0 },
-  left: { yaw: 36, pitch: 12 },
-  right: { yaw: -36, pitch: 12 },
+  left: { yaw: 46, pitch: 16 },
+  right: { yaw: -46, pitch: 16 },
   top: { yaw: -8, pitch: 64 },
 } satisfies Record<string, Angles>;
 export type PresetName = keyof typeof PRESETS;
@@ -54,7 +54,7 @@ export const clampPitch = (p: number) => clamp(p, -MAX_PITCH, MAX_PITCH);
 
 /** Normalise an angle to (-180, 180]. */
 export function wrapAngle(deg: number): number {
-  let a = ((deg + 180) % 360 + 360) % 360 - 180;
+  let a = ((((deg + 180) % 360) + 360) % 360) - 180;
   if (a === -180) a = 180;
   return a;
 }
@@ -136,7 +136,12 @@ export function wrapperCss(cam: Camera): string {
 export function projectWith(m: Mat4, cam: Pick<Camera, 'zoom' | 'panX' | 'panY'>, perspective: number, p: Vec3): { x: number; y: number; z: number; k: number } {
   const v = transformPoint(m, p);
   const k = perspective / Math.max(1e-6, perspective - v[2]);
-  return { x: cam.panX + cam.zoom * v[0] * k, y: cam.panY + cam.zoom * v[1] * k, z: v[2], k };
+  return {
+    x: cam.panX + cam.zoom * v[0] * k,
+    y: cam.panY + cam.zoom * v[1] * k,
+    z: v[2],
+    k,
+  };
 }
 
 export function project(cam: Camera, spacing: number, perspective: number, p: Vec3): { x: number; y: number; z: number; k: number } {
@@ -147,7 +152,11 @@ export function project(cam: Camera, spacing: number, perspective: number, p: Ve
 export function zoomAbout(cam: Pick<Camera, 'zoom' | 'panX' | 'panY'>, factor: number, mx: number, my: number): Pick<Camera, 'zoom' | 'panX' | 'panY'> {
   const zoom = clampZoom(cam.zoom * factor);
   const k = zoom / cam.zoom;
-  return { zoom, panX: mx + (cam.panX - mx) * k, panY: my + (cam.panY - my) * k };
+  return {
+    zoom,
+    panX: mx + (cam.panX - mx) * k,
+    panY: my + (cam.panY - my) * k,
+  };
 }
 
 /** Distance at which the perspective never inverts for this scene (camera stays outside it). */
@@ -184,7 +193,14 @@ export function hairline(zoom: number): number {
 /* Tree                                                                */
 /* ------------------------------------------------------------------ */
 
-export type Bounds = { x0: number; y0: number; x1: number; y1: number; d0: number; d1: number };
+export type Bounds = {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  d0: number;
+  d1: number;
+};
 
 export type Level = { depth: number; count: number };
 
@@ -255,7 +271,14 @@ export function boundsOf(nodes: readonly Hierarchy3DNode[], indices?: Iterable<n
 }
 
 export function unionBounds(a: Bounds, b: Bounds): Bounds {
-  return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1), d0: Math.min(a.d0, b.d0), d1: Math.max(a.d1, b.d1) };
+  return {
+    x0: Math.min(a.x0, b.x0),
+    y0: Math.min(a.y0, b.y0),
+    x1: Math.max(a.x1, b.x1),
+    y1: Math.max(a.y1, b.y1),
+    d0: Math.min(a.d0, b.d0),
+    d1: Math.max(a.d1, b.d1),
+  };
 }
 
 /** Ancestor chain of node `i` (nearest first), excluding `i`. */
@@ -330,7 +353,12 @@ export function depthT(depth: number, minDepth: number, maxDepth: number): numbe
 /* Fit                                                                 */
 /* ------------------------------------------------------------------ */
 
-export type Insets = { top: number; right: number; bottom: number; left: number };
+export type Insets = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+};
 export const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 export function boundsCorners(b: Bounds, spacing: number): Vec3[] {
@@ -380,8 +408,8 @@ export function fitPoints(
   const zoom = clamp(Math.min(availW / w, availH / h), MIN_ZOOM, maxZoom);
   return {
     zoom,
-    panX: (insets.left - insets.right) / 2 - zoom * (e.x0 + e.x1) / 2,
-    panY: (insets.top - insets.bottom) / 2 - zoom * (e.y0 + e.y1) / 2,
+    panX: (insets.left - insets.right) / 2 - (zoom * (e.x0 + e.x1)) / 2,
+    panY: (insets.top - insets.bottom) / 2 - (zoom * (e.y0 + e.y1)) / 2,
   };
 }
 
@@ -396,8 +424,77 @@ export function fitBounds(
   padding = 32,
   maxZoom = MAX_ZOOM,
 ): Camera {
+  const base: Camera = {
+    yaw: angles.yaw,
+    pitch: angles.pitch,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    tx: (b.x0 + b.x1) / 2,
+    ty: (b.y0 + b.y1) / 2,
+    td: (b.d0 + b.d1) / 2,
+  };
+  return {
+    ...base,
+    ...fitPoints(base, spacing, perspective, boundsCorners(b, spacing), view, insets, padding, maxZoom),
+  };
+}
+
+/** Bounding rectangle of one depth level. */
+export type LevelRect = { d: number; x0: number; y0: number; x1: number; y1: number };
+
+/** A tight hull for a stack of planes: one rectangle per depth level. */
+export type Frame = { bounds: Bounds; levels: LevelRect[] };
+
+export function frameOf(nodes: readonly Hierarchy3DNode[], indices?: Iterable<number>, extra: readonly LevelRect[] = []): Frame {
+  const map = new Map<number, LevelRect>();
+  const add = (d: number, x0: number, y0: number, x1: number, y1: number) => {
+    const l = map.get(d);
+    if (!l) map.set(d, { d, x0, y0, x1, y1 });
+    else {
+      l.x0 = Math.min(l.x0, x0);
+      l.y0 = Math.min(l.y0, y0);
+      l.x1 = Math.max(l.x1, x1);
+      l.y1 = Math.max(l.y1, y1);
+    }
+  };
+  const visit = (n: Hierarchy3DNode) => add(n.depth, n.rect.x, n.rect.y, n.rect.x + n.rect.width, n.rect.y + n.rect.height);
+  if (indices) for (const i of indices) visit(nodes[i]);
+  else for (const n of nodes) visit(n);
+  for (const l of extra) add(l.d, l.x0, l.y0, l.x1, l.y1);
+  const levels = [...map.values()].sort((a, b) => a.d - b.d);
+  if (!levels.length) return { bounds: { x0: 0, y0: 0, x1: 0, y1: 0, d0: 0, d1: 0 }, levels };
+  const bounds = levels.reduce<Bounds>(
+    (b, l) => ({ x0: Math.min(b.x0, l.x0), y0: Math.min(b.y0, l.y0), x1: Math.max(b.x1, l.x1), y1: Math.max(b.y1, l.y1), d0: Math.min(b.d0, l.d), d1: Math.max(b.d1, l.d) }),
+    { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity, d0: Infinity, d1: -Infinity },
+  );
+  return { bounds, levels };
+}
+
+export function frameCorners(f: Frame, spacing: number): Vec3[] {
+  const out: Vec3[] = [];
+  for (const l of f.levels) {
+    const z = l.d * spacing;
+    out.push([l.x0, l.y0, z], [l.x1, l.y0, z], [l.x0, l.y1, z], [l.x1, l.y1, z]);
+  }
+  return out;
+}
+
+/** Camera orbiting the frame's centre that tightly frames every level's rectangle. */
+export function fitFrame(
+  angles: Angles,
+  f: Frame,
+  spacing: number,
+  perspective: number,
+  view: { width: number; height: number },
+  insets: Insets = NO_INSETS,
+  padding = 32,
+  maxZoom = MAX_ZOOM,
+): Camera {
+  const b = f.bounds;
   const base: Camera = { yaw: angles.yaw, pitch: angles.pitch, zoom: 1, panX: 0, panY: 0, tx: (b.x0 + b.x1) / 2, ty: (b.y0 + b.y1) / 2, td: (b.d0 + b.d1) / 2 };
-  return { ...base, ...fitPoints(base, spacing, perspective, boundsCorners(b, spacing), view, insets, padding, maxZoom) };
+  const pts = f.levels.length ? frameCorners(f, spacing) : boundsCorners(b, spacing);
+  return { ...base, ...fitPoints(base, spacing, perspective, pts, view, insets, padding, maxZoom) };
 }
 
 /* ------------------------------------------------------------------ */
@@ -405,9 +502,48 @@ export function fitBounds(
 /* ------------------------------------------------------------------ */
 
 /** Faint fill tinted by the node's own background colour (user content). */
-export function fillFor(bg: string | null, amount = 16): string | undefined {
+export function fillFor(bg: string | null, amount = 12): string | undefined {
   if (!bg || bg === 'image') return undefined;
   return `color-mix(in srgb, ${bg} ${amount}%, transparent)`;
+}
+
+const TAG_WEIGHT: Record<string, number> = {
+  header: 3,
+  footer: 3,
+  main: 3,
+  nav: 3,
+  section: 2.5,
+  aside: 2.5,
+  form: 2.5,
+  article: 2.5,
+  dialog: 3,
+  h1: 2.5,
+  h2: 2,
+  h3: 1.5,
+  button: 2,
+  img: 1.5,
+  svg: 1,
+  video: 2,
+  canvas: 2,
+  input: 2,
+  select: 2,
+  textarea: 2,
+  a: 1.2,
+  label: 1,
+  ul: 1,
+  ol: 1,
+  table: 2,
+  p: 0.8,
+  li: 0.6,
+  div: 0.5,
+  span: 0.3,
+};
+
+/** Which planes deserve a screen-space label first: landmarks and big boxes. */
+export function labelPriority(n: Pick<Hierarchy3DNode, 'label' | 'rect'>): number {
+  const tag = /^[a-z0-9-]+/i.exec(n.label)?.[0].toLowerCase() ?? '';
+  const weight = (TAG_WEIGHT[tag] ?? 0.5) + (n.label.includes('#') ? 0.5 : 0);
+  return (1 + weight) * Math.sqrt(Math.max(0, n.rect.width * n.rect.height));
 }
 
 /** Font size (document px) for a text preview inside a box of height `h`. */

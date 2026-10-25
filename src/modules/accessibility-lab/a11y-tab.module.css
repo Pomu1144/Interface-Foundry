@@ -1,0 +1,267 @@
+.kv {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+  font-size: var(--fs-xs);
+}
+.k {
+  color: var(--text-2);
+}
+.v {
+  color: var(--text-0);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.role {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.name {
+  color: var(--text-0);
+}
+.mono,
+.ariaKey,
+.ariaVal {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.bad,
+.warn,
+.ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.bad {
+  color: var(--danger);
+}
+.warn {
+  color: var(--warning);
+}
+.ok {
+  color: var(--success);
+}
+.muted {
+  color: var(--text-3);
+}
+.count {
+  margin-left: 6px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.hint {
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.aria {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+  overflow: hidden;
+}
+.ariaRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--bg-inset);
+}
+.ariaRow + .ariaRow {
+  border-top: 1px solid var(--line-1);
+}
+.ariaKey {
+  color: var(--syn-attr);
+  overflow-wrap: anywhere;
+}
+.ariaVal {
+  color: var(--syn-string);
+  overflow-wrap: anywhere;
+}
+
+/* Contrast */
+.contrast {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+.sample {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.25);
+  overflow: hidden;
+}
+.sampleText {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ratioBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 104px;
+}
+.ratio {
+  color: var(--text-0);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ratio span {
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 500;
+  margin-left: 1px;
+}
+.ratio[data-ok='false'] {
+  color: var(--danger);
+}
+.levels {
+  display: flex;
+  gap: 4px;
+}
+.level {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-full);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.level[data-ok='true'] {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.level[data-ok='false'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.need {
+  font-weight: 500;
+  opacity: 0.7;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+}
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 11px;
+}
+.swatch i {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.35);
+}
+.swatch code {
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Fixes */
+.fixes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fix {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+}
+.fixHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.fixHead svg {
+  color: var(--violet);
+}
+.fixRow {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.fixRow > label {
+  flex: 1;
+}
+.fixColors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-3);
+}
+
+.related {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.relItem {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.relItem > span {
+  margin-top: 4px;
+}
+.relTitle {
+  color: var(--text-0);
+  font-size: var(--fs-xs);
+}
+.footer {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 14px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.footer svg {
+  flex: none;
+  margin-top: 2px;
+}

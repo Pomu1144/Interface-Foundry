@@ -1,4 +1,4 @@
-import type { Change, PatchSet } from '@shared/types';
+import type { Change, PatchSet, ViewportState } from '@shared/types';
 import { studio } from '@/store';
 import { previews } from '@/modules/preview-runtime/registry';
 import { currentPatchSet } from '@/modules/preview-runtime/sync';
@@ -37,24 +37,22 @@ export function patchSetWithout(groupId: string): PatchSet {
 }
 
 export type RerunRow = { label: string; viewport: Measurement['viewport']; before: Measurement; after: Measurement; comparison: MeasurementComparison; source: string };
-export type RerunResult = { rows: RerunRow[]; sharedAudit: 'ran' | 'unavailable' | 'failed'; at: number };
+export type SharedAudit = { status: 'ran' | 'unavailable' | 'failed'; responsive?: number; viewports?: number; errors?: string[] };
+export type RerunResult = { rows: RerunRow[]; shared: SharedAudit; at: number };
 
-type AuditModule = { runAllAudits?: (...args: unknown[]) => unknown };
-const auditModules = import.meta.glob<AuditModule>(['/src/modules/responsive-audit/index.ts', '/src/modules/responsive-audit/audits.ts', '/src/modules/responsive-audit/run.ts']);
-
-/** Ask the responsive-audit module (written by another team) to refresh its panels; never throws. */
-async function runSharedAudits(): Promise<'ran' | 'unavailable' | 'failed'> {
+/**
+ * Re-run the shared responsive audit (responsive-audit module, written by another
+ * team) at this viewport and the other posture so its panels refresh. Guarded:
+ * the before/after numbers below never depend on it.
+ */
+async function runSharedAudits(profiles: ViewportState[]): Promise<SharedAudit> {
   try {
-    for (const load of Object.values(auditModules)) {
-      const mod = await load();
-      if (typeof mod.runAllAudits === 'function') {
-        await Promise.resolve(mod.runAllAudits());
-        return 'ran';
-      }
-    }
-    return 'unavailable';
+    const mod = await import('@/modules/responsive-audit');
+    if (typeof mod.runAllAudits !== 'function') return { status: 'unavailable' };
+    const counts = await mod.runAllAudits({ profiles, a11y: false });
+    return { status: 'ran', responsive: counts.responsive, viewports: counts.viewports, errors: counts.errors };
   } catch {
-    return 'failed';
+    return { status: 'failed' };
   }
 }
 
@@ -77,5 +75,5 @@ export async function rerunChecks(opts: { selector: string | null; groupId: stri
     /* other posture unavailable — the UI shows only this viewport */
   }
   // Refresh the shared Responsive panels afterwards so they do not race our measurements.
-  return { rows, sharedAudit: await runSharedAudits(), at: Date.now() };
+  return { rows, shared: await runSharedAudits([studio().viewport, other.state]), at: Date.now() };
 }

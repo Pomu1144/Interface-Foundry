@@ -197,14 +197,15 @@ export class BrowserSession implements PageHost {
     const context = await this.ensureContext();
     if (this.disposed) return;
     const page = new RemotePage(pageId, this, msg);
-    this.pages.set(pageId, page);
     try {
       await page.start(context);
     } catch (err) {
-      this.pages.delete(pageId);
       await page.close();
       throw err;
     }
+    // Registered only once started: live messages sent meanwhile were queued behind the open.
+    if (this.disposed) return void page.close();
+    this.pages.set(pageId, page);
     this.manager.touch();
   }
 

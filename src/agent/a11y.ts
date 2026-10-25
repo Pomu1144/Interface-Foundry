@@ -134,6 +134,8 @@ type AxeResult = {
 declare global {
   interface Window {
     axe?: { run: (ctx: unknown, opts: unknown) => Promise<AxeResult>; configure?: (c: unknown) => void };
+    /** Provided by the controlled-browser init script: loads axe-core via the companion (CSP-proof). */
+    __ifdyLoadAxe?: () => Promise<void>;
   }
 }
 
@@ -146,6 +148,12 @@ export function setAgentOrigin(origin: string) {
 
 function loadAxe(): Promise<void> {
   if (window.axe) return Promise.resolve();
+  if (!axeLoading && typeof window.__ifdyLoadAxe === 'function') {
+    axeLoading = window.__ifdyLoadAxe().catch((err: unknown) => {
+      axeLoading = null;
+      throw err instanceof Error ? err : new Error(String(err));
+    });
+  }
   if (!axeLoading) {
     axeLoading = new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -154,7 +162,7 @@ function loadAxe(): Promise<void> {
       s.onload = () => resolve();
       s.onerror = () => {
         axeLoading = null;
-        reject(new Error('Could not load axe-core into the preview.'));
+        reject(new Error('Could not load axe-core into the preview (its Content-Security-Policy may block injected scripts).'));
       };
       (document.head ?? document.documentElement).appendChild(s);
     });

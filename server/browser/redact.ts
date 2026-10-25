@@ -85,8 +85,10 @@ export function redactUrl(raw: string): { url: string; redacted: boolean } {
 
 const SECRET_KV = /((?:pass(?:word)?|passwd|pwd|token|secret|authorization|api[_-]?key|session(?:id)?|ssn|cvv|bearer)["']?\s*[:= ]\s*["']?)([^\s"',;&}]{3,})/gi;
 
+const AUTH_SCHEME = /\b(Bearer|Basic|Token)\s+[A-Za-z0-9._~+/=-]{6,}/g;
+
 /** Scrub `password=…`, `token: …`, `Bearer …` style secrets from free text. */
 export function redactText(s: string, max = 4000): string {
-  const out = s.replace(SECRET_KV, '$1[redacted]');
+  const out = s.replace(AUTH_SCHEME, '$1 [redacted]').replace(SECRET_KV, '$1[redacted]');
   return out.length > max ? out.slice(0, max) + '…' : out;
 }

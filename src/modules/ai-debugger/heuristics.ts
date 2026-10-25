@@ -1121,7 +1121,7 @@ export function heuristicDiagnosis(ctx: DiagnosisContext, question: string, inte
       inferredCauses: [],
       proposedFixes: [],
       assumptions: [`The offline engine checks ${RULES.length} known patterns (fixed widths, flex shrink, nowrap, hinge crossing, tap targets, contrast, line length, hidden actions, off-screen and clipped content); it does not read source files or interpret free-form questions.`],
-      followUpTests: ['Try another posture or viewport', 'Ask Claude or a local model for an open-ended analysis'],
+      followUpTests: ['Try another posture or viewport', 'Ask an Anthropic or local model for an open-ended analysis'],
     };
   }
   const top = findings[0];
@@ -1137,7 +1137,7 @@ export function heuristicDiagnosis(ctx: DiagnosisContext, question: string, inte
       ...findings.flatMap((f) => f.assumptions),
       'Offline heuristic engine: deterministic rules over the measured DOM, styles and audits of this preview; it does not read source files.',
       ...(intent === 'general' && question.trim() && !/^why is this overflowing|^why does it look different|^suggest an accessible fix|^propose a layout/i.test(question.trim())
-        ? ['The offline engine does not interpret free-form questions; it reports its rule results. Use Claude or a local model for open questions.']
+        ? ['The offline engine does not interpret free-form questions; it reports its rule results. Ask an Anthropic or local model for open questions.']
         : []),
     ],
     (s) => s,

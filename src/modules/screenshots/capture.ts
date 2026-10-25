@@ -27,7 +27,7 @@ type ChromiumCaptureOptions = {
   waitForMs?: number;
 };
 type ChromiumModule = {
-  captureChromium(opts: ChromiumCaptureOptions): Promise<{ dataUrl: string; width: number; height: number }>;
+  captureChromium(opts: ChromiumCaptureOptions): Promise<{ dataUrl: string; width: number; height: number; warnings?: string[] }>;
   chromiumAvailable(): boolean;
 };
 
@@ -105,7 +105,7 @@ async function persist(ref: CaptureRef, entries: LayoutSnapshotEntry[], fold: Fo
   });
 }
 
-async function chromiumShot(mod: ChromiumModule, p: ResolvedProfile): Promise<{ dataUrl: string; width: number; height: number }> {
+async function chromiumShot(mod: ChromiumModule, p: ResolvedProfile): Promise<{ dataUrl: string; width: number; height: number; warnings?: string[] }> {
   const s = studio();
   if (!s.source) throw new Error('No project open.');
   return mod.captureChromium({
@@ -145,26 +145,31 @@ export async function captureCurrent(opts: { label?: string } = {}): Promise<Cap
   const warnings: string[] = [];
   const captures: CaptureRef[] = [];
 
+  // Raster (live state) and the deterministic Chromium capture run concurrently.
+  const chromium = await chromiumStatus();
+  const profile = resolveProfile({ deviceId: viewport.deviceId, posture: viewport.posture, orientation: viewport.orientation });
+  const chromiumJob =
+    chromium.available && profile
+      ? loadChromium()
+          .then((mod) => chromiumShot(mod!, profile))
+          .catch((err: unknown) => {
+            warnings.push(`Chromium capture failed: ${err instanceof Error ? err.message : String(err)}`);
+            return null;
+          })
+      : Promise.resolve(null);
+
   const [raster, entries] = await Promise.all([conn.call('capture.raster', { scale: 1 }, 45_000), conn.call('layout.snapshot', undefined, 15_000).catch(() => [] as LayoutSnapshotEntry[])]);
   const ref = makeRef('raster', viewport, raster, opts.label);
   await persist(ref, entries, fold, scroll, 'canvas');
   captures.push(ref);
 
-  const chromium = await chromiumStatus();
-  if (chromium.available) {
-    try {
-      const mod = (await loadChromium())!;
-      const p = resolveProfile({ deviceId: viewport.deviceId, posture: viewport.posture, orientation: viewport.orientation });
-      if (p) {
-        const img = await chromiumShot(mod, p);
-        const cref = makeRef('chromium', viewport, img, opts.label ? `${opts.label} · Chromium` : undefined);
-        // Fresh page load in Chromium: no scroll, same structure as the canvas page.
-        await persist(cref, entries, fold, { x: 0, y: 0 }, 'canvas');
-        captures.push(cref);
-      }
-    } catch (err) {
-      warnings.push(`Chromium capture failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
+  const img = await chromiumJob;
+  if (img) {
+    const cref = makeRef('chromium', viewport, img, opts.label ? `${opts.label} · Chromium` : undefined);
+    // Fresh page load in Chromium: no scroll, same structure as the canvas page.
+    await persist(cref, entries, fold, { x: 0, y: 0 }, 'canvas');
+    captures.push(cref);
+    if (img.warnings?.length) warnings.push(...img.warnings);
   }
   return { captures, warnings };
 }
@@ -192,8 +197,10 @@ export async function captureProfiles(states: ViewportState[], opts: { labelPref
       let kind: CaptureRef['kind'] = 'raster';
       if (mod) {
         try {
-          img = await chromiumShot(mod, p);
+          const shot = await chromiumShot(mod, p);
+          img = shot;
           kind = 'chromium';
+          if (shot.warnings?.length) warnings.push(...shot.warnings.map((w) => `${p.ctx.deviceName}: ${w}`));
         } catch (err) {
           warnings.push(`Chromium capture failed for ${p.ctx.deviceName}: ${err instanceof Error ? err.message : String(err)}`);
         }

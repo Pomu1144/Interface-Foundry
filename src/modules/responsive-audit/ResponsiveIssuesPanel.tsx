@@ -1,14 +1,13 @@
-import { ChevronDown, Crosshair, Download, Lightbulb, Monitor, MonitorSmartphone, Play, RefreshCw, Smartphone, Sparkles, TabletSmartphone } from 'lucide-react';
+import { ChevronDown, CircleCheck, Crosshair, Download, Lightbulb, Monitor, MonitorSmartphone, Play, RefreshCw, ScanSearch, Smartphone, Sparkles, TabletSmartphone } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { IssueSeverity, ResponsiveIssue } from '@shared/types';
 import { Badge, Button, Checkbox, EmptyState, IconButton, Menu, Notice, Popover, SearchInput, Segmented, Spinner, Tooltip } from '@/ui';
-import { art } from '@/app/art';
 import { bus } from '@/lib/events';
 import { studio, useStudio } from '@/store';
 import { describeViewport } from '@/modules/device-simulator/viewport';
 import { downloadText } from '@/modules/screenshots/capture';
 import { CLASS_LABEL, filterIssues, groupIssues, issuesToJson, issuesToMarkdown, ruleLabel, SEVERITY_ORDER, viewportKey, type Classification, type ViewportGroup } from './classify';
-import { ClassBadge, CodeLine, EvidenceChips, SevBadge, SevDot, timeAgo, useTick, useWidth, SEV_LABEL } from './bits';
+import { ClassBadge, CodeLine, QaEmpty, EvidenceChips, SevBadge, SevDot, timeAgo, useTick, useWidth, SEV_LABEL } from './bits';
 import { defaultProfiles, findDevice, loadExtraProfiles, parseStateKey, REFERENCE_PROFILES, resolveProfile, saveExtraProfiles } from './profiles';
 import { isCurrentViewport, revealIn, revealSelector } from './reveal';
 import { runResponsiveAudit, useResponsiveAudit } from './runner';
@@ -93,9 +92,9 @@ export function ResponsiveIssuesPanel() {
   if (!project) {
     return (
       <div className={s.center}>
-        <EmptyState art={art.test} title="Responsive audit">
+        <QaEmpty icon={<ScanSearch size={18} />} title="Responsive audit">
           Open a project to audit it across devices and postures.
-        </EmptyState>
+        </QaEmpty>
       </div>
     );
   }
@@ -207,7 +206,7 @@ export function ResponsiveIssuesPanel() {
         </div>
       ) : !issues.length ? (
         <div className={s.center}>
-          <EmptyState art={art.simulate} title={`No responsive issues at ${runs.length || 'the audited'} viewport${runs.length === 1 ? '' : 's'}`}>
+          <QaEmpty tone="success" icon={<CircleCheck size={18} />} title={`No responsive issues at ${runs.length || 'the audited'} viewport${runs.length === 1 ? '' : 's'}`}>
             <span style={{ display: 'block', marginBottom: 8 }}>Automated checks found nothing to flag. Confirm on real devices before shipping.</span>
             <span className={s.vpPills}>
               {runs.map((r) => (
@@ -216,7 +215,7 @@ export function ResponsiveIssuesPanel() {
                 </Badge>
               ))}
             </span>
-          </EmptyState>
+          </QaEmpty>
         </div>
       ) : (
         <div className={s.body}>
@@ -308,9 +307,9 @@ function NeverRun({ onRun, ready }: { onRun: () => void; ready: boolean }) {
   return (
     <div className={s.center}>
       <div className={s.runCard}>
-        <EmptyState art={art.simulate} title="Audit every posture and breakpoint">
+        <QaEmpty icon={<TabletSmartphone size={18} />} title="Audit every posture and breakpoint">
           Finds horizontal overflow, controls under a hinge or fold, hidden primary actions, small tap targets, tiny text, long lines and overlapping controls — then compares postures to separate likely regressions from intentional layout changes.
-        </EmptyState>
+        </QaEmpty>
         <span className={s.vpPills}>
           {profiles.map((p) => (
             <Badge key={viewportKey(p!.ctx)} tone={isCurrentViewport(p!.ctx) ? 'accent' : 'outline'}>

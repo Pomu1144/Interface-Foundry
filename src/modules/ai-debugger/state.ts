@@ -23,7 +23,7 @@ export type Turn = {
   model?: string;
   servedBy?: string;
   repairs?: string[];
-  /** Why the provider differs from the one requested (e.g. Claude not configured). */
+  /** Why the provider differs from the one requested (e.g. Anthropic not configured). */
   notice?: string;
   context?: DiagnosisContext;
   payload?: DiagnoseRequest;

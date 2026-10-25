@@ -36,7 +36,11 @@ export const DepthRail = memo(function DepthRail({ tree, filter, pathDepths, vis
           minStepsBetweenThumbs={0}
           disabled={single}
           value={[filter.min, Math.min(filter.max, single ? tree.minDepth + 1 : tree.maxDepth)]}
-          onValueChange={([lo, hi]) => setView({ range: lo === tree.minDepth && hi === tree.maxDepth ? null : [lo, hi] })}
+          onValueChange={([lo, hi]) =>
+            setView({
+              range: lo === tree.minDepth && hi === tree.maxDepth ? null : [lo, hi],
+            })
+          }
         >
           <RSlider.Track className={s.rangeTrack}>
             <RSlider.Range className={s.rangeFill} />
@@ -56,17 +60,32 @@ export const DepthRail = memo(function DepthRail({ tree, filter, pathDepths, vis
               className={s.level}
               data-off={on ? undefined : 'true'}
               data-path={pathDepths.has(l.depth) ? 'true' : undefined}
-              style={{ '--t': depthT(l.depth, tree.minDepth, tree.maxDepth) } as CSSProperties}
+              style={
+                {
+                  '--t': depthT(l.depth, tree.minDepth, tree.maxDepth),
+                } as CSSProperties
+              }
               onPointerEnter={() => engine.highlightDepth(on ? l.depth : null)}
             >
               <span className={s.levelDepth}>{String(l.depth).padStart(2, '0')}</span>
               <span className={s.levelBar}>
-                <span className={s.levelFill} style={{ width: `${Math.max(4, (l.count / maxCount) * 100)}%` }} />
+                <span
+                  className={s.levelFill}
+                  style={{
+                    width: `${Math.max(4, (l.count / maxCount) * 100)}%`,
+                  }}
+                />
               </span>
               <span className={s.levelCount}>{l.count}</span>
               <span className={s.levelActions}>
                 <Tooltip content={isSolo ? 'Unsolo level' : 'Solo level (show only soloed levels)'} side="right">
-                  <button className={s.levelBtn} data-on={isSolo ? 'true' : undefined} aria-pressed={isSolo} aria-label={`Solo depth ${l.depth}`} onClick={() => setView({ solo: toggle(solo, l.depth) })}>
+                  <button
+                    className={s.levelBtn}
+                    data-on={isSolo ? 'true' : undefined}
+                    aria-pressed={isSolo}
+                    aria-label={`Solo depth ${l.depth}`}
+                    onClick={() => setView({ solo: toggle(solo, l.depth) })}
+                  >
                     <Headphones size={12} />
                   </button>
                 </Tooltip>
@@ -93,9 +112,7 @@ export const DepthRail = memo(function DepthRail({ tree, filter, pathDepths, vis
             Show all levels
           </Button>
         )}
-        <p className={s.railNote}>
-          {visibleCount} boxes shown. Boxes from getBoundingClientRect; depth = DOM depth; base texture is a DOM raster (approximate).
-        </p>
+        <p className={s.railNote}>{visibleCount} boxes shown. Boxes from getBoundingClientRect; depth = DOM depth; base texture is a DOM raster (approximate).</p>
       </div>
     </aside>
   );

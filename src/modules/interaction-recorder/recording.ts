@@ -137,6 +137,24 @@ export function startRecordingSync() {
       vpTimer = setTimeout(flushViewport, 350);
     },
   );
+  // Agent-recorded steps get studio descriptions (accessible names first, secrets masked).
+  const described = new Set<string>();
+  useStudio.subscribe(
+    (s) => s.recording.steps,
+    (steps) => {
+      if (!studio().recording.active) return;
+      let changed = false;
+      const next = steps.map((st) => {
+        if (described.has(st.id)) return st;
+        described.add(st.id);
+        const d = describeAction(st.action);
+        if (d === st.description) return st;
+        changed = true;
+        return { ...st, description: d };
+      });
+      if (changed) studio().setRecordedSteps(next);
+    },
+  );
   bus.on('preview-hello', ({ instanceId }) => {
     const s = studio();
     if (!s.recording.active || s.recording.instanceId !== instanceId) return;

@@ -16,7 +16,7 @@ import {
   TabletSmartphone,
   TextCursorInput,
 } from 'lucide-react';
-import { useEffect, useReducer, useState, type ComponentType } from 'react';
+import { useEffect, useReducer, useState, type ComponentType, type ReactNode } from 'react';
 import type { ScenarioRun, StepAction, StepResult } from '@shared/types';
 import { Spinner } from '@/ui';
 import { useStudio } from '@/store';
@@ -144,4 +144,18 @@ export function useHostOwner(key: string): boolean {
     };
   }, [id, key]);
   return owners.get(key) === id;
+}
+
+/** Empty / onboarding state with a vector glyph (no raster art). */
+export function PanelEmpty({ icon: Icon, title, children, action, tone = 'accent' }: { icon: ComponentType<{ size?: number; strokeWidth?: number }>; title: ReactNode; children?: ReactNode; action?: ReactNode; tone?: 'accent' | 'danger' | 'success' }) {
+  return (
+    <div className={s.empty}>
+      <span className={s.emptyGlyph} data-tone={tone}>
+        <Icon size={20} strokeWidth={1.6} />
+      </span>
+      <div className={s.emptyTitle}>{title}</div>
+      {children && <div className={s.emptyText}>{children}</div>}
+      {action && <div className={s.emptyAction}>{action}</div>}
+    </div>
+  );
 }

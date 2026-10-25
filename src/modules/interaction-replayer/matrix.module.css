@@ -1,0 +1,113 @@
+.presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.presetsLabel {
+  margin-right: 4px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 440px;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.groupLabel {
+  padding: 2px 8px 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+.row:hover {
+  background: var(--bg-hover);
+}
+.row[data-on='true'] .glyph {
+  color: var(--accent-strong);
+}
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-0);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.chips {
+  display: flex;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--bg-2);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--text-2);
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    background var(--dur-1) ease,
+    box-shadow var(--dur-1) ease,
+    color var(--dur-1) ease;
+}
+.chip:hover {
+  color: var(--text-0);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}
+.chip[data-on='true'] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--text-0);
+}
+.chipPosture {
+  font-weight: 600;
+}
+.chipDims {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.chip[data-on='true'] .chipDims {
+  color: var(--accent-strong);
+}
+.count {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}

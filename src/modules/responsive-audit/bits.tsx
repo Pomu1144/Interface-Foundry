@@ -9,6 +9,19 @@ import s from './qa.module.css';
 export const SEV_LABEL: Record<IssueSeverity, string> = { critical: 'Critical', serious: 'Serious', moderate: 'Moderate', minor: 'Minor', info: 'Info' };
 export const SEV_TONE: Record<IssueSeverity, Tone> = { critical: 'danger', serious: 'molten', moderate: 'warning', minor: 'info', info: 'neutral' };
 
+/** Empty state with a vector mark (no raster art), matching EmptyState's rhythm. */
+export function QaEmpty({ icon, title, children, tone = 'accent' }: { icon: ReactNode; title: ReactNode; children?: ReactNode; tone?: 'accent' | 'success' | 'violet' | 'neutral' }) {
+  return (
+    <div className={s.qaEmpty}>
+      <span className={s.qaEmptyMark} data-tone={tone}>
+        {icon}
+      </span>
+      <div className={s.qaEmptyTitle}>{title}</div>
+      {children && <div className={s.qaEmptyText}>{children}</div>}
+    </div>
+  );
+}
+
 export function SevDot({ severity }: { severity: IssueSeverity }) {
   return <span className={s.sev} data-sev={severity} aria-label={SEV_LABEL[severity]} role="img" />;
 }

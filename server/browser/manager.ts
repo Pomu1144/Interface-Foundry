@@ -93,7 +93,7 @@ export class BrowserManager {
       const page = await ctx.newPage();
       const cdp = await ctx.newCDPSession(page);
       const metrics = { width: 400, height: 300, deviceScaleFactor: 1, mobile: false };
-      const feature = { orientation: 'vertical', offset: 200, maskLength: 0 };
+      const feature = { orientation: 'vertical' as const, offset: 200, maskLength: 0 };
       const segments = () =>
         page.evaluate(() => {
           const v = (window as unknown as { viewport?: { segments?: unknown[] } }).viewport;

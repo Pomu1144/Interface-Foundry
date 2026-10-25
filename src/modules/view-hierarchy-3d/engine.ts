@@ -9,11 +9,10 @@
 import type { Hierarchy3DNode } from '@shared/protocol';
 import {
   approach,
-  boundsCorners,
   clampPitch,
   clampZoom,
   decay,
-  fitBounds,
+  fitFrame,
   fitPoints,
   hairline,
   matrixCss,
@@ -25,7 +24,7 @@ import {
   wrapperCss,
   zoomAbout,
   type Angles,
-  type Bounds,
+  type Frame,
   type Camera,
   type Insets,
   type Mat4,
@@ -33,7 +32,13 @@ import {
   type Vec3,
 } from './math';
 
-export type LabelSpec = { i: number; x: number; y: number; w: number; depth: number };
+export type LabelSpec = {
+  i: number;
+  x: number;
+  y: number;
+  w: number;
+  depth: number;
+};
 
 type Drag = {
   mode: 'orbit' | 'pan';
@@ -57,14 +62,23 @@ const TAU_CAMERA = 120;
 const TAU_SPACING = 140;
 const TAU_INERTIA = 340;
 const ORBIT_SPEED = 0.32; // degrees per px
-const DEFAULT_SPACING = 36;
+const DEFAULT_SPACING = 44;
 /** Floating chrome over the stage that fits should avoid. */
 export const STAGE_INSETS: Insets = { top: 40, right: 8, bottom: 58, left: 8 };
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export class HierarchyEngine {
-  cam: Camera = { yaw: PRESETS.right.yaw, pitch: PRESETS.right.pitch, zoom: 0.5, panX: 0, panY: 0, tx: 0, ty: 0, td: 0 };
+  cam: Camera = {
+    yaw: PRESETS.right.yaw,
+    pitch: PRESETS.right.pitch,
+    zoom: 0.5,
+    panX: 0,
+    panY: 0,
+    tx: 0,
+    ty: 0,
+    td: 0,
+  };
   /** Last non-front angles, restored by "Explode". */
   lastAngles: Angles = { ...PRESETS.right };
   spacing = 0;
@@ -72,7 +86,7 @@ export class HierarchyEngine {
   private goal: Camera | null = null;
   private vel = { yaw: 0, pitch: 0 };
   private perspective = 2400;
-  private bounds: Bounds | null = null;
+  private hull: Frame | null = null;
   private baseDepth = -1;
   private sceneKey = '';
   private hasCamera = false;
@@ -93,15 +107,35 @@ export class HierarchyEngine {
   private labelState: string[] = [];
 
   private nodes: readonly Hierarchy3DNode[] = [];
-  private cb: Callbacks = { onPick: () => {}, onFocusRequest: () => {}, onHover: () => {} };
+  private cb: Callbacks = {
+    onPick: () => {},
+    onFocusRequest: () => {},
+    onHover: () => {},
+  };
   private view = { width: 1, height: 1, left: 0, top: 0 };
   private raf = 0;
   private lastT = 0;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
-  private written = { pan: '', world: '', persp: '', spacing: NaN, bw: '', detail: '', zoom: '', angles: '' };
+  private written = {
+    pan: '',
+    world: '',
+    persp: '',
+    spacing: NaN,
+    bw: '',
+    detail: '',
+    zoom: '',
+    angles: '',
+  };
   private drag: Drag | null = null;
   private pointers = new Map<number, { x: number; y: number }>();
-  private pinch: { dist: number; zoom: number; panX: number; panY: number; mx: number; my: number } | null = null;
+  private pinch: {
+    dist: number;
+    zoom: number;
+    panX: number;
+    panY: number;
+    mx: number;
+    my: number;
+  } | null = null;
   private hoverIndex: number | null = null;
   private hoverEl: HTMLElement | null = null;
   private hlDepth: number | null = null;
@@ -113,16 +147,40 @@ export class HierarchyEngine {
   /* Wiring                                                            */
   /* ---------------------------------------------------------------- */
 
-  attach(els: { stage: HTMLElement; pan: HTMLElement; world: HTMLElement; tip: HTMLElement; hudZoom: HTMLElement | null; hudAngles: HTMLElement | null }, cb: Callbacks) {
+  attach(
+    els: {
+      stage: HTMLElement;
+      pan: HTMLElement;
+      world: HTMLElement;
+      tip: HTMLElement;
+      hudZoom: HTMLElement | null;
+      hudAngles: HTMLElement | null;
+    },
+    cb: Callbacks,
+  ) {
     this.detach?.();
     Object.assign(this, els);
     this.cb = cb;
-    this.written = { pan: '', world: '', persp: '', spacing: NaN, bw: '', detail: '', zoom: '', angles: '' };
+    this.written = {
+      pan: '',
+      world: '',
+      persp: '',
+      spacing: NaN,
+      bw: '',
+      detail: '',
+      zoom: '',
+      angles: '',
+    };
     this.labelState = [];
     const stage = els.stage;
     const measure = () => {
       const r = stage.getBoundingClientRect();
-      this.view = { width: Math.max(1, r.width), height: Math.max(1, r.height), left: r.left, top: r.top };
+      this.view = {
+        width: Math.max(1, r.width),
+        height: Math.max(1, r.height),
+        left: r.left,
+        top: r.top,
+      };
     };
     measure();
     this.ro = new ResizeObserver(() => {
@@ -137,6 +195,7 @@ export class HierarchyEngine {
     const leave = () => this.setHover(null, null);
     const wheel = (e: WheelEvent) => this.onWheel(e);
     const dbl = (e: MouseEvent) => {
+      if ((e.target as Element).closest('[data-ui]')) return;
       const i = this.indexAt(e.target);
       this.cb.onFocusRequest(i);
     };
@@ -239,9 +298,10 @@ export class HierarchyEngine {
    * New scene bounds. Frames it on first use (with the "explode" intro) or when
    * the page changed substantially; otherwise keeps the user's camera.
    */
-  setScene(bounds: Bounds, baseDepth: number, key: string, perspective: number, opts: { intro: boolean; exploded: boolean; spacing: number }) {
-    const prev = this.bounds;
-    this.bounds = bounds;
+  setScene(frame: Frame, baseDepth: number, key: string, perspective: number, opts: { intro: boolean; exploded: boolean; spacing: number }) {
+    const prev = this.hull?.bounds;
+    const bounds = frame.bounds;
+    this.hull = frame;
     this.baseDepth = baseDepth;
     this.perspective = perspective;
     this.written.persp = '';
@@ -259,15 +319,15 @@ export class HierarchyEngine {
       if (opts.intro && opts.exploded && !this.motionOff()) {
         // Open flat and front-on, then explode into the ¾ view.
         this.spacing = 0;
-        this.cam = fitBounds(PRESETS.front, bounds, 0, perspective, this.view, STAGE_INSETS, 40);
+        this.cam = fitFrame(PRESETS.front, frame, 0, perspective, this.view, STAGE_INSETS, 40);
         this.spacingGoal = target;
-        this.goal = fitBounds(angles, bounds, target, perspective, this.view, STAGE_INSETS, 40);
+        this.goal = fitFrame(angles, frame, target, perspective, this.view, STAGE_INSETS, 40);
       } else {
         this.spacing = this.spacingGoal = target;
-        this.cam = fitBounds(angles, bounds, target, perspective, this.view, STAGE_INSETS, 40);
+        this.cam = fitFrame(angles, frame, target, perspective, this.view, STAGE_INSETS, 40);
       }
     } else if (changed) {
-      this.goal = fitBounds({ yaw: this.cam.yaw, pitch: this.cam.pitch }, bounds, this.spacingGoal, perspective, this.view, STAGE_INSETS, 40);
+      this.goal = fitFrame({ yaw: this.cam.yaw, pitch: this.cam.pitch }, frame, this.spacingGoal, perspective, this.view, STAGE_INSETS, 40);
     }
     this.kick();
   }
@@ -282,6 +342,7 @@ export class HierarchyEngine {
 
   private animateTo(cam: Camera) {
     this.vel = { yaw: 0, pitch: 0 };
+    this.setHover(null, null);
     const goal = { ...cam, yaw: nearestAngle(this.cam.yaw, cam.yaw) };
     if (this.motionOff()) {
       this.cam = { ...goal, yaw: wrapAngle(goal.yaw) };
@@ -297,43 +358,44 @@ export class HierarchyEngine {
 
   setSpacing(spacing: number, animate: boolean) {
     this.spacingGoal = spacing;
+    this.setHover(null, null);
     if (!animate || this.motionOff()) this.spacing = spacing;
     this.kick();
   }
 
   /** Animate to flat (front, spacing 0) or exploded (last ¾ angles, `spacing`). */
   setExploded(exploded: boolean, spacing: number) {
-    if (!this.bounds) return;
+    if (!this.hull) return;
     const cur = this.settled();
     if (!exploded) {
       if (Math.abs(cur.yaw) > 1 || Math.abs(cur.pitch) > 1) this.lastAngles = { yaw: wrapAngle(cur.yaw), pitch: cur.pitch };
       this.setSpacing(0, true);
-      this.animateTo(fitBounds(PRESETS.front, this.bounds, 0, this.perspective, this.view, STAGE_INSETS, 40));
+      this.animateTo(fitFrame(PRESETS.front, this.hull, 0, this.perspective, this.view, STAGE_INSETS, 40));
     } else {
       this.setSpacing(spacing, true);
       const angles = Math.abs(cur.yaw) < 1 && Math.abs(cur.pitch) < 1 ? this.lastAngles : { yaw: cur.yaw, pitch: cur.pitch };
-      this.animateTo(fitBounds(angles, this.bounds, spacing, this.perspective, this.view, STAGE_INSETS, 40));
+      this.animateTo(fitFrame(angles, this.hull, spacing, this.perspective, this.view, STAGE_INSETS, 40));
     }
   }
 
   preset(name: PresetName) {
-    if (!this.bounds) return;
+    if (!this.hull) return;
     const a = PRESETS[name];
     if (name !== 'front') this.lastAngles = { ...a };
-    this.animateTo(fitBounds(a, this.bounds, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
+    this.animateTo(fitFrame(a, this.hull, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
   }
 
   /** Frame `b` (defaults to the whole scene) from the current angles, orbiting around its centre. */
-  fit(b: Bounds | null = this.bounds) {
+  fit(b: Frame | null = this.hull) {
     if (!b) return;
     const cur = this.settled();
-    this.animateTo(fitBounds({ yaw: cur.yaw, pitch: cur.pitch }, b, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
+    this.animateTo(fitFrame({ yaw: cur.yaw, pitch: cur.pitch }, b, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
   }
 
   reset() {
-    if (!this.bounds) return;
+    if (!this.hull) return;
     this.lastAngles = { ...PRESETS.right };
-    this.animateTo(fitBounds(PRESETS.right, this.bounds, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
+    this.animateTo(fitFrame(PRESETS.right, this.hull, this.spacingGoal, this.perspective, this.view, STAGE_INSETS, 40));
   }
 
   /** Orbit around and zoom onto one plane. */
@@ -349,14 +411,26 @@ export class HierarchyEngine {
       [x, y + height, z],
       [x + width, y + height, z],
     ];
-    const base: Camera = { ...cur, tx: x + width / 2, ty: y + height / 2, td: n.depth, zoom: 1, panX: 0, panY: 0 };
+    const base: Camera = {
+      ...cur,
+      tx: x + width / 2,
+      ty: y + height / 2,
+      td: n.depth,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+    };
     const view = fitPoints(base, this.spacingGoal, this.perspective, pts, this.view, STAGE_INSETS, 72, 6);
     this.animateTo({ ...base, ...view });
   }
 
   rotateBy(dYaw: number, dPitch: number) {
     const cur = this.settled();
-    const next = { ...cur, yaw: cur.yaw + dYaw, pitch: clampPitch(cur.pitch + dPitch) };
+    const next = {
+      ...cur,
+      yaw: cur.yaw + dYaw,
+      pitch: clampPitch(cur.pitch + dPitch),
+    };
     if (Math.abs(next.yaw) > 1 || Math.abs(next.pitch) > 1) this.lastAngles = { yaw: wrapAngle(next.yaw), pitch: next.pitch };
     this.animateTo(next);
   }
@@ -404,16 +478,37 @@ export class HierarchyEngine {
     if (this.pointers.size === 2) {
       // Two-finger pinch (touch).
       const [a, b] = [...this.pointers.values()];
-      const p = this.local({ clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2 });
-      this.pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: this.cam.zoom, panX: this.cam.panX, panY: this.cam.panY, mx: p.x - this.view.width / 2, my: p.y - this.view.height / 2 };
+      const p = this.local({
+        clientX: (a.x + b.x) / 2,
+        clientY: (a.y + b.y) / 2,
+      });
+      this.pinch = {
+        dist: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        zoom: this.cam.zoom,
+        panX: this.cam.panX,
+        panY: this.cam.panY,
+        mx: p.x - this.view.width / 2,
+        my: p.y - this.view.height / 2,
+      };
       this.drag = null;
       return;
     }
-    if (e.button !== 0 && e.button !== 1) return;
+    if (e.button > 2) return;
     this.goal = null;
     this.vel = { yaw: 0, pitch: 0 };
-    const mode = e.button === 1 || e.shiftKey || this.spaceDown ? 'pan' : 'orbit';
-    this.drag = { mode, id: e.pointerId, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, lastT: performance.now(), moved: false, target: this.indexAt(e.target) };
+    // Left drag orbits; Shift / Space / middle / right drag pans.
+    const mode = e.button !== 0 || e.shiftKey || this.spaceDown ? 'pan' : 'orbit';
+    this.drag = {
+      mode,
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      lastT: performance.now(),
+      moved: false,
+      target: this.indexAt(e.target),
+    };
     if (e.button === 1) e.preventDefault();
   }
 
@@ -422,7 +517,19 @@ export class HierarchyEngine {
     if (this.pinch && this.pointers.size === 2) {
       const [a, b] = [...this.pointers.values()];
       const f = Math.hypot(a.x - b.x, a.y - b.y) / this.pinch.dist;
-      Object.assign(this.cam, zoomAbout({ zoom: this.pinch.zoom, panX: this.pinch.panX, panY: this.pinch.panY }, f, this.pinch.mx, this.pinch.my));
+      Object.assign(
+        this.cam,
+        zoomAbout(
+          {
+            zoom: this.pinch.zoom,
+            panX: this.pinch.panX,
+            panY: this.pinch.panY,
+          },
+          f,
+          this.pinch.mx,
+          this.pinch.my,
+        ),
+      );
       this.kick();
       return;
     }
@@ -447,7 +554,11 @@ export class HierarchyEngine {
         // Smoothed angular velocity (deg/ms) for inertia.
         this.vel.yaw = this.vel.yaw * 0.6 + (dyaw / dt) * 0.4;
         this.vel.pitch = this.vel.pitch * 0.6 + (dpitch / dt) * 0.4;
-        if (Math.abs(this.cam.yaw) > 1 || Math.abs(this.cam.pitch) > 1) this.lastAngles = { yaw: wrapAngle(this.cam.yaw), pitch: this.cam.pitch };
+        if (Math.abs(this.cam.yaw) > 1 || Math.abs(this.cam.pitch) > 1)
+          this.lastAngles = {
+            yaw: wrapAngle(this.cam.yaw),
+            pitch: this.cam.pitch,
+          };
       } else {
         this.cam.panX += dx;
         this.cam.panY += dy;
@@ -491,6 +602,7 @@ export class HierarchyEngine {
     if (!this.stage) return;
     this.goal = null;
     this.vel = { yaw: 0, pitch: 0 };
+    this.setHover(null, null);
     const p = this.local(e);
     if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
       this.cam.panX -= e.deltaX || e.deltaY;
@@ -572,7 +684,11 @@ export class HierarchyEngine {
       this.cam.pitch = p;
       this.vel.yaw = decay(this.vel.yaw, dt, TAU_INERTIA);
       this.vel.pitch = decay(this.vel.pitch, dt, TAU_INERTIA);
-      if (Math.abs(this.cam.yaw) > 1 || Math.abs(this.cam.pitch) > 1) this.lastAngles = { yaw: wrapAngle(this.cam.yaw), pitch: this.cam.pitch };
+      if (Math.abs(this.cam.yaw) > 1 || Math.abs(this.cam.pitch) > 1)
+        this.lastAngles = {
+          yaw: wrapAngle(this.cam.yaw),
+          pitch: this.cam.pitch,
+        };
       active = true;
     } else if (!this.drag) this.vel = { yaw: 0, pitch: 0 };
 
@@ -688,10 +804,15 @@ export class HierarchyEngine {
       const size = this.labelSizes[k] ?? { w: 80, h: 18 };
       const screenW = Math.hypot(b.x - a.x, b.y - a.y);
       let state = 'h';
-      if (screenW >= 44) {
+      if (screenW >= 56) {
         const x = Math.round(cx + Math.min(a.x, b.x));
         const y = Math.round(cy + (a.x <= b.x ? a.y : b.y) - size.h - 4);
-        const r = { x0: x - 2, y0: y - 2, x1: x + size.w + 2, y1: y + size.h + 2 };
+        const r = {
+          x0: x - 4,
+          y0: y - 3,
+          x1: x + size.w + 4,
+          y1: y + size.h + 3,
+        };
         const inView = r.x1 > 0 && r.y1 > 0 && r.x0 < this.view.width && r.y0 < this.view.height;
         if (inView && !placed.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0)) {
           placed.push(r);

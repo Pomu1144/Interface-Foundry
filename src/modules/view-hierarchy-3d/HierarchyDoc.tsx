@@ -1,12 +1,11 @@
-import { Box, Focus, Image, ImageOff, RefreshCw, SquareDashed, Tag } from 'lucide-react';
-import { useMemo, type CSSProperties } from 'react';
+import { Box, Focus, Image, ImageOff, Layers3, RefreshCw, SquareDashed, Tag, Unplug, type LucideIcon } from 'lucide-react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Hierarchy3DNode } from '@shared/protocol';
 import { Badge, Button, EmptyState, IconButton, Notice, Spinner } from '@/ui';
 import { studio, useStudio, type DocTab } from '@/store';
-import { art } from '@/app/art';
 import { runAction } from '@/app/actions';
-import { ancestorsOf, boundsOf, buildTree, normalizeRange, visibleByDepth, visibleIndices, type DepthFilter } from './math';
+import { ancestorsOf, buildTree, normalizeRange, visibleByDepth, visibleIndices, type DepthFilter } from './math';
 import { MAX_NODES, refresh, setView, useAutoRefresh, useH3D } from './state';
 import { DepthRail } from './DepthRail';
 import { Stage } from './Stage';
@@ -34,8 +33,8 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
     return (
       <div className={s.root}>
         <div className={s.center}>
-          <EmptyState
-            art={art.hierarchy}
+          <Empty
+            icon={Layers3}
             title="Explode a live page into layers"
             action={
               <Button variant="primary" onClick={() => runAction('project.openDemo')}>
@@ -44,7 +43,7 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
             }
           >
             Open a project to see every element box as a plane in 3D — stacked by DOM depth, tinted by its background, with the page screenshot as the base.
-          </EmptyState>
+          </Empty>
         </div>
       </div>
     );
@@ -56,8 +55,8 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
       return (
         <div className={s.root}>
           <div className={s.center}>
-            <EmptyState
-              art={art.hierarchy}
+            <Empty
+              icon={Unplug}
               title={preview.status === 'blocked' ? 'This preview cannot be inspected' : 'The preview is not responding'}
               action={
                 preview.status !== 'blocked' && (
@@ -68,7 +67,7 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
               }
             >
               {preview.error ?? 'The 3D view reads element boxes from the primary preview’s agent, which is unavailable.'}
-            </EmptyState>
+            </Empty>
           </div>
         </div>
       );
@@ -95,9 +94,9 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
       return (
         <div className={s.root}>
           <div className={s.center}>
-            <EmptyState art={art.hierarchy} title="No visible boxes" action={<Button onClick={() => void refresh({ forceShot: true })}>Refresh</Button>}>
+            <Empty icon={Box} title="No visible boxes" action={<Button onClick={() => void refresh({ forceShot: true })}>Refresh</Button>}>
               The page has no rendered elements with a size yet.
-            </EmptyState>
+            </Empty>
           </div>
         </div>
       );
@@ -122,11 +121,33 @@ export default function HierarchyDoc({ doc }: { doc: DocTab }) {
   return <Viewer nodes={nodes} />;
 }
 
+/** Empty state with a vector mark (no raster art). */
+function Empty({ icon: Icon, title, action, children }: { icon: LucideIcon; title: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <div className={s.empty}>
+      <span className={s.emptyMark} aria-hidden>
+        <Icon size={22} strokeWidth={1.6} />
+      </span>
+      <EmptyState title={title} action={action}>
+        {children}
+      </EmptyState>
+    </div>
+  );
+}
+
 const EMPTY_SET: ReadonlySet<number> = new Set();
 
 function Viewer({ nodes }: { nodes: Hierarchy3DNode[] }) {
   const tree = useMemo(() => buildTree(nodes), [nodes]);
-  const { range, hidden, solo, isolate, sourceId } = useH3D(useShallow((st) => ({ range: st.range, hidden: st.hidden, solo: st.solo, isolate: st.isolate, sourceId: st.sourceId })));
+  const { range, hidden, solo, isolate, sourceId } = useH3D(
+    useShallow((st) => ({
+      range: st.range,
+      hidden: st.hidden,
+      solo: st.solo,
+      isolate: st.isolate,
+      sourceId: st.sourceId,
+    })),
+  );
   const selNodeId = useStudio((st) => (st.selection.instanceId === sourceId || st.selection.instanceId === null ? st.selection.nodeId : null));
   const selIndex = selNodeId === null ? null : (tree.indexById.get(selNodeId) ?? null);
   const path = useMemo(() => (selIndex === null ? EMPTY_SET : new Set([selIndex, ...ancestorsOf(tree, selIndex)])), [tree, selIndex]);
@@ -140,14 +161,13 @@ function Viewer({ nodes }: { nodes: Hierarchy3DNode[] }) {
   const isolateRoot = isolate && selIndex !== null ? selIndex : null;
   const byDepth = useMemo(() => visibleByDepth(nodes, tree, { min: tree.minDepth, max: tree.maxDepth, hidden: [], solo: [] }, isolateRoot), [nodes, tree, isolateRoot]);
   const visible = useMemo(() => visibleIndices(nodes, tree, filter, isolateRoot), [nodes, tree, filter, isolateRoot]);
-  const visibleBounds = useMemo(() => (visible.length ? boundsOf(nodes, visible) : tree.bounds), [nodes, visible, tree]);
 
   return (
     <div className={s.root}>
       <Header nodes={nodes} levels={tree.levels.length} visibleCount={visible.length} selIndex={selIndex} />
       <div className={s.body}>
         <DepthRail tree={tree} filter={filter} pathDepths={pathDepths} visibleCount={visible.length} />
-        <Stage nodes={nodes} tree={tree} byDepth={byDepth} filter={filter} selIndex={selIndex} path={path} visibleBounds={visibleBounds} />
+        <Stage nodes={nodes} tree={tree} byDepth={byDepth} filter={filter} selIndex={selIndex} path={path} visible={visible} isolateRoot={isolateRoot} />
       </div>
     </div>
   );

@@ -58,6 +58,9 @@ export class RemotePage {
   private streamKey = '';
   private frameSeq = 0;
   lastFrameAt = 0;
+  private metricsTimer: ReturnType<typeof setTimeout> | null = null;
+  private metricsAt = 0;
+  private metricsKey = '';
   private inputQueue: RemoteInput[] = [];
   private inputBusy = false;
   /* document tracking */
@@ -167,6 +170,7 @@ export class RemotePage {
       detail: fold ? detail : undefined,
       touchNeedsReload: touchNeedsReload && !first ? true : undefined,
     });
+    this.scheduleMetrics(120);
   }
 
   /* ------------------------------------------------------------------ */
@@ -216,6 +220,36 @@ export class RemotePage {
     };
     this.host.sendFrame(header, Buffer.from(f.data, 'base64'));
     this.host.scheduleAck(this, ack);
+    this.scheduleMetrics();
+  }
+
+  /** Track the visual viewport (page scale / zoomed-out mobile layouts), throttled. */
+  private scheduleMetrics(delay = 0) {
+    if (this.metricsTimer) return;
+    const wait = Math.max(delay, 300 - (Date.now() - this.metricsAt));
+    this.metricsTimer = setTimeout(async () => {
+      this.metricsTimer = null;
+      this.metricsAt = Date.now();
+      if (this.closed) return;
+      try {
+        const m = (await this.cdp.send('Page.getLayoutMetrics')) as { cssVisualViewport: { clientWidth: number; clientHeight: number; scale: number; offsetX: number; offsetY: number } };
+        const v = m.cssVisualViewport;
+        const visual = {
+          width: Math.round(v.clientWidth * 100) / 100,
+          height: Math.round(v.clientHeight * 100) / 100,
+          scale: Math.round(v.scale * 10000) / 10000,
+          offsetX: Math.round(v.offsetX * 100) / 100,
+          offsetY: Math.round(v.offsetY * 100) / 100,
+        };
+        const key = JSON.stringify(visual);
+        if (key !== this.metricsKey) {
+          this.metricsKey = key;
+          this.host.send({ t: 'metrics', pageId: this.id, visual });
+        }
+      } catch {
+        /* navigating */
+      }
+    }, Math.max(0, wait));
   }
 
   /* ------------------------------------------------------------------ */
@@ -229,7 +263,6 @@ export class RemotePage {
       this.host.send({ t: 'status', pageId: this.id, status: 'error', url, error: forbidden });
       return;
     }
-    this.host.send({ t: 'status', pageId: this.id, status: 'loading', url });
     try {
       await this.page.goto(url, { waitUntil: 'commit', timeout: 45_000 });
     } catch (err) {
@@ -520,6 +553,7 @@ export class RemotePage {
     if (this.closed) return;
     this.closed = true;
     if (this.netTimer) clearTimeout(this.netTimer);
+    if (this.metricsTimer) clearTimeout(this.metricsTimer);
     this.agent?.dispose();
     this.inputQueue = [];
     await this.page?.close({ runBeforeUnload: false }).catch(() => {});
