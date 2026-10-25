@@ -27,14 +27,14 @@ describe('measurements', () => {
   });
 
   it('reports a fix that removes overflow as improved, with numbers', () => {
-    const before = summarize([issue('horizontal-overflow', { overflowBy: 36 }, 7), issue('tap-target', {}, 9)], info(16, 560), vp, null, '.x', 7);
-    const after = summarize([issue('tap-target', {}, 9)], info(16, 508), vp, null, '.x', 7);
+    const before = summarize([issue('horizontal-overflow', { overflowBy: 36 }, 7), issue('tap-target', {}, 9, '.y')], info(16, 560), vp, null, '.x', 7);
+    const after = summarize([issue('tap-target', {}, 9, '.y')], info(16, 508), vp, null, '.x', 7);
     expect(before.elementOverflowPx).toBe(36);
     expect(before.hingeOverlapPx).toBeNull();
     const c = compareMeasurements(before, after);
     expect(c.verdict).toBe('improved');
     expect(c.text).toContain('page overflow 36px → 0px');
-    expect(c.text).toContain('issues 2 → 1');
+    expect(c.text).toBe('page overflow 36px → 0px · element issues 1 → 0 · issues 2 → 1');
   });
 
   it('detects unchanged and worse results', () => {

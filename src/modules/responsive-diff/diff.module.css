@@ -39,7 +39,47 @@
   background: var(--line-2);
   margin: 0 4px;
 }
+.viewbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--bg-1);
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.viewbar > * {
+  flex: none;
+}
+.viewbar > .spacer {
+  flex: 1;
+}
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.noteIcon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--text-3);
+}
+.noteIcon:hover,
+.noteIcon:focus-visible {
+  color: var(--text-1);
+  background: var(--bg-hover);
+  outline: none;
+}
 .slotSel {
+  flex: 1 1 220px !important;
+  min-width: 150px;
+  max-width: 340px;
   display: inline-flex;
   align-items: center;
   gap: 0;
@@ -67,7 +107,9 @@
   color: #1a0d05;
 }
 .select {
-  width: 250px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
   border: 0 !important;
   background-color: transparent !important;
   box-shadow: none !important;
@@ -431,6 +473,7 @@
 /* Structure table */
 .tableWrap {
   padding: 12px 16px 24px;
+  overflow-x: auto;
 }
 .tableHead {
   display: flex;
@@ -449,6 +492,8 @@
 }
 .table {
   width: 100%;
+  min-width: 620px;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   border-radius: var(--r-md);
@@ -512,17 +557,21 @@
   font-family: var(--font-mono);
   font-size: 10px;
 }
-.el {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.el code {
+.elCode {
+  display: block;
   color: var(--syn-property);
   font-family: var(--font-mono);
   font-size: 11px;
   overflow-wrap: anywhere;
+}
+.kinds {
+  margin-top: 5px;
+  align-items: center;
+}
+.rectCell {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-1);
 }
 .role {
   color: var(--text-3);

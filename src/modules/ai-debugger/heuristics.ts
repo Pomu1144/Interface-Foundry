@@ -215,7 +215,7 @@ export const fixedWidthRule: HeuristicRule = {
     const contentBox = el.computed['box-sizing'] === 'content-box' && (el.box.padding.left + el.box.padding.right + el.box.border.left + el.box.border.right) > 0;
     const facts: ObservedFact[] = [
       {
-        text: `${el.label} is ${r0(el.rect.width)}px wide; its right edge is at x ${r0(right)}${overVp > 1 ? `, ${r0(overVp)}px past the ${vw}px viewport` : ''}.`,
+        text: `Its right edge is at x ${r0(right)}${overVp > 1 ? `, ${r0(overVp)}px past the ${vw}px viewport` : `, ${r0(overParent)}px past its container`}.`,
         evidence: [`element.rect: ${rectText(el.rect)}`, `viewport: ${vpText(ctx)}`],
       },
     ];
@@ -273,9 +273,7 @@ export const fixedWidthRule: HeuristicRule = {
       rule: this.id,
       topics: ['overflow', 'general', 'layout'],
       weight: 0.9,
-      summary: w
-        ? `${el.label} overflows by ${r0(Math.max(overVp, overParent))}px because \`${w.rule.selector} { ${w.decl.property}: ${w.decl.value} }\` (${w.rule.source}) does not shrink with its ${r0(available)}px container.`
-        : `${el.label} is wider than its ${r0(available)}px container (${r0(computedW)}px) and overflows by ${r0(Math.max(overVp, overParent))}px.`,
+      summary: `${el.label} is ${r0(el.rect.width)}px wide in a ${r0(available)}px container${w ? `: \`${w.rule.selector} { ${w.decl.property}: ${w.decl.value} }\` (${w.rule.source}) does not shrink` : ' (no fixed width declaration found)'}${ctx.pageOverflowPx > 0 ? `, so the page scrolls ${ctx.pageOverflowPx}px horizontally` : `, so it overflows by ${r0(Math.max(overVp, overParent))}px`}.`,
       facts,
       causes,
       fixes,
@@ -414,8 +412,16 @@ export function hingeContainers(ctx: DiagnosisContext, fold: CtxFold, vw: number
   }
   const startIdx = card ? ctx.ancestors.indexOf(card) + 1 : 0;
   const fulls = ctx.ancestors.slice(startIdx).filter((a) => full(a) && !/^(html|body)$/.test(a.tag));
-  const shell = fulls.find((a) => (a.childCount ?? 0) >= 2) ?? fulls[0] ?? null;
-  return { card, shell };
+  // Innermost full-width container that splits into several children; never climb above
+  // <main>, so the app shell (header/nav/footer) is not spread across the screens.
+  let shell: CtxAncestor | null = null;
+  for (const a of fulls) {
+    if ((a.childCount ?? 0) >= 2 || a.tag === 'main') {
+      shell = a;
+      break;
+    }
+  }
+  return { card, shell: shell ?? fulls[0] ?? null };
 }
 
 /** Viewport-segment layout + a measured px fallback (IFDY's preview cannot emulate segments). */
@@ -966,14 +972,14 @@ export const expandedProposalRule: HeuristicRule = {
     if (!fold) return null;
     const viewport = useCmp ? ctx.comparison!.viewport : ctx.viewport;
     if (!useCmp && crossesFold(ctx.element.rect, fold)) return null; // hingeRule covers it
-    const shell = useCmp ? null : hingeContainers(ctx, fold, viewport.width).shell;
-    const target = shell?.classSelector || shell?.selector || ctx.ancestors.find((a) => !/^(html|body)$/.test(a.tag) && a.rect.width >= ctx.viewport.width - 2)?.classSelector || ctx.element.classSelector;
+    const shell = hingeContainers(ctx, fold, ctx.viewport.width).shell;
+    const target = shell?.classSelector || shell?.selector || ctx.element.classSelector;
     if (!target) return null;
     const band = `${fold.axis === 'vertical' ? 'x' : 'y'} ${r0(fold.offset)}–${r0(fold.offset + fold.maskLength)}`;
     return {
       rule: this.id,
       topics: ['layout'],
-      weight: 0.5,
+      weight: 0.8,
       summary: `For ${viewport.deviceName} expanded (${viewport.width}×${viewport.height}), lay ${target} out as two segments around the ${fold.kind} at ${band}.`,
       facts: [{ text: `At ${viewport.width}×${viewport.height} the ${fold.kind} occupies ${band} (${fold.maskLength}px).`, evidence: [`${useCmp ? 'comparison.fold' : 'fold'}: ${fold.axis} ${fold.kind} ${band}`] }],
       causes: [],

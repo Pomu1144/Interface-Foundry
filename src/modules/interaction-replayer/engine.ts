@@ -46,6 +46,7 @@ export type RunOptions = {
   restoreViewport?: boolean;
   /** Switch the preview to interact mode for the run and restore it after (default true). */
   manageInteraction?: boolean;
+  /** Capture an end-state screenshot (off by default: DOM rasters can take seconds on image-heavy pages). */
   captureFinal?: boolean;
 };
 
@@ -407,7 +408,7 @@ export async function runScenario(scenario: Scenario, opts: RunOptions = {}): Pr
     }
 
     if (opts.audits) publish({ issues: await auditEndState(signal) });
-    if (opts.captureFinal ?? true) {
+    if (opts.captureFinal) {
       try {
         const shot = await withAbort(conn().call('capture.raster', { scale: 1, maxWidth: 480 }, 20_000), signal);
         publish({ finalScreenshot: shot.dataUrl });
@@ -469,8 +470,9 @@ export async function runBatch(scenarios: Scenario[], opts: BatchOptions = {}): 
   const s0 = studio();
   const devices = s0.allDevices();
   const matrix = (opts.matrix ?? []).filter((v) => devices.some((d) => d.id === v.deviceId));
-  const entries: (ViewportState | undefined)[] = matrix.length ? matrix : [undefined];
   const prevViewport = { ...s0.viewport };
+  // "Current device" pins the viewport the user had, so posture steps in one run never leak into the next.
+  const entries: ViewportState[] = matrix.length ? matrix : [prevViewport];
   const prevInteraction = s0.interaction;
   controller = new AbortController();
   const { signal } = controller;
@@ -484,7 +486,7 @@ export async function runBatch(scenarios: Scenario[], opts: BatchOptions = {}): 
     outer: for (const vp of entries) {
       for (const sc of scenarios) {
         if (signal.aborted) break outer;
-        const ctxLabel = vp ? viewportLabel(contextFor(vp, devices) ?? currentViewportContext(), devices) : viewportLabel(currentViewportContext(), devices);
+        const ctxLabel = viewportLabel(contextFor(vp, devices) ?? currentViewportContext(), devices);
         useRunner.setState((st) => (st.active ? { active: { ...st.active, current: { scenarioId: sc.id, scenarioName: sc.name, runId: null, viewportLabel: ctxLabel, stepIndex: opts.startAt ?? 0, stepCount: sc.steps.length } } } : st));
         const r = await runScenario(sc, {
           viewport: vp,
@@ -510,7 +512,7 @@ export async function runBatch(scenarios: Scenario[], opts: BatchOptions = {}): 
     controller = null;
     if (studio().interaction !== prevInteraction) studio().setInteraction(prevInteraction);
     const cur = studio().viewport;
-    if (matrix.length && (cur.deviceId !== prevViewport.deviceId || cur.posture !== prevViewport.posture || cur.orientation !== prevViewport.orientation)) studio().setViewport(prevViewport);
+    if (cur.deviceId !== prevViewport.deviceId || cur.posture !== prevViewport.posture || cur.orientation !== prevViewport.orientation) studio().setViewport(prevViewport);
     const a = useRunner.getState().active;
     useRunner.setState({
       active: null,

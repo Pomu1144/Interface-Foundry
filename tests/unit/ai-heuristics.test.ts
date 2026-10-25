@@ -320,7 +320,7 @@ describe('heuristicDiagnosis', () => {
   it('ranks findings by intent', () => {
     const ctx = rateBannerContext();
     ctx.element.a11y = { role: 'note', name: 'Refinance', focusable: false, hidden: false, states: [], contrast: { ratio: 2.1, fg: '#aaaaaa', bg: '#ffffff', aa: false, aaLarge: false, fontSize: 14, bold: false } };
-    expect(heuristicDiagnosis(ctx, 'Why is this overflowing?').summary).toMatch(/overflows/);
+    expect(heuristicDiagnosis(ctx, 'Why is this overflowing?').summary).toMatch(/page scrolls 36px horizontally/);
     expect(heuristicDiagnosis(ctx, 'Suggest an accessible fix').summary).toMatch(/contrast/);
   });
 
@@ -348,5 +348,27 @@ describe('colour maths', () => {
   it('lightens on dark backgrounds', () => {
     const r = adjustForContrast(parseColor('#333355')!, parseColor('#101114')!, 4.5)!;
     expect(contrastRatio(parseColor(r.color)!, parseColor('#101114')!)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('expanded posture proposal', () => {
+  it('proposes a two-segment layout from the comparison fold while folded', async () => {
+    const { expandedProposalRule } = await import('../../src/modules/ai-debugger/heuristics');
+    const ctx = rateBannerContext();
+    ctx.ancestors.push(ancestor('main.app__main', rect(0, 56, 540, 700), { tag: 'main', childCount: 1 }));
+    ctx.comparison = {
+      viewport: { ...ctx.viewport, posture: 'expanded', width: 1114 },
+      fold: { axis: 'vertical', offset: 540, maskLength: 34, kind: 'hinge' },
+      method: 'worker-probe',
+      element: { found: true, visible: true, rect: rect(277, 120, 560, 70) },
+      issues: [],
+      issueCounts: {},
+      rulesOnlyHere: [],
+      rulesOnlyThere: [],
+    };
+    const f = expandedProposalRule.run(ctx)!;
+    expect(f.fixes[0].css).toContainEqual({ selector: 'main.login', property: 'grid-template-columns', value: '540px 540px', media: '(min-width: 1114px) and (max-width: 1114px)' });
+    const d = heuristicDiagnosis(ctx, 'Propose a layout for the expanded posture');
+    expect(d.proposedFixes[0].id).toBe('expanded-layout:expanded-segments');
   });
 });

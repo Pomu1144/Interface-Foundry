@@ -39,7 +39,7 @@ export function buildAnthropicParams(req: DiagnoseRequest, model: string): BetaM
 
 export async function runAnthropic(client: AnthropicClientLike, req: DiagnoseRequest, model: string, emit: Emit, signal?: AbortSignal): Promise<ProviderResult> {
   const params = buildAnthropicParams(req, model);
-  emit({ type: 'progress', stage: 'sending', message: `Sending to ${model}` });
+  emit({ type: 'progress', stage: 'sending', message: 'Sending to the Anthropic API' });
   const stream = client.beta.messages.stream(params, { signal });
   let chars = 0;
   let thinking = '';

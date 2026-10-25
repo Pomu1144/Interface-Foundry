@@ -2,6 +2,7 @@ import { Camera, Columns2, Download, ImageOff, Star, Trash } from 'lucide-react'
 import { useMemo, useState } from 'react';
 import { Badge, Button, IconButton, Spinner, Tooltip } from '@/ui';
 import { studio, useStudio, type CaptureRef } from '@/store';
+import { viewportLabel } from '@/modules/responsive-audit/classify';
 import { baselineKey, captureFilename, downloadDataUrl } from './capture';
 import { deleteLayout } from './layouts';
 import s from './gallery.module.css';
@@ -79,11 +80,7 @@ export function CapturesGallery({
           return (
             <div key={g.key} className={s.group}>
               <div className={s.groupHead}>
-                <span className={s.groupName}>
-                  {first.viewport.deviceName}
-                  {first.viewport.posture === 'expanded' ? ' · expanded' : ''}
-                  {first.viewport.orientation === 'landscape' ? ' · landscape' : ''}
-                </span>
+                <span className={s.groupName}>{viewportLabel(first.viewport, (id) => Boolean(studio().allDevices().find((d) => d.id === id)?.expanded))}</span>
                 <span className={s.groupRoute}>{routeLabel(first.route)}</span>
               </div>
               {g.list.map((c) => {

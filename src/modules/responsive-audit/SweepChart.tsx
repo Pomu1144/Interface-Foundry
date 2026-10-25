@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { SweepPoint } from './sweep';
-import { overflowZones } from './sweep';
+import { overflowZones, type SweepPoint } from './sweep-math';
 import { useWidth } from './bits';
 import s from './responsive-tab.module.css';
 

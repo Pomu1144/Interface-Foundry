@@ -225,9 +225,32 @@
   margin-top: 3px;
   color: var(--text-2);
 }
-.sideNote {
-  padding: 8px 10px;
-  border-top: 1px solid var(--line-1);
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 8px 4px 12px;
+  border-bottom: 1px solid var(--line-1);
+  background: var(--info-soft);
+  color: var(--text-1);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  flex: none;
+}
+.banner > svg {
+  color: var(--info);
+  flex: none;
+}
+.banner > span {
+  flex: 1;
+  min-width: 0;
+}
+.banner[data-tone='warning'] {
+  background: var(--warning-soft);
+}
+.banner[data-tone='warning'] > svg {
+  color: var(--warning);
 }
 .main {
   display: flex;

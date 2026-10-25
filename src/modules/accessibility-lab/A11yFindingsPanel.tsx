@@ -331,7 +331,6 @@ function ViolationDetail({ issue }: { issue: A11yIssue }) {
                   onClick={async () => {
                     await revealSelector(n.selector, { nodeId: n.nodeId, quiet: true });
                     bus.emit('ai-diagnose', { nodeId: studio().selection.nodeId ?? n.nodeId });
-                    studio().setRightTab('ai');
                   }}
                 >
                   <Sparkles size={12} />
@@ -420,9 +419,9 @@ function KeyboardView() {
         </div>
         <label className={s.switchRow}>
           <Switch checked={lab.overlay} onChange={(v) => void toggleTabOrderOverlay(v)} ariaLabel="Show tab order on canvas" />
-          <span>
+          <span className={s.switchText}>
             Show numbered tab order on the canvas
-            <span className={q.muted}> · stops without visible focus are amber</span>
+            <span className={q.muted}>Stops without a visible focus indicator are amber.</span>
           </span>
         </label>
         <div className={q.dLabel}>Pointer-only controls</div>

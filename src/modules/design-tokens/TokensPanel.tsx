@@ -261,7 +261,7 @@ function TokenRow({ token, value, usage, open, onToggle }: { token: DesignToken;
         <Preview token={token} value={value} />
         <span className={s.names}>
           <span className={s.name}>{token.name}</span>
-          <span className={s.var}>{token.cssVar}</span>
+          {token.name !== token.cssVar.replace(/^--/, '') && <span className={s.var}>{token.cssVar}</span>}
         </span>
         <span className={s.value} title={value}>
           {value}

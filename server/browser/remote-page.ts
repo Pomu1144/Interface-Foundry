@@ -64,6 +64,7 @@ export class RemotePage {
   private inputQueue: RemoteInput[] = [];
   private inputBusy = false;
   /* document tracking */
+  private navSeq = 0;
   private navPending = false;
   private navRequest: Request | null = null;
   private navFailed = false;
@@ -258,6 +259,7 @@ export class RemotePage {
 
   async navigate(url: string) {
     this.lastActivity = Date.now();
+    const seq = ++this.navSeq;
     const forbidden = this.host.isForbiddenUrl(url);
     if (forbidden) {
       this.host.send({ t: 'status', pageId: this.id, status: 'error', url, error: forbidden });
@@ -266,7 +268,7 @@ export class RemotePage {
     try {
       await this.page.goto(url, { waitUntil: 'commit', timeout: 45_000 });
     } catch (err) {
-      if (this.closed) return;
+      if (this.closed || seq !== this.navSeq) return;
       const msg = (err as Error).message.split('\n')[0].replace(/^page\.goto:\s*/, '');
       if (/interrupted by another navigation|frame was detached/i.test(msg)) return;
       this.navFailed = true;
@@ -276,6 +278,7 @@ export class RemotePage {
 
   async reload() {
     this.lastActivity = Date.now();
+    this.navSeq++;
     try {
       await this.page.reload({ waitUntil: 'commit', timeout: 45_000 });
     } catch (err) {

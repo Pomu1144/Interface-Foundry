@@ -70,7 +70,8 @@ export async function rerunChecks(opts: { selector: string | null; groupId: stri
     const sets = opts.groupId ? [patchSetWithout(opts.groupId), currentPatchSet()] : [currentPatchSet(), currentPatchSet()];
     const probe = await probeAt(other.state, opts.selector, { patchSets: sets, withStyles: false });
     const [b, a] = probe.samples.map((smp) => summarize(smp.issues, smp.info, probe.viewport, probe.fold, opts.selector, smp.info?.id));
-    rows.push({ label: `Other posture (${other.label})`, viewport: probe.viewport, before: b, after: a, comparison: compareMeasurements(b, a), source: 'hidden worker preview' });
+    const name = other.label.charAt(0).toUpperCase() + other.label.slice(1);
+    rows.push({ label: other.label === 'expanded' || other.label === 'folded' ? `${name} posture` : name, viewport: probe.viewport, before: b, after: a, comparison: compareMeasurements(b, a), source: 'hidden worker preview' });
   } catch {
     /* other posture unavailable — the UI shows only this viewport */
   }

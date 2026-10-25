@@ -72,7 +72,7 @@ export async function runLocal(fetchImpl: FetchLike, cfg: LocalConfig, req: Diag
   const endpoint = localEndpoint(cfg.url);
   const timeout = AbortSignal.timeout(LOCAL_TIMEOUT_MS);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  emit({ type: 'progress', stage: 'sending', message: `Sending to local model ${cfg.model}` });
+  emit({ type: 'progress', stage: 'sending', message: 'Sending to the local model' });
   let mode: 'json_schema' | 'json_object' = 'json_schema';
   let r = await post(fetchImpl, endpoint, buildLocalBody(req, cfg.model, mode), combined);
   if (r.status === 400 || r.status === 422) {

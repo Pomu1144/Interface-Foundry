@@ -61,7 +61,10 @@ export const INTERACTIVE_ROLES = new Set([
   'spinbutton',
 ]);
 
-export const isInteractive = (e: Pick<LayoutSnapshotEntry, 'role' | 'primary'>) => e.primary || INTERACTIVE_ROLES.has(e.role);
+/** Native controls by tag, for elements without an ARIA role mapping (e.g. input[type=password]). */
+const NATIVE_CONTROL = /^(input|select|textarea|button|summary|a)(?=[#.[:]|$)/;
+
+export const isInteractive = (e: Pick<LayoutSnapshotEntry, 'role' | 'primary'> & { label?: string }) => e.primary || INTERACTIVE_ROLES.has(e.role) || NATIVE_CONTROL.test(e.label ?? '');
 
 /** Does a viewport-relative rect cross the fold line/mask? */
 export function crossesFold(r: Rect, fold: FoldGeometry): boolean {

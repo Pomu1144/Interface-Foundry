@@ -43,6 +43,7 @@ export function ResponsiveIssuesPanel() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [ref, width] = useWidth<HTMLDivElement>();
 
+  const compact = width > 0 && width < 1080;
   const filtered = useMemo(() => filterIssues(issues, { severities: sevs, classification: klass, query }), [issues, sevs, klass, query]);
   const groups = useMemo(() => groupIssues(filtered), [filtered]);
   const flat = useMemo(() => groups.flatMap((g) => (collapsed[g.key] ? [] : g.rules.flatMap((r) => (collapsed[`${g.key}|${r.rule}`] ? [] : r.issues)))), [groups, collapsed]);
@@ -117,9 +118,18 @@ export function ResponsiveIssuesPanel() {
             const on = sevs.includes(sev);
             const n = sevCounts[sev] ?? 0;
             return (
-              <button key={sev} className={s.chip} data-on={on ? 'true' : undefined} data-empty={!n ? 'true' : undefined} aria-pressed={on} onClick={() => setSevs(on ? sevs.filter((x) => x !== sev) : [...sevs, sev])}>
+              <button
+                key={sev}
+                className={s.chip}
+                data-on={on ? 'true' : undefined}
+                data-empty={!n ? 'true' : undefined}
+                aria-pressed={on}
+                aria-label={`${SEV_LABEL[sev]}: ${n}`}
+                title={compact ? `${SEV_LABEL[sev]} · ${n}` : undefined}
+                onClick={() => setSevs(on ? sevs.filter((x) => x !== sev) : [...sevs, sev])}
+              >
                 <SevDot severity={sev} />
-                {SEV_LABEL[sev]}
+                {!compact && SEV_LABEL[sev]}
                 <span className={s.chipCount}>{n}</span>
               </button>
             );
@@ -137,7 +147,7 @@ export function ResponsiveIssuesPanel() {
           ]}
         />
         <span className={s.spacer} />
-        <span className={s.status} aria-live="polite">
+        <span className={s.status} aria-live="polite" hidden={compact && !running}>
           {running && progress ? (
             <>
               <Spinner size={10} /> <b>{progress.label}</b> {progress.done + 1}/{progress.total}
@@ -350,7 +360,6 @@ function IssueDetail({ issue }: { issue: ResponsiveIssue }) {
     let nodeId: number | undefined;
     if (current && (await revealSelector(issue.selector, { nodeId: issue.nodeId, quiet: true }))) nodeId = studio().selection.nodeId ?? undefined;
     bus.emit('ai-diagnose', { nodeId });
-    studio().setRightTab('ai');
   };
   const { onlyIn, seenIn, ...evidence } = issue.evidence;
   return (

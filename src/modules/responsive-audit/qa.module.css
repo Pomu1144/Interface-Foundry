@@ -572,3 +572,6 @@
   font-size: var(--fs-xs);
   line-height: 1.5;
 }
+.status[hidden] {
+  display: none;
+}

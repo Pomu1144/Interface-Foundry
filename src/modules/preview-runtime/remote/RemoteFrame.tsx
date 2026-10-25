@@ -326,12 +326,11 @@ export function RemoteFrame({
     browserSocket.send({ t: 'navigate', pageId: L.pageId, url });
   }, [url, instanceId, L]);
 
-  const firstReload = useRef(true);
+  // Compare against the last handled nonce (StrictMode re-runs effects; a "first run" flag would misfire).
+  const lastNonce = useRef(reloadNonce);
   useEffect(() => {
-    if (firstReload.current) {
-      firstReload.current = false;
-      return;
-    }
+    if (reloadNonce === lastNonce.current) return;
+    lastNonce.current = reloadNonce;
     L.conn?.resetPending('Reloading');
     studio().upsertInstance(instanceId, { status: 'loading', error: undefined });
     if (L.openedGen === browserSocket.generation) browserSocket.send({ t: 'reload', pageId: L.pageId });

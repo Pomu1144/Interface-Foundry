@@ -153,52 +153,48 @@ export function VerdictRow({ result, prefix }: { result: MeasurementComparison; 
           {prefix ? `${prefix}: ` : ''}
           {word}
         </b>{' '}
-        — <span className={s.mono}>{result.text}</span>
+        — {result.text}
       </span>
     </div>
   );
 }
 
+function Metric({ label, before, after, unit = '' }: { label: string; before: number | null; after: number | null; unit?: string }) {
+  if (before === null || after === null) return null;
+  const cls = after < before ? s.better : after > before ? s.worse : undefined;
+  return (
+    <span className={s.metric}>
+      {label}
+      <b>
+        {before}
+        {unit} → <span className={cls}>{after}{unit}</span>
+      </b>
+    </span>
+  );
+}
+
 function RerunTable({ rerun }: { rerun: RerunResult }) {
   if (!rerun.rows.length) return <div className={s.muted}>No measurements were available.</div>;
-  const cell = (b: number | null, a: number | null, unit = '') => {
-    if (b === null || a === null) return <td>—</td>;
-    const cls = a < b ? s.better : a > b ? s.worse : undefined;
-    return (
-      <td>
-        {b}
-        {unit} → <span className={cls}>{a}{unit}</span>
-      </td>
-    );
-  };
   return (
-    <div>
-      <table className={s.rerun}>
-        <thead>
-          <tr>
-            <th>Viewport</th>
-            <th>Issues</th>
-            <th>Overflow</th>
-            <th>Hinge</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rerun.rows.map((r) => (
-            <tr key={r.label}>
-              <td>
-                {r.label}
-                <span className={s.rerunVp}>
-                  {r.viewport.deviceName} {r.viewport.width}×{r.viewport.height}
-                </span>
-              </td>
-              {cell(r.before.total, r.after.total)}
-              {cell(r.before.pageOverflowPx, r.after.pageOverflowPx, 'px')}
-              {cell(r.before.hingeOverlapPx, r.after.hingeOverlapPx, 'px')}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className={s.muted} style={{ marginTop: 4 }}>
+    <div className={s.rerun} aria-label="Re-run results">
+      {rerun.rows.map((r) => (
+        <div key={r.label} className={s.rerunRow}>
+          <div className={s.rerunHead}>
+            <span>{r.label}</span>
+            <span className={s.rerunVp}>
+              {r.viewport.width}×{r.viewport.height}
+            </span>
+            <Badge tone={r.comparison.verdict === 'improved' ? 'success' : r.comparison.verdict === 'worse' ? 'danger' : 'outline'}>{r.comparison.verdict}</Badge>
+          </div>
+          <div className={s.metrics}>
+            <Metric label="issues" before={r.before.total} after={r.after.total} />
+            <Metric label="overflow" before={r.before.pageOverflowPx} after={r.after.pageOverflowPx} unit="px" />
+            <Metric label="under hinge" before={r.before.hingeOverlapPx} after={r.after.hingeOverlapPx} unit="px" />
+            <Metric label="on element" before={r.before.elementIssues} after={r.after.elementIssues} />
+          </div>
+        </div>
+      ))}
+      <div className={s.muted}>
         Agent responsive audit; the other posture is measured in a hidden preview with and without this fix.
         {rerun.shared.status === 'ran' ? ` Shared audit re-run: ${rerun.shared.responsive} issue${rerun.shared.responsive === 1 ? '' : 's'} across ${rerun.shared.viewports} viewport${rerun.shared.viewports === 1 ? '' : 's'}.` : rerun.shared.status === 'failed' ? ' The shared responsive audit could not run; numbers come from the agent directly.' : ''}
       </div>
@@ -226,6 +222,7 @@ export function FixCard({ turn, fix, index }: { turn: Turn; fix: ProposedFix; in
   const badge = STATUS_BADGE[st.status];
   const busy = st.busy;
   const canAct = !markupOnly && invalid.length === 0 && !busy;
+  const [showTests, setShowTests] = useState(false);
   return (
     <article className={s.fix} data-status={st.status} aria-label={`Fix ${index + 1}: ${fix.title}`}>
       <div className={s.fixHead}>
@@ -278,7 +275,7 @@ export function FixCard({ turn, fix, index }: { turn: Turn; fix: ProposedFix; in
               </span>
             </>
           )}
-          {fix.tests.length > 0 && (
+          {fix.tests.length > 0 && showTests && (
             <>
               <span className={s.metaLabel}>Tests</span>
               <span className={s.metaValue}>
@@ -293,6 +290,12 @@ export function FixCard({ turn, fix, index }: { turn: Turn; fix: ProposedFix; in
             </>
           )}
         </div>
+        {fix.tests.length > 0 && (
+          <button type="button" className={s.disclosure} aria-expanded={showTests} onClick={() => setShowTests((v) => !v)}>
+            <ChevronDown size={11} style={{ transform: showTests ? undefined : 'rotate(-90deg)', transition: 'transform var(--dur-2) var(--ease-out)' }} />
+            {showTests ? 'Hide suggested tests' : `Suggested tests (${fix.tests.length})`}
+          </button>
+        )}
         {!markupOnly && (
           <div className={s.actions}>
             {st.status !== 'previewing' && st.status !== 'applied' && (
@@ -306,8 +309,8 @@ export function FixCard({ turn, fix, index }: { turn: Turn; fix: ProposedFix; in
               </Button>
             )}
             {(st.status === 'previewing' || st.status === 'applied') && (
-              <Button size="sm" variant="ghost" icon={<X size={12} />} disabled={Boolean(busy)} onClick={() => discardFixAction(turn.id, fix)} title="Remove this fix's changes">
-                Discard
+              <Button size="sm" variant="ghost" icon={<X size={12} />} disabled={Boolean(busy)} onClick={() => discardFixAction(turn.id, fix)} title={st.status === 'applied' ? "Remove this fix's committed changes" : 'Remove the preview'}>
+                {st.status === 'applied' ? 'Revert' : 'Discard'}
               </Button>
             )}
             {(st.status === 'previewing' || st.status === 'applied') && (

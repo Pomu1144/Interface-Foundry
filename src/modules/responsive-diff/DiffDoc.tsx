@@ -147,40 +147,7 @@ export default function DiffDoc({ doc }: { doc: DocTab }) {
               vs baseline
             </Button>
           )}
-          <span className={s.sep} />
-          <Segmented
-            ariaLabel="Comparison view"
-            value={view}
-            onChange={(v) => update({ view: v })}
-            options={[
-              { value: 'side', icon: <Columns2 size={12} />, label: 'Side by side' },
-              { value: 'swipe', icon: <SquareSplitHorizontal size={12} />, label: 'Swipe' },
-              { value: 'onion', icon: <Blend size={12} />, label: 'Onion' },
-              { value: 'pixel', icon: <ScanEye size={12} />, label: 'Pixels' },
-              {
-                value: 'structure',
-                icon: <ListTree size={12} />,
-                label: (
-                  <>
-                    Structure
-                    {structural.data?.summary.suspicious ? <span className={s.segBad}>{structural.data.summary.suspicious}</span> : null}
-                  </>
-                ),
-                title: 'Structural changes',
-              },
-            ]}
-          />
           <span className={s.spacer} />
-          {view !== 'structure' && (
-            <div className={s.zoom}>
-              <IconButton size="sm" label="Zoom to fit" active={zoom === 'fit'} onClick={() => setZoom('fit')}>
-                <Maximize size={12} />
-              </IconButton>
-              <button className={s.zoomBtn} data-on={zoom === 1 ? 'true' : undefined} onClick={() => setZoom(zoom === 1 ? 'fit' : 1)} title="Toggle 100%">
-                {Math.round(k * 100)}%
-              </button>
-            </div>
-          )}
           <Menu
             align="end"
             trigger={
@@ -198,7 +165,42 @@ export default function DiffDoc({ doc }: { doc: DocTab }) {
           />
         </div>
 
-        {capA && capB && <InfoBar a={capA} b={capB} view={view} pixel={pixel.diff} />}
+        <div className={s.viewbar}>
+            <Segmented
+              ariaLabel="Comparison view"
+              value={view}
+              onChange={(v) => update({ view: v })}
+              options={[
+                { value: 'side', icon: <Columns2 size={12} />, label: 'Side by side' },
+                { value: 'swipe', icon: <SquareSplitHorizontal size={12} />, label: 'Swipe' },
+                { value: 'onion', icon: <Blend size={12} />, label: 'Onion' },
+                { value: 'pixel', icon: <ScanEye size={12} />, label: 'Pixels' },
+                {
+                  value: 'structure',
+                  icon: <ListTree size={12} />,
+                  label: (
+                    <>
+                      Structure
+                      {structural.data?.summary.suspicious ? <span className={s.segBad}>{structural.data.summary.suspicious}</span> : null}
+                    </>
+                  ),
+                  title: 'Structural changes',
+                },
+              ]}
+            />
+            {capA && capB && <InfoBadges a={capA} b={capB} view={view} pixel={pixel.diff} />}
+            <span className={s.spacer} />
+            {view !== 'structure' && (
+              <div className={s.zoom}>
+                <IconButton size="sm" label="Zoom to fit" active={zoom === 'fit'} onClick={() => setZoom('fit')}>
+                  <Maximize size={12} />
+                </IconButton>
+                <button className={s.zoomBtn} data-on={zoom === 1 ? 'true' : undefined} onClick={() => setZoom(zoom === 1 ? 'fit' : 1)} title="Toggle 100%">
+                  {Math.round(k * 100)}%
+                </button>
+              </div>
+            )}
+        </div>
 
         {view === 'onion' && capA && capB && (
           <div className={s.subbar}>
@@ -232,7 +234,7 @@ export default function DiffDoc({ doc }: { doc: DocTab }) {
             )}
           </div>
         )}
-        {(view === 'side' || view === 'structure') && capA && capB && structural.data && (
+        {view === 'side' && capA && capB && structural.data && (
           <div className={s.subbar}>
             {view === 'side' && (
               <label className={s.switchLabel}>
@@ -316,20 +318,22 @@ function SlotSelect({ slot, value, captures, onChange }: { slot: 'A' | 'B'; valu
   );
 }
 
-function InfoBar({ a, b, view, pixel }: { a: CaptureRef; b: CaptureRef; view: View; pixel: PixelDiff | null }) {
-  const same = a.width / captureScale(a) === b.width / captureScale(b) && a.height / captureScale(a) === b.height / captureScale(b);
+function InfoBadges({ a, b, view, pixel }: { a: CaptureRef; b: CaptureRef; view: View; pixel: PixelDiff | null }) {
+  const same = a.viewport.width === b.viewport.width && a.viewport.height === b.viewport.height;
   const ov = overlapSize(a.viewport, b.viewport);
-  const raster = a.kind === 'raster' || b.kind === 'raster';
   const edits = b.changeCount - a.changeCount;
+  const notes: string[] = [];
+  if (!same) notes.push(`Different viewports (${sizeDelta(a.viewport, b.viewport)}): images are aligned top-left; the pixel diff covers only the ${ov.width}×${ov.height} overlap.`);
+  if (a.kind === 'raster' || b.kind === 'raster') notes.push(`${engineLabel('raster')}: the page is re-rendered through SVG foreignObject, so fonts and effects can differ from the browser. Prefer Chromium captures for baselines.`);
+  if (a.kind !== b.kind) notes.push('A and B were captured with different engines; expect rendering noise.');
+  if (a.route !== b.route) notes.push('A and B show different pages.');
   return (
-    <div className={s.info}>
-      <Chip slot="A">{describeViewport(a.viewport)}</Chip>
-      <Chip slot="B">{describeViewport(b.viewport)}</Chip>
+    <span className={s.badges}>
       {!same && <Badge tone="warning">Size Δ {sizeDelta(a.viewport, b.viewport)}</Badge>}
       {edits !== 0 && (
         <Badge tone="violet">
           {edits > 0 ? '+' : ''}
-          {edits} edit{Math.abs(edits) === 1 ? '' : 's'} between captures
+          {edits} edit{Math.abs(edits) === 1 ? '' : 's'}
         </Badge>
       )}
       {a.route !== b.route && <Badge tone="warning">Different pages</Badge>}
@@ -337,30 +341,17 @@ function InfoBar({ a, b, view, pixel }: { a: CaptureRef; b: CaptureRef; view: Vi
         <>
           <Badge tone={pixel.percent > 5 ? 'danger' : pixel.percent > 0.5 ? 'warning' : 'success'}>{pixel.percent.toFixed(2)}% changed</Badge>
           <Badge tone="neutral">
-            {pixel.boxes.length} region{pixel.boxes.length === 1 ? '' : 's'} · {pixel.changed.toLocaleString()} px · {pixel.ms} ms
+            {pixel.boxes.length} region{pixel.boxes.length === 1 ? '' : 's'} · {pixel.changed.toLocaleString()} px
           </Badge>
         </>
       )}
-      <span className={s.spacer} />
-      {!same && (view === 'pixel' || view === 'swipe' || view === 'onion') && (
-        <span className={s.infoNote}>
-          <Info size={11} /> Aligned top-left{view === 'pixel' ? ` · pixels compared over the ${ov.width}×${ov.height} overlap only` : ''}
-        </span>
+      {notes.length > 0 && (
+        <Tooltip content={<span style={{ display: 'block', maxWidth: 320, whiteSpace: 'normal' }}>{notes.join(' ')}</span>}>
+          <span className={s.noteIcon} tabIndex={0} aria-label={notes.join(' ')}>
+            <Info size={12} />
+          </span>
+        </Tooltip>
       )}
-      {raster && (
-        <span className={s.infoNote} title="DOM raster re-renders the page via SVG foreignObject; fonts and effects can differ from the browser.">
-          <Info size={11} /> {a.kind === b.kind ? engineLabel('raster') : 'Mixed engines'}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function Chip({ slot, children }: { slot: 'A' | 'B'; children: ReactNode }) {
-  return (
-    <span className={s.chip} data-slot={slot}>
-      <b>{slot}</b>
-      {children}
     </span>
   );
 }
@@ -607,7 +598,19 @@ function StructureTable({ state, a, b, names }: { state: ReturnType<typeof useSt
       </div>
     );
   const rows = onlySus ? state.data.rows.filter((r) => r.classification === 'suspicious') : state.data.rows;
-  const rect = (r?: Rect) => (r ? `${Math.round(r.x)}, ${Math.round(r.y)} · ${Math.round(r.width)}×${Math.round(r.height)}` : '—');
+  const rect = (r?: Rect) =>
+    r ? (
+      <>
+        <div>
+          {Math.round(r.x)}, {Math.round(r.y)}
+        </div>
+        <div className={s.muted}>
+          {Math.round(r.width)}×{Math.round(r.height)}
+        </div>
+      </>
+    ) : (
+      '—'
+    );
   const sum = state.data.summary;
   return (
     <div className={s.tableWrap}>
@@ -633,47 +636,49 @@ function StructureTable({ state, a, b, names }: { state: ReturnType<typeof useSt
         </div>
       ) : (
         <table className={s.table}>
+          <colgroup>
+            <col style={{ width: '36%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '13%' }} />
+            <col />
+            <col style={{ width: 40 }} />
+          </colgroup>
           <thead>
             <tr>
-              <th style={{ width: 96 }}>Class</th>
-              <th style={{ width: 120 }}>Change</th>
-              <th>Element</th>
-              <th style={{ width: 150 }}>{names[0]}</th>
-              <th style={{ width: 150 }}>{names[1]}</th>
+              <th>Element · change</th>
+              <th>{names[0]}</th>
+              <th>{names[1]}</th>
               <th>Why</th>
-              <th style={{ width: 36 }} />
+              <th />
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.selector} data-class={r.classification}>
                 <td>
-                  <Badge tone={r.classification === 'suspicious' ? 'danger' : 'outline'}>{r.classification === 'suspicious' ? 'Suspicious' : 'Expected'}</Badge>
-                </td>
-                <td>
-                  <span className={s.kinds}>
+                  <code className={s.elCode}>{r.label}</code>
+                  {r.text && <div className={s.elText}>“{r.text}”</div>}
+                  <div className={s.kinds}>
+                    <Badge tone={r.classification === 'suspicious' ? 'danger' : 'outline'}>{r.classification === 'suspicious' ? 'Suspicious' : 'Expected'}</Badge>
+                    {r.primary && <Badge tone="molten">Primary</Badge>}
                     {r.kinds.map((kk) => (
                       <span key={kk} className={s.kind} data-kind={kk}>
                         {KIND_LABEL[kk]}
                       </span>
                     ))}
-                  </span>
+                    <span className={s.role}>{r.role}</span>
+                  </div>
+                </td>
+                <td className={s.rectCell}>{r.visibleA === false ? <span className={s.muted}>hidden</span> : rect(r.a)}</td>
+                <td className={s.rectCell}>
+                  {r.visibleB === false ? <span className={s.muted}>hidden</span> : rect(r.b)}
                   {(r.kinds.includes('moved') || r.kinds.includes('resized')) && (
                     <div className={s.delta}>
-                      {r.kinds.includes('moved') ? `Δ ${r.dx > 0 ? '+' : ''}${r.dx}, ${r.dy > 0 ? '+' : ''}${r.dy}` : ''} {r.kinds.includes('resized') ? `${r.dw > 0 ? '+' : ''}${r.dw} × ${r.dh > 0 ? '+' : ''}${r.dh}` : ''}
+                      {r.kinds.includes('moved') ? `Δ ${r.dx > 0 ? '+' : ''}${r.dx}, ${r.dy > 0 ? '+' : ''}${r.dy}` : ''}
+                      {r.kinds.includes('resized') ? ` · ${r.dw > 0 ? '+' : ''}${r.dw}×${r.dh > 0 ? '+' : ''}${r.dh}` : ''}
                     </div>
                   )}
                 </td>
-                <td>
-                  <div className={s.el}>
-                    {r.primary && <Badge tone="molten">Primary</Badge>}
-                    <span className={s.role}>{r.role}</span>
-                    <code>{r.label}</code>
-                  </div>
-                  {r.text && <div className={s.elText}>“{r.text}”</div>}
-                </td>
-                <td className={s.mono}>{r.visibleA === false ? 'hidden' : rect(r.a)}</td>
-                <td className={s.mono}>{r.visibleB === false ? 'hidden' : rect(r.b)}</td>
                 <td className={s.why}>{r.reasons.length ? r.reasons.map((x, i) => <div key={i}>{x}</div>) : <span className={s.muted}>Responsive layout change</span>}</td>
                 <td>
                   <IconButton size="sm" label={`Locate in ${describeViewport(b.viewport)}`} onClick={() => void revealIn(b.viewport, r.selector)}>

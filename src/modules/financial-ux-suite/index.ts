@@ -61,7 +61,7 @@ export async function runSuite(opts: { matrix?: ViewportState[]; scenarios?: Sce
 /** Toolbar flask / Mod+Enter: project audits (when available) then the suite. */
 export async function runTestsAndAudits() {
   if (isRunning()) {
-    toast('Tests are already running', { description: 'Stop them first (Stop button or Escape in the Tests panel).' });
+    toast('Tests are already running', { description: 'Stop them first with Stop in the toolbar or the Tests panel.' });
     return;
   }
   const s = studio();

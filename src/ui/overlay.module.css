@@ -191,3 +191,10 @@
   border-top: 1px solid var(--line-1);
   background: var(--bg-0);
 }
+
+/* Radix Presence waits for an exit animation when one is set; closed overlays have none. */
+.tooltip[data-state='closed'],
+.menu[data-state='closed'],
+.popover[data-state='closed'] {
+  animation: none;
+}

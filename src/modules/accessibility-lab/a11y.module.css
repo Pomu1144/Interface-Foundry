@@ -361,3 +361,12 @@
 .checkNote {
   margin-top: 6px;
 }
+
+.switchText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.switchText > span {
+  font-size: 10.5px;
+}

@@ -54,6 +54,14 @@ describe('structuralDiff', () => {
     expect(rows[0].reasons.join(' ')).toMatch(/Split by the 34px hinge in expanded/);
   });
 
+  it('treats native controls without an ARIA role (password inputs) as interactive', () => {
+    const a = folded([entry('#login-password', 41, 464, 458, 48, { label: 'input#login-password.input' })]);
+    const b = expanded([entry('#login-password', 278, 404, 514, 48, { label: 'input#login-password.input' })]);
+    expect(structuralDiff(a, b).rows[0].classification).toBe('suspicious');
+    const c = expanded([entry('.card', 278, 404, 514, 48, { label: 'div.card' })]);
+    expect(structuralDiff(folded([entry('.card', 41, 464, 458, 48, { label: 'div.card' })]), c).rows[0].classification).toBe('expected');
+  });
+
   it('flags hidden primary actions, off-screen elements and controls shrunk below tap size', () => {
     const a = expanded([
       entry('.statement__download', 600, 100, 220, 44, { role: 'button', primary: true }),

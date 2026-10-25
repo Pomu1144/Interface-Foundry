@@ -470,7 +470,9 @@ const STATEMENT: Scenario[] = [
     b
       .waitVisible(st.table, { timeout: 8000 })
       .text(st.table, 'second-half real property tax installment, parcel 12-0457-889-0021', { expect: 'The full description is present (not truncated)' })
-      .inViewport(L.css('[data-testid="statement-table"] tbody tr:nth-child(6) .statement-table__desc'), { description: 'Assert a 145-character description cell fits the viewport' }),
+      .text(st.table, 'applied to principal only, per borrower instructions received by secure message')
+      .inViewport(L.css('[data-testid="statement-table"] tbody tr:nth-child(6) .statement-table__desc'), { description: 'Assert a 145-character description cell fits the viewport' })
+      .screenshot('Long descriptions'),
   ),
   scenario('fin.statement.expanded-readability', SUITE_IDS.statement, 'Expanded-screen readability', '#/statement', 'On the expanded screen the primary action is available and the table fits without sideways scrolling.', ['foldable', 'responsive'], (b) =>
     b

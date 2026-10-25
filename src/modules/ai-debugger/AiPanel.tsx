@@ -182,7 +182,9 @@ function DiagnoseView({ info }: { info: NodeInfo }) {
     const el = scrollRef.current;
     if (!el || !last) return;
     const node = el.querySelector<HTMLElement>(`[data-turn="${last.id}"]`);
-    if (node) el.scrollTo({ top: Math.max(0, node.offsetTop - 8), behavior: 'smooth' });
+    if (!node) return;
+    const top = node.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
+    el.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
   }, [last?.id, last?.status]);
 
   return (
@@ -276,9 +278,9 @@ function Composer({ label, busy, hasTurns }: { label: string; busy: boolean; has
         <span className={s.dot} data-state={effective === 'heuristic' ? 'ok' : 'violet'} />
         <span>
           {providerLabel(effective)}
-          {effective === 'heuristic' ? ' · runs locally, nothing leaves the studio' : consent ? ' · sends redacted context' : ' · asks before sending'}
+          {effective === 'heuristic' ? ' · nothing leaves the studio' : consent ? ' · sends redacted context' : ' · asks before sending'}
         </span>
-        <span>↵ send · ⇧↵ newline</span>
+        <span title="Enter to send, Shift+Enter for a new line">↵ send</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { MatchedRule, NodeId, NodeInfo, ResponsiveIssue, StylesPayload } from '@shared/types';
+import type { Insets, MatchedRule, NodeId, NodeInfo, Rect, ResponsiveIssue, StylesPayload } from '@shared/types';
 import { studio } from '@/store';
 import { previews } from '@/modules/preview-runtime/registry';
 import { currentFold, currentViewportContext } from '@/modules/device-simulator/context';
@@ -32,7 +32,7 @@ export type BuiltContext = {
 };
 
 export function classSelectorOf(info: Pick<NodeInfo, 'tag' | 'classes' | 'selector'>): string {
-  const stable = info.classes.filter((c) => /^[a-zA-Z_][\w-]*$/.test(c) && !/\d{4,}/.test(c) && !/^(is|has)-/.test(c));
+  const stable = info.classes.filter((c) => /^[a-zA-Z_][\w-]*$/.test(c) && !/\d{4,}/.test(c) && !/^(is|has)-/.test(c) && !/^(css|sc|jsx|svelte|emotion)-/i.test(c) && !/[a-z]\d[a-z]\d/i.test(c));
   return stable.length ? info.tag + stable.slice(0, 3).map((c) => `.${c}`).join('') : info.selector;
 }
 
@@ -137,6 +137,10 @@ function pickComputed(computed: Record<string, string>, props: string[]) {
   return out;
 }
 
+const r1 = (n: number) => Math.round(n * 10) / 10;
+const rr = (r: Rect): Rect => ({ x: r1(r.x), y: r1(r.y), width: r1(r.width), height: r1(r.height) });
+const ri = (i: Insets): Insets => ({ top: r1(i.top), right: r1(i.right), bottom: r1(i.bottom), left: r1(i.left) });
+
 export function toCtxElement(info: NodeInfo): CtxElement {
   return {
     selector: info.selector,
@@ -147,8 +151,8 @@ export function toCtxElement(info: NodeInfo): CtxElement {
     classes: info.classes,
     attrs: info.attrs,
     text: info.text,
-    rect: info.rect,
-    box: { content: info.box.content, padding: info.box.padding, border: info.box.border, margin: info.box.margin, boxSizing: info.box.boxSizing, position: info.box.position },
+    rect: rr(info.rect),
+    box: { content: rr(info.box.content), padding: ri(info.box.padding), border: ri(info.box.border), margin: ri(info.box.margin), boxSizing: info.box.boxSizing, position: info.box.position },
     layout: {
       display: info.layout.display,
       parentDisplay: info.layout.parentDisplay,
@@ -182,9 +186,9 @@ export function toCtxAncestor(info: NodeInfo): CtxAncestor {
     classSelector: classSelectorOf(info),
     label: info.label,
     tag: info.tag,
-    rect: info.rect,
-    contentLeft: info.box.content.x,
-    contentRight: info.box.content.x + info.box.content.width,
+    rect: rr(info.rect),
+    contentLeft: r1(info.box.content.x),
+    contentRight: r1(info.box.content.x + info.box.content.width),
     childCount,
     computed: pickComputed(info.computed, ANCESTOR_PROPS),
   };
@@ -242,7 +246,7 @@ export async function buildContext(opts: BuildOptions = {}): Promise<BuiltContex
         viewport: probe.viewport,
         fold: probe.fold as CtxFold | null,
         method: probe.method,
-        element: sample.info ? { found: true, visible, rect: sample.info.rect, computed: pickComputed(sample.info.computed, [...ANCESTOR_PROPS, 'font-size', 'visibility', 'height']) } : { found: false, visible: false },
+        element: sample.info ? { found: true, visible, rect: rr(sample.info.rect), computed: pickComputed(sample.info.computed, [...ANCESTOR_PROPS, 'font-size', 'visibility', 'height']) } : { found: false, visible: false },
         issues: sample.info ? relateIssues(sample.issues, sample.info, new Map()) : [],
         issueCounts: issueCounts(sample.issues),
         rulesOnlyHere: diff.onlyHere,

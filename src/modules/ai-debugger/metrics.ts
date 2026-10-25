@@ -54,9 +54,9 @@ export function summarize(issues: ResponsiveIssue[], info: NodeInfo | null, view
 const METRICS: { key: keyof Measurement; label: string; unit: 'px' | ''; weight: number }[] = [
   { key: 'pageOverflowPx', label: 'page overflow', unit: 'px', weight: 3 },
   { key: 'hingeOverlapPx', label: 'under hinge', unit: 'px', weight: 3 },
-  { key: 'elementOverflowPx', label: 'element overflow', unit: 'px', weight: 2 },
   { key: 'elementIssues', label: 'element issues', unit: '', weight: 2 },
   { key: 'total', label: 'issues', unit: '', weight: 1 },
+  { key: 'elementOverflowPx', label: 'element overflow', unit: 'px', weight: 2 },
 ];
 
 /** Compare two measurements (lower is better for every metric) and describe the change with numbers. */
@@ -92,7 +92,7 @@ export function compareMeasurements(before: Measurement, after: Measurement): Me
   const changed = deltas.filter((d) => d.better !== null);
   const fmt = (d: MetricDelta) => (d.key === 'visible' ? (d.after ? 'now visible' : 'now hidden') : `${d.label} ${d.before}${d.unit} → ${d.after}${d.unit}`);
   const text = changed.length
-    ? changed.slice(0, 4).map(fmt).join(' · ')
+    ? changed.slice(0, 3).map(fmt).join(' · ')
     : `no measurable change (${deltas
         .filter((d) => d.key === 'pageOverflowPx' || d.key === 'total' || d.key === 'hingeOverlapPx')
         .map((d) => `${d.label} ${d.after}${d.unit}`)

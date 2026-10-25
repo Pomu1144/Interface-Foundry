@@ -18,10 +18,11 @@ import {
   Upload,
   FilePlus2,
   Send,
+  ShieldCheck,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Badge, Button, IconButton, Notice, Segmented, Spinner, Switch, Tooltip } from '@/ui';
+import { Badge, Button, IconButton, Segmented, Spinner, Switch, Tooltip } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { highlightLines, segmentsFor } from '@/modules/code-editor/syntax';
 import { duplicateDemoAsProject, sourceAccess } from '@/modules/code-editor/sources';
@@ -253,18 +254,23 @@ export function ExportPanel() {
           hasChanges={list.length > 0}
           accessNote={
             access.kind === 'demo' ? (
-              <Notice tone="info">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span>Demo sources are read-only. The patch is reviewable and downloadable; duplicate the demo to apply it.</span>
-                  <Button size="sm" icon={duplicating ? <Spinner /> : <FilePlus2 size={12} />} disabled={duplicating} onClick={duplicate} data-testid="duplicate-demo">
-                    Duplicate as editable project
-                  </Button>
-                </div>
-              </Notice>
+              <div className={s.banner}>
+                <Info size={13} />
+                <span>Demo sources are read-only — this patch is reviewable and downloadable. Duplicate the demo to apply it to files.</span>
+                <Button size="sm" icon={duplicating ? <Spinner /> : <FilePlus2 size={12} />} disabled={duplicating} onClick={duplicate} data-testid="duplicate-demo">
+                  Duplicate as editable project
+                </Button>
+              </div>
             ) : access.kind === 'none' ? (
-              <Notice tone="warning">{access.reason} The patch contains an overrides stylesheet only.</Notice>
+              <div className={s.banner} data-tone="warning">
+                <Info size={13} />
+                <span>{access.reason} The patch contains an overrides stylesheet only.</span>
+              </div>
             ) : access.kind === 'fs' ? (
-              <Notice tone="info">Local files are written only after you approve each file in a review dialog.</Notice>
+              <div className={s.banner}>
+                <ShieldCheck size={13} />
+                <span>Local files are written only after you approve every file in a review dialog.</span>
+              </div>
             ) : null
           }
         />
@@ -374,9 +380,9 @@ function PatchView({
             </>
           )}
         </div>
-        {accessNote && <div className={s.sideNote}>{accessNote}</div>}
       </div>
       <div className={s.main}>
+        {accessNote}
         <div className={s.mainScroll}>
           {visible.length ? (
             visible.map((f) => <DiffView key={f.path + mode} file={f} mode={mode} />)
