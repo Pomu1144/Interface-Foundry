@@ -5,7 +5,7 @@ import { Badge, Button, Spinner } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { art } from '@/app/art';
 import { runAction } from '@/app/actions';
-import { openDemoProject, openUrl, DEMO_PROJECT_ID, openProject } from '@/modules/project-adapter/projects';
+import { openDemoProject, openUrl, DEMO_PROJECT_ID, openProject, ensureVfs } from '@/modules/project-adapter/projects';
 import { deleteProject, listProjects, loadProject } from '@/modules/project-storage/storage';
 import type { ProjectMeta } from '@/store';
 import s from './welcome.module.css';
@@ -133,7 +133,6 @@ export function Welcome() {
                         const saved = await loadProject(p.id);
                         if (!saved) throw new Error('Project not found');
                         if (saved.project.source.kind === 'vfs') {
-                          const { ensureVfs } = await import('@/modules/project-adapter/projects');
                           if (!(await ensureVfs(saved.project.source.projectId))) throw new Error('Project files are no longer available. Import the project again.');
                         }
                         await openProject(saved.project, saved.routes, saved.currentRoute);

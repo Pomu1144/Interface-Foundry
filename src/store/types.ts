@@ -86,6 +86,15 @@ export type CaptureRef = {
   changeCount: number;
 };
 
+export type StylePreset = {
+  id: string;
+  name: string;
+  /** Declarations applied together, e.g. typography + colors + radius. */
+  declarations: { property: string; value: string }[];
+  source: string;
+  createdAt: number;
+};
+
 export type AssetRef = {
   id: string;
   name: string;
@@ -201,6 +210,8 @@ export type StudioState = {
   /* design system */
   tokens: DesignToken[];
   assets: AssetRef[];
+  /** Reusable styles saved from elements (Figma-style "styles"). */
+  stylePresets: StylePreset[];
 
   /* testing */
   scenarios: Scenario[];

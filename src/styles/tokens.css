@@ -42,6 +42,7 @@
   --molten-gradient: linear-gradient(135deg, #ff6a3d 0%, #ff8a3d 45%, #ffb547 100%);
   --violet: #a78bfa; /* AI */
   --violet-soft: rgba(167, 139, 250, 0.14);
+  --violet-text: #c9b8ff;
   --success: #3dd68c;
   --success-soft: rgba(61, 214, 140, 0.13);
   --warning: #f5b544;
@@ -154,6 +155,19 @@
   --accent-strong: #2056e0;
   --accent-soft: rgba(47, 107, 255, 0.12);
   --accent-softer: rgba(47, 107, 255, 0.06);
+  --molten: #e8590c;
+  --molten-soft: rgba(232, 89, 12, 0.1);
+  --violet: #7c3aed;
+  --violet-soft: rgba(124, 58, 237, 0.1);
+  --violet-text: #6d28d9;
+  --success: #15803d;
+  --success-soft: rgba(21, 128, 61, 0.1);
+  --warning: #b45309;
+  --warning-soft: rgba(180, 83, 9, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --info: #0369a1;
+  --info-soft: rgba(3, 105, 161, 0.08);
   --shadow-pop: 0 0 0 1px var(--line-2), 0 16px 48px -8px rgba(20, 24, 33, 0.22), 0 4px 12px rgba(20, 24, 33, 0.08);
   --shadow-2: 0 6px 16px -4px rgba(20, 24, 33, 0.18), 0 2px 4px rgba(20, 24, 33, 0.08);
   --shadow-3: 0 24px 64px -12px rgba(20, 24, 33, 0.28), 0 8px 20px -6px rgba(20, 24, 33, 0.12);

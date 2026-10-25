@@ -176,18 +176,21 @@
 }
 .bpTrack {
   position: relative;
-  border-radius: 3px;
-  background: linear-gradient(90deg, rgba(91, 141, 255, 0.28), rgba(167, 139, 250, 0.22), rgba(255, 122, 69, 0.22));
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(91, 141, 255, 0.35), rgba(167, 139, 250, 0.3) 60%, rgba(255, 122, 69, 0.3));
+  max-height: 3px;
 }
 .bpMark {
   position: absolute;
-  bottom: -4px;
+  bottom: -5px;
   padding: 0;
   border: 0;
   border-radius: 2px;
-  background: var(--text-2);
+  background: var(--text-3);
   transform: translateX(-50%);
   cursor: pointer;
+  max-height: 13px;
+  transition: background var(--dur-1) ease;
 }
 .bpMark[data-active='true'] {
   background: var(--accent-strong);
@@ -308,6 +311,9 @@
   box-shadow: var(--shadow-pop);
   pointer-events: auto;
   animation: ifdy-pop-in var(--dur-2) var(--ease-out);
+}
+:root[data-theme='light'] .contextBar {
+  background: rgba(255, 255, 255, 0.96);
 }
 .contextLabel {
   max-width: 180px;
@@ -452,4 +458,30 @@
   color: var(--text-3);
   font-size: 11.5px;
   line-height: 1.5;
+}
+
+/* Rulers ------------------------------------------------------------------ */
+.rulerTop,
+.rulerLeft,
+.rulerCorner {
+  position: absolute;
+  z-index: 35;
+  pointer-events: none;
+}
+.rulerTop {
+  top: 0;
+  left: 18px;
+}
+.rulerLeft {
+  top: 18px;
+  left: 0;
+}
+.rulerCorner {
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
 }

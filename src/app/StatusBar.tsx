@@ -2,6 +2,7 @@ import { Cpu, GitBranch, Layers3, Wifi, WifiOff } from 'lucide-react';
 import { Tooltip } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { previews } from '@/modules/preview-runtime/registry';
+import { refreshSelection } from '@/modules/preview-runtime/sync';
 import s from './shell.module.css';
 
 export function StatusBar() {
@@ -46,7 +47,7 @@ export function StatusBar() {
               onClick={() => {
                 const st = studio();
                 st.select(st.selection.instanceId, p.id, null);
-                void import('@/modules/preview-runtime/sync').then((m) => m.refreshSelection());
+                void refreshSelection();
                 previews.get(st.selection.instanceId)?.tell('overlay.watch', { ids: [p.id] });
               }}
             >

@@ -92,7 +92,7 @@
 }
 .violet {
   background: var(--violet-soft);
-  color: #c9b8ff;
+  color: var(--violet-text);
   border-color: rgba(167, 139, 250, 0.28);
 }
 .violet:hover {

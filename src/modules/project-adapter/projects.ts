@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { studio, useStudio, CANVAS_DOC, type PreviewSource, type ProjectMeta, type RouteEntry } from '@/store';
 import { DEFAULT_DEVICE_ID } from '@/modules/device-simulator/devices';
 import { api, connectCompanion, CompanionError } from './server-api';
-import { loadProject, saveProjectNow } from '@/modules/project-storage/storage';
+import { getProjectFiles, loadProject, putProjectFiles, saveProjectNow } from '@/modules/project-storage/storage';
 
 export const DEMO_PROJECT_ID = 'demo-harborline';
 
@@ -51,6 +51,9 @@ export async function openProject(meta: ProjectMeta, routes: RouteEntry[], defau
       assets: saved.assets ?? [],
       scenarios: saved.scenarios?.length ? saved.scenarios : studio().scenarios,
       captures: saved.captures ?? [],
+      stylePresets: saved.stylePresets ?? [],
+      responsiveIssues: saved.audits?.responsive ?? [],
+      a11yIssues: saved.audits?.a11y ?? [],
       baselines: saved.baselines ?? {},
       customDevices: saved.customDevices ?? [],
       viewport: saved.viewport ?? studio().viewport,
@@ -103,7 +106,6 @@ export async function importStaticProject(name: string, files: { path: string; d
     return btoa(bin);
   };
   await api(`/api/vfs/${id}`, { method: 'PUT', json: { files: normalized.map((f) => ({ path: f.path, base64: toB64(f.data) })) } });
-  const { putProjectFiles } = await import('@/modules/project-storage/storage');
   await putProjectFiles(id, normalized);
   const now = Date.now();
   await openProject(
@@ -118,7 +120,6 @@ export async function importStaticProject(name: string, files: { path: string; d
 export async function ensureVfs(projectId: string) {
   const status = await api<{ exists: boolean }>(`/api/vfs/${projectId}`).catch(() => ({ exists: false }));
   if (status.exists) return true;
-  const { getProjectFiles } = await import('@/modules/project-storage/storage');
   const files = await getProjectFiles(projectId);
   if (!files.length) return false;
   const toB64 = (buf: ArrayBuffer) => {

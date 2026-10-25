@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { studio } from '@/store';
 import { bus } from '@/lib/events';
 import { isTyping } from '@/modules/canvas/useCamera';
+import { refreshSelection } from '@/modules/preview-runtime/sync';
 import { allActions, matchesShortcut } from './actions';
 
 /** Global keyboard shortcuts, also honouring keys forwarded from previews. */
@@ -22,7 +23,7 @@ export function useShortcuts() {
           const parent = st.selection.info?.path.at(-2);
           if (parent && parent.label !== 'html') {
             st.select(st.selection.instanceId, parent.id, null);
-            void import('@/modules/preview-runtime/sync').then((m) => m.refreshSelection());
+            void refreshSelection();
           } else st.select(null, null);
           return true;
         }

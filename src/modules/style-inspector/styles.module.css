@@ -106,7 +106,7 @@
   padding: 0 5px;
   border-radius: 3px;
   background: var(--violet-soft);
-  color: #c9b8ff;
+  color: var(--violet-text);
   font-size: 10px;
 }
 .decl {
@@ -236,5 +236,5 @@
 }
 .media {
   padding: 2px 4px;
-  color: #c9b8ff;
+  color: var(--violet-text);
 }

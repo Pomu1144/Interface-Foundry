@@ -86,7 +86,7 @@
   text-overflow: ellipsis;
 }
 .componentName {
-  color: #c9b8ff;
+  color: var(--violet-text);
   font-weight: 500;
 }
 .detail {

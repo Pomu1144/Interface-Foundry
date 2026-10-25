@@ -1,6 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import type { Change, DesignToken, DeviceProfile, Scenario, ViewportState } from '@shared/types';
-import { studio, useStudio, type AssetRef, type CaptureRef, type ProjectMeta, type RouteEntry, type Settings, type StudioState } from '@/store';
+import type { A11yIssue, Change, DesignToken, DeviceProfile, ResponsiveIssue, Scenario, ViewportState } from '@shared/types';
+import { studio, useStudio, type AssetRef, type CaptureRef, type ProjectMeta, type RouteEntry, type Settings, type StudioState, type StylePreset } from '@/store';
 
 /**
  * Local project persistence (IndexedDB). Stores the workspace configuration,
@@ -17,6 +17,9 @@ export type SavedProject = {
   assets: AssetRef[];
   scenarios: Scenario[];
   captures: CaptureRef[];
+  stylePresets?: StylePreset[];
+  /** Latest audit reports (responsive + accessibility) for this project. */
+  audits?: { responsive: ResponsiveIssue[]; a11y: A11yIssue[]; at: number | null };
   baselines: Record<string, string>;
   customDevices: DeviceProfile[];
   viewport: ViewportState;
@@ -102,6 +105,8 @@ function snapshot(): SavedProject | null {
     assets: s.assets,
     scenarios: s.scenarios.filter((x) => !x.builtIn),
     captures: s.captures,
+    stylePresets: s.stylePresets,
+    audits: { responsive: s.responsiveIssues, a11y: s.a11yIssues, at: s.auditStatus.at ?? null },
     baselines: s.baselines,
     customDevices: s.customDevices,
     viewport: s.viewport,
@@ -135,7 +140,7 @@ export function startAutosave() {
     useStudio.setState({ saveStatus: 'unsaved' });
     timer = setTimeout(() => void saveProjectNow(), 700);
   };
-  const keys = ['changes', 'tokens', 'assets', 'scenarios', 'captures', 'baselines', 'customDevices', 'viewport', 'compare', 'settings', 'currentRoute', 'panels'] as const;
+  const keys = ['changes', 'tokens', 'assets', 'stylePresets', 'scenarios', 'captures', 'baselines', 'customDevices', 'viewport', 'compare', 'settings', 'currentRoute', 'panels', 'responsiveIssues', 'a11yIssues'] as const;
   for (const k of keys) useStudio.subscribe((s) => s[k], schedule);
   window.addEventListener('beforeunload', (e) => {
     if (studio().saveStatus === 'unsaved' || studio().saveStatus === 'saving') {
