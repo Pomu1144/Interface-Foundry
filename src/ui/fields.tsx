@@ -56,6 +56,8 @@ export function NumberField({
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
   const scrubRef = useRef<{ x: number; start: number; unit: string; moved: boolean } | null>(null);
+  // Enter/Escape already handled the value; the blur that follows must not commit again.
+  const skipBlur = useRef(false);
   useEffect(() => {
     if (!focused && !scrubRef.current) setDraft(value);
   }, [value, focused]);
@@ -112,7 +114,7 @@ export function NumberField({
       )}
       <input
         className={s.input}
-        value={focused ? draft : parsed ? String(parsed.n) : draft}
+        value={focused ? draft : parsed ? String(Math.round(parsed.n * 100) / 100) : draft}
         placeholder={placeholder}
         spellCheck={false}
         disabled={disabled}
@@ -122,15 +124,21 @@ export function NumberField({
         }}
         onBlur={() => {
           setFocused(false);
+          if (skipBlur.current) {
+            skipBlur.current = false;
+            return;
+          }
           if (draft !== value) commitText(draft);
         }}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             commitText(draft);
+            skipBlur.current = true;
             (e.target as HTMLInputElement).blur();
           } else if (e.key === 'Escape') {
             setDraft(value);
+            skipBlur.current = true;
             (e.target as HTMLInputElement).blur();
           } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
@@ -167,6 +175,7 @@ export function TextField({
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
+  const skipBlur = useRef(false);
   useEffect(() => {
     if (!focused) setDraft(value);
   }, [value, focused]);
@@ -182,15 +191,21 @@ export function TextField({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
+          if (skipBlur.current) {
+            skipBlur.current = false;
+            return;
+          }
           if (draft !== value) onCommit(draft);
         }}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             onCommit(draft);
+            skipBlur.current = true;
             (e.target as HTMLInputElement).blur();
           } else if (e.key === 'Escape') {
             setDraft(value);
+            skipBlur.current = true;
             (e.target as HTMLInputElement).blur();
           }
         }}

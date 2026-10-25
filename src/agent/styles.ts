@@ -117,7 +117,7 @@ export function findRule(key: string, selector: string): CSSStyleRule | null {
 /* Source labels and approximate line numbers                          */
 /* ------------------------------------------------------------------ */
 
-const sheetText = new Map<string, string | null>();
+const sheetText = new Map<string, Promise<string | null>>();
 
 function sourceLabel(sheet: CSSStyleSheet, sheetIndex: number): { href?: string; label: string; ownerNode?: string } {
   if (sheet.href) {
@@ -129,16 +129,16 @@ function sourceLabel(sheet: CSSStyleSheet, sheetIndex: number): { href?: string;
   return { label: `constructed sheet #${sheetIndex}` };
 }
 
-async function loadSheetText(href: string) {
-  if (sheetText.has(href)) return sheetText.get(href);
-  sheetText.set(href, null);
-  try {
-    const r = await fetch(href, { cache: 'force-cache' });
-    if (r.ok) sheetText.set(href, await r.text());
-  } catch {
-    /* ignore */
+/** Fetch each stylesheet's source once (shared promise) to approximate rule line numbers. */
+function loadSheetText(href: string): Promise<string | null> {
+  let p = sheetText.get(href);
+  if (!p) {
+    p = fetch(href, { cache: 'force-cache' })
+      .then((r) => (r.ok ? r.text() : null))
+      .catch(() => null);
+    sheetText.set(href, p);
   }
-  return sheetText.get(href) ?? null;
+  return p;
 }
 
 function lineOf(text: string | null | undefined, selector: string): number | undefined {

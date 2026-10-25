@@ -16,10 +16,12 @@ export function useTransitionDriver() {
       const s = studio();
       const t = s.transition;
       if (!t.playing) return;
-      const dt = Math.min(64, now - last);
-      last = now;
+      // rAF timestamps can precede the performance.now() taken when the effect ran.
+      const dt = Math.max(0, Math.min(64, now - last));
+      last = Math.max(last, now);
       let progress = t.progress + (dt / Math.max(120, t.duration)) * t.direction;
-      if (progress >= 1 || progress <= 0) {
+      const done = t.direction === 1 ? progress >= 1 : progress <= 0;
+      if (done) {
         progress = progress >= 1 ? 1 : 0;
         if (t.loop) {
           s.setTransition({ progress, direction: (t.direction * -1) as 1 | -1 });

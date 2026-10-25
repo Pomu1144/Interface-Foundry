@@ -83,6 +83,14 @@ export function PreviewFrame({
     if (!frame) return;
     if (lastSrc.current === src) return;
     lastSrc.current = src;
+    // Hash-only change of the loaded document (hash routes): a fragment navigation never
+    // reloads the page, so no new hello would follow. Route it through the agent instead.
+    const live = studio().instances[instanceId];
+    const conn = previews.get(instanceId);
+    if (conn?.ready && live?.status === 'ready' && live.url && src.includes('#') && live.url.split('#')[0] === src.split('#')[0]) {
+      if (live.url !== src) conn.tell('nav.go', { url: src.slice(src.indexOf('#')) });
+      return;
+    }
     previews.get(instanceId)?.resetPending('Navigating');
     studio().upsertInstance(instanceId, { status: 'loading', url: src, error: undefined });
     frame.src = src;

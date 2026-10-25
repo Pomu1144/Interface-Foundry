@@ -36,7 +36,7 @@ export function PaymentPage({ onCleanup }) {
         )}
       </ol>
       <div class="split payment__layout">
-        <div class="stack" data-slot="step" aria-live="off">
+        <div class="stack" data-slot="step">
           <div class="card"><span class="skeleton" style="width: 40%"></span><span class="skeleton" style="width: 90%; height: 3rem; margin-top: 1rem"></span></div>
         </div>
         <aside class="stack payment__aside" aria-label="Payment information" data-slot="aside"></aside>

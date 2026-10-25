@@ -55,12 +55,15 @@ export function specificity(selector: string): [number, number, number] {
     return '';
   });
   s = s.replace(/"[^"]*"|'[^']*'/g, '');
+  // Pseudo-elements (including legacy single-colon forms) count as types; strip them first.
+  const pseudoEl = /::[\w-]+(\([^)]*\))?|:(before|after|first-line|first-letter)\b/g;
+  c += (s.match(pseudoEl) ?? []).length;
+  s = s.replace(pseudoEl, ' ');
   a += (s.match(/#[\w-]+/g) ?? []).length;
   b += (s.match(/\.[\w-]+/g) ?? []).length;
   b += (s.match(/\[[^\]]*\]/g) ?? []).length;
-  b += (s.match(/:(?!:)[\w-]+(\([^)]*\))?/g) ?? []).length;
-  c += (s.match(/::[\w-]+/g) ?? []).length;
-  s = s.replace(/#[\w-]+|\.[\w-]+|\[[^\]]*\]|::?[\w-]+(\([^)]*\))?/g, ' ');
+  b += (s.match(/:[\w-]+(\([^)]*\))?/g) ?? []).length;
+  s = s.replace(/#[\w-]+|\.[\w-]+|\[[^\]]*\]|:[\w-]+(\([^)]*\))?/g, ' ');
   c += (s.match(/(^|[\s>+~])([a-zA-Z][\w-]*)/g) ?? []).length;
   return [a, b, c];
 }

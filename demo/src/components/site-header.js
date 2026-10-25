@@ -85,7 +85,9 @@ export function SiteHeader({ onSignOut }) {
     if (event.key === 'Escape' && nav.dataset.open === 'true') setMenu(false, { returnFocus: true });
   });
   document.addEventListener('click', (event) => {
-    if (nav.dataset.open === 'true' && !root.contains(event.target)) setMenu(false);
+    // composedPath() is captured at dispatch, so it still includes the header
+    // even though the toggle swaps its icon during the click.
+    if (nav.dataset.open === 'true' && !event.composedPath().includes(root)) setMenu(false);
   });
 
   root.update = ({ route, session }) => {

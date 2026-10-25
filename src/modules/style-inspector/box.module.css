@@ -1,0 +1,129 @@
+.wrap {
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid var(--line-1);
+}
+.diagram {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.position,
+.margin,
+.border,
+.padding {
+  position: relative;
+  padding: 22px 34px;
+  border-radius: 4px;
+}
+.position {
+  border: 1px dashed var(--line-3);
+}
+.margin {
+  background: rgba(246, 178, 107, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(246, 178, 107, 0.45);
+}
+.border {
+  background: rgba(253, 221, 155, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(253, 221, 155, 0.5);
+}
+.padding {
+  background: rgba(147, 196, 125, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(147, 196, 125, 0.5);
+}
+.content {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  padding: 6px;
+  border-radius: 3px;
+  background: rgba(111, 168, 220, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(111, 168, 220, 0.6);
+  color: var(--text-0);
+  font-weight: 500;
+}
+.label {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+.cell {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+.cell[data-side='top'] {
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.cell[data-side='bottom'] {
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.cell[data-side='left'] {
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+}
+.cell[data-side='right'] {
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+}
+.cellButton {
+  min-width: 22px;
+  height: 17px;
+  padding: 0 3px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  cursor: text;
+}
+.cellButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.cell[data-zero='true'] .cellButton {
+  color: var(--text-3);
+}
+.cellInput {
+  width: 40px;
+  height: 18px;
+  padding: 0 3px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-align: center;
+}
+.hint {
+  margin-top: 8px;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+.dims {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 6px 10px;
+  margin: 0;
+  font-size: 11.5px;
+}
+.dims dt {
+  color: var(--text-2);
+}
+.dims dd {
+  margin: 0;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

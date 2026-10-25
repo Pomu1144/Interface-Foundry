@@ -218,6 +218,17 @@
     display: inline-flex;
   }
 
+  .site-nav {
+    top: calc(100% + var(--hl-space-2));
+    left: auto;
+    right: var(--hl-gutter);
+    width: 18rem;
+    padding: var(--hl-space-2);
+    border: 1px solid var(--hl-color-border);
+    border-radius: var(--hl-radius-lg);
+    box-shadow: var(--hl-shadow-lg);
+  }
+
   .user-chip__name {
     display: inline;
   }
@@ -232,8 +243,10 @@
   .site-nav[data-open="false"] {
     position: static;
     display: block;
+    width: auto;
     padding: 0;
     border: 0;
+    border-radius: 0;
     background: none;
     box-shadow: none;
   }
@@ -381,8 +394,11 @@
     gap: var(--hl-split-gap);
   }
 
+}
+
+@media (min-width: 75rem) {
   .site-footer__aside {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
   }
 }
 
