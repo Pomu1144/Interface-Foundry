@@ -2,7 +2,7 @@ import { unzipSync } from 'fflate';
 import { FolderOpen, FolderTree, Plug, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Button, Dialog, Notice, Segmented, Spinner } from '@/ui';
+import { ArtIcon, Button, Dialog, Notice, Segmented, Spinner } from '@/ui';
 import { useStudio } from '@/store';
 import { art } from '@/app/art';
 import { connectLocalServer, importStaticProject, openLocalDirectory } from '@/modules/project-adapter/projects';
@@ -104,7 +104,9 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                 void finish(name, files);
               }}
             >
-              {busy ? <Spinner size={22} /> : <img src={art.code} className={s.dropArt} alt="" />}
+              {busy ? <Spinner size={22} /> : <span className={s.dropArt}>
+                  <ArtIcon src={art.folderPlus} size={26} />
+                </span>}
               <div style={{ color: 'var(--text-0)', fontWeight: 500 }}>Drop a folder or .zip with HTML, CSS and JavaScript</div>
               <div className={s.help}>Files stay on this machine: they are held in the local companion's memory and this browser's storage.</div>
               <div className={s.choices}>

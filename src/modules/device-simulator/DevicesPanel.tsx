@@ -1,6 +1,6 @@
 import { Columns2, Settings2 } from 'lucide-react';
 import type { DeviceCategory } from '@shared/types';
-import { Badge, Button, Row, Section, Segmented, Select, Switch } from '@/ui';
+import { ArtIcon, Badge, Button, Row, Section, Segmented, Select, Switch } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { deviceArt } from '@/app/art';
 import { DeviceGlyph } from '@/app/toolbar/DevicePicker';
@@ -98,7 +98,7 @@ export function DevicesPanel() {
           return (
             <div key={c.id}>
               <div className={s.group}>
-                {deviceArt(c.id) && <img src={deviceArt(c.id)!} alt="" />}
+                {deviceArt(c.id) && <ArtIcon src={deviceArt(c.id)!} size={14} />}
                 {c.label}
               </div>
               {list.map((d) => (

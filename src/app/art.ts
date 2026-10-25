@@ -1,36 +1,42 @@
 /**
- * Illustration assets generated with Higgsfield (see docs/ASSETS.md).
- * UI glyphs are vector (lucide); these are used for brand, onboarding,
- * empty states and category art where a richer image helps.
+ * Brand mark and line icons generated with Higgsfield (see docs/ASSETS.md).
+ * Icons are monochrome masks: render them with <ArtIcon src={art.x} /> (or as
+ * EmptyState art) so they take the current text color in both themes.
+ * Small UI glyphs come from lucide-react.
  */
-import appIcon from '@/assets/brand/ifdy-app-icon.webp';
-import crucible from '@/assets/brand/ifdy-crucible.webp';
-import welcomeHero from '@/assets/brand/welcome-hero.webp';
-import design from '@/assets/icons3d/design.webp';
-import inspect from '@/assets/icons3d/inspect.webp';
-import simulate from '@/assets/icons3d/simulate.webp';
-import test from '@/assets/icons3d/test.webp';
-import ai from '@/assets/icons3d/ai.webp';
-import ship from '@/assets/icons3d/ship.webp';
-import phone from '@/assets/icons3d/device-phone.webp';
-import foldable from '@/assets/icons3d/device-foldable.webp';
-import tablet from '@/assets/icons3d/device-tablet.webp';
-import desktop from '@/assets/icons3d/device-desktop.webp';
-import select from '@/assets/icons3d/select.webp';
-import record from '@/assets/icons3d/record.webp';
-import hierarchy from '@/assets/icons3d/hierarchy-3d.webp';
-import wall from '@/assets/icons3d/device-wall.webp';
-import code from '@/assets/icons3d/code.webp';
-import git from '@/assets/icons3d/git.webp';
-import tokens from '@/assets/icons3d/tokens.webp';
-import assets from '@/assets/icons3d/assets.webp';
-import components from '@/assets/icons3d/components.webp';
+import mark from '@/assets/brand/ifdy-mark.png';
+import productShot from '@/assets/brand/product-shot.webp';
+import design from '@/assets/icons/design.png';
+import inspect from '@/assets/icons/inspect.png';
+import simulate from '@/assets/icons/simulate.png';
+import test from '@/assets/icons/test.png';
+import ai from '@/assets/icons/ai.png';
+import ship from '@/assets/icons/ship.png';
+import phone from '@/assets/icons/phone.png';
+import foldable from '@/assets/icons/foldable.png';
+import tablet from '@/assets/icons/tablet.png';
+import desktop from '@/assets/icons/desktop.png';
+import select from '@/assets/icons/select.png';
+import record from '@/assets/icons/record.png';
+import hierarchy from '@/assets/icons/hierarchy.png';
+import wall from '@/assets/icons/wall.png';
+import code from '@/assets/icons/code.png';
+import git from '@/assets/icons/git.png';
+import tokens from '@/assets/icons/tokens.png';
+import assets from '@/assets/icons/assets.png';
+import components from '@/assets/icons/components.png';
+import shield from '@/assets/icons/shield.png';
+import chart from '@/assets/icons/chart.png';
+import tools from '@/assets/icons/tools.png';
+import folderPlus from '@/assets/icons/folderPlus.png';
+import globe from '@/assets/icons/globe.png';
 import type { DeviceCategory } from '@shared/types';
 
 export const art = {
-  appIcon,
-  crucible,
-  welcomeHero,
+  /** Full-color app mark (selection frame with fold line). Use as <img>. */
+  appIcon: mark,
+  /** Real screenshot of the studio used on the welcome screen. Use as <img>. */
+  productShot,
   design,
   inspect,
   simulate,
@@ -50,6 +56,11 @@ export const art = {
   tokens,
   assets,
   components,
+  shield,
+  chart,
+  tools,
+  folderPlus,
+  globe,
 };
 
 export function deviceArt(category: DeviceCategory): string | null {

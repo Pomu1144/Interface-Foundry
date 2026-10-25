@@ -96,10 +96,30 @@ export function Spinner({ size = 12 }: { size?: number }) {
   return <span className={s.spinner} style={{ width: size, height: size }} aria-hidden />;
 }
 
+/**
+ * Monochrome line icon rendered as a CSS mask so it takes the current text
+ * color (works in dark and light themes). `src` is one of the icons in art.ts.
+ */
+export function ArtIcon({ src, size = 20, className, style, title }: { src: string; size?: number; className?: string; style?: CSSProperties; title?: string }) {
+  return (
+    <span
+      className={clsx(s.artIcon, className)}
+      role={title ? 'img' : undefined}
+      aria-label={title}
+      aria-hidden={title ? undefined : true}
+      style={{ width: size, height: size, WebkitMaskImage: `url(${src})`, maskImage: `url(${src})`, ...style }}
+    />
+  );
+}
+
 export function EmptyState({ art, title, children, action }: { art?: string; title: ReactNode; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className={s.empty}>
-      {art && <img className={s.emptyArt} src={art} alt="" draggable={false} />}
+      {art && (
+        <span className={s.emptyTile}>
+          <ArtIcon src={art} size={22} />
+        </span>
+      )}
       <div className={s.emptyTitle}>{title}</div>
       {children && <div className={s.emptyText}>{children}</div>}
       {action}

@@ -8,7 +8,7 @@ an Xcode/Android-Studio-style device simulator with foldables, responsive and ac
 QA, interaction recording/replay, an evidence-grounded AI layout debugger, and a
 visual-change-to-code pipeline.
 
-![IFDY](src/assets/brand/welcome-hero.webp)
+![IFDY workspace](src/assets/brand/product-shot.webp)
 
 ## Quick start
 
@@ -44,7 +44,7 @@ Configuration is via environment variables — see `.env.example`.
 * `docs/SECURITY.md` — studio ⇄ preview security boundary, companion API, data handling
 * `docs/MODULE_GUIDE.md` — how to build a module (contracts, UI kit, rules)
 * `docs/MILESTONES.md` — milestone report: features, tests, limitations, remaining work
-* `docs/ASSETS.md` — Higgsfield-generated brand and illustration assets
+* `docs/ASSETS.md` — Higgsfield-generated brand mark and line icons
 * `demo/README.md`, `demo/DEFECTS.md` — the synthetic demo and its deliberate defects
 
 ## Tests

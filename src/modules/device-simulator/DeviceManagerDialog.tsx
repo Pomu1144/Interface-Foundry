@@ -1,7 +1,7 @@
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { DeviceProfile, FoldGeometry, PostureGeometry } from '@shared/types';
-import { Badge, Button, Dialog, Grid, NumberField, Notice, Select, Switch, TextField } from '@/ui';
+import { ArtIcon, Badge, Button, Dialog, Grid, NumberField, Notice, Select, Switch, TextField } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { deviceArt } from '@/app/art';
 import { DeviceGlyph } from '@/app/toolbar/DevicePicker';
@@ -91,7 +91,11 @@ export function DeviceManagerDialog({ open, onOpenChange }: { open: boolean; onO
         </div>
         <div className={s.detail}>
           <div className={s.hero}>
-            {deviceArt(d.category) && <img src={deviceArt(d.category)!} alt="" className={s.heroArt} />}
+            {deviceArt(d.category) && (
+              <span className={s.heroArt}>
+                <ArtIcon src={deviceArt(d.category)!} size={30} />
+              </span>
+            )}
             <div style={{ minWidth: 0 }}>
               <div className={s.heroName}>{d.name}</div>
               <div className={s.heroMeta}>

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { Check, Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { DeviceCategory, DeviceProfile } from '@shared/types';
-import { Badge, Popover, SearchInput } from '@/ui';
+import { ArtIcon, Badge, Popover, SearchInput } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { BUILT_IN_DEVICES, RESPONSIVE_ID } from '@/modules/device-simulator/devices';
 import { deviceArt } from '@/app/art';
@@ -54,7 +54,7 @@ export function DevicePicker({ trigger, onPick, value }: { trigger: React.ReactE
             return (
               <div key={cat.id}>
                 <div className={s.group}>
-                  {deviceArt(cat.id) && <img src={deviceArt(cat.id)!} alt="" className={s.groupArt} />}
+                  {deviceArt(cat.id) && <ArtIcon src={deviceArt(cat.id)!} size={14} className={s.groupArt} />}
                   {cat.label}
                 </div>
                 {list.map((d) => (

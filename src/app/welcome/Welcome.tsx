@@ -1,7 +1,7 @@
-import { ArrowRight, FolderOpen, Globe, Laptop, Plug, Server, Trash2 } from 'lucide-react';
+import { ArrowRight, ChevronRight, FolderOpen, Globe, Laptop, Server, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Badge, Button, Spinner } from '@/ui';
+import { ArtIcon, Badge, Button, Kbd, Spinner } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { art } from '@/app/art';
 import { runAction } from '@/app/actions';
@@ -11,12 +11,12 @@ import type { ProjectMeta } from '@/store';
 import s from './welcome.module.css';
 
 const FEATURES = [
-  { img: art.design, title: 'Design', text: 'Edit live layouts with CSS-aware handles, tokens and reversible history.' },
-  { img: art.inspect, title: 'Inspect', text: 'DOM, cascade, computed styles, box model, console and network.' },
-  { img: art.simulate, title: 'Simulate', text: 'Foldables, phones, tablets and desktops with real reflow.' },
-  { img: art.test, title: 'Test', text: 'Responsive diffs, accessibility, recordings and replay.' },
-  { img: art.ai, title: 'Diagnose', text: 'Evidence-grounded AI debugging with approval before every fix.' },
-  { img: art.ship, title: 'Ship', text: 'CSS patches, source diffs, QA reports and Git hand-off.' },
+  { icon: art.design, title: 'Design', text: 'Edit live layouts with CSS-aware handles, tokens and reversible history.' },
+  { icon: art.inspect, title: 'Inspect', text: 'DOM, cascade, computed styles, box model, console and network.' },
+  { icon: art.foldable, title: 'Simulate', text: 'Foldables, phones, tablets and desktops with real reflow.' },
+  { icon: art.test, title: 'Test', text: 'Responsive diffs, accessibility, recordings and replay.' },
+  { icon: art.ai, title: 'Diagnose', text: 'Evidence-grounded debugging with approval before every fix.' },
+  { icon: art.ship, title: 'Ship', text: 'CSS patches, source diffs, QA reports and Git hand-off.' },
 ];
 
 export function Welcome() {
@@ -39,10 +39,34 @@ export function Welcome() {
     }
   };
 
+  const start = [
+    {
+      key: 'demo',
+      icon: art.foldable,
+      title: 'Open the Harborline demo',
+      text: 'A synthetic mortgage app with seeded responsive and accessibility bugs.',
+      run: () => go('demo', openDemoProject),
+    },
+    {
+      key: 'import',
+      icon: art.folderPlus,
+      title: 'Import static project',
+      text: 'A folder, zip or single HTML file. Files stay on this machine.',
+      shortcut: 'Mod+O',
+      run: () => runAction('project.import'),
+    },
+    {
+      key: 'local',
+      icon: art.code,
+      title: 'Connect localhost',
+      text: 'Proxy a running dev server with hot reload passthrough.',
+      run: () => runAction('project.connectLocal'),
+    },
+  ];
+
   return (
     <div className={s.root}>
-      <div className={s.hero} style={{ backgroundImage: `url(${art.welcomeHero})` }} />
-      <div className={s.heroShade} />
+      <div className={s.backdrop} aria-hidden />
       <div className={s.content}>
         <header className={s.top}>
           <div className={s.brand}>
@@ -60,59 +84,86 @@ export function Welcome() {
           </div>
         </header>
 
-        <section className={s.intro}>
-          <h1 className={s.title}>
-            Shape real interfaces.
-            <br />
-            <span className={s.titleAccent}>On every screen they’ll ever fold into.</span>
-          </h1>
-          <p className={s.lede}>Design, inspect, simulate, test, diagnose and ship from one workspace — against the real rendering engine, never a screenshot.</p>
+        <div className={s.hero}>
+          <section className={s.intro}>
+            <h1 className={s.title}>
+              Build interfaces against the real browser.
+              <span className={s.titleSub}> On every screen they fold into.</span>
+            </h1>
+            <p className={s.lede}>Design, inspect, simulate, test, diagnose and ship from one workspace. Every edit is live CSS on the real rendering engine, never a screenshot.</p>
 
-          <div className={s.actions}>
-            <Button size="lg" variant="molten" icon={busy === 'demo' ? <Spinner /> : <img src={art.crucible} alt="" style={{ width: 18, height: 18 }} />} onClick={() => go('demo', openDemoProject)}>
-              Open the Harborline demo
-            </Button>
-            <Button size="lg" variant="secondary" icon={<FolderOpen size={15} />} onClick={() => runAction('project.import')}>
-              Import static project
-            </Button>
-            <Button size="lg" variant="secondary" icon={<Plug size={15} />} onClick={() => runAction('project.connectLocal')}>
-              Connect localhost
-            </Button>
-          </div>
-
-          <form
-            className={s.urlBox}
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!url.trim()) return;
-              void go('url', async () => {
-                await openUrl(url.trim());
-                runAction('view.wall');
-              });
-            }}
-          >
-            <Globe size={16} className={s.urlIcon} />
-            <input className={s.urlInput} placeholder="Paste any website link to simulate it across devices — e.g. https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} spellCheck={false} aria-label="Website URL" />
-            <div className={s.urlDevices}>
-              {[art.phone, art.foldable, art.tablet, art.desktop].map((src, i) => (
-                <img key={i} src={src} alt="" />
+            <div className={s.start} role="group" aria-label="Start">
+              {start.map((item) => (
+                <button key={item.key} className={s.startItem} onClick={item.run} disabled={busy !== null}>
+                  <span className={s.startTile}>{busy === item.key ? <Spinner size={14} /> : <ArtIcon src={item.icon} size={20} />}</span>
+                  <span className={s.startText}>
+                    <span className={s.startTitle}>{item.title}</span>
+                    <span className={s.startDesc}>{item.text}</span>
+                  </span>
+                  {item.shortcut ? <Kbd keys={item.shortcut} /> : <ChevronRight size={14} className={s.startChevron} />}
+                </button>
               ))}
             </div>
-            <Button type="submit" variant="primary" trailing={busy === 'url' ? <Spinner /> : <ArrowRight size={14} />} disabled={!url.trim()}>
-              Simulate
-            </Button>
-          </form>
-          <p className={s.urlNote}>
-            {server.capabilities?.browser.available
-              ? 'Public sites run in an isolated, controlled Chromium — fully interactive, with real device emulation and DevTools data.'
-              : 'Public sites open as read-only embeds where the site allows framing. Install Chromium (npm run browsers:install) for full simulation.'}
-          </p>
-        </section>
 
-        <section className={s.features}>
+            <form
+              className={s.urlForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!url.trim()) return;
+                void go('url', async () => {
+                  await openUrl(url.trim());
+                  runAction('view.wall');
+                });
+              }}
+            >
+              <label className={s.urlLabel} htmlFor="ifdy-welcome-url">
+                Simulate a website across devices
+              </label>
+              <div className={s.urlBox}>
+                <Globe size={15} className={s.urlIcon} />
+                <input
+                  id="ifdy-welcome-url"
+                  className={s.urlInput}
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  spellCheck={false}
+                  aria-label="Website URL"
+                />
+                <span className={s.urlDevices} aria-hidden>
+                  {[art.phone, art.foldable, art.tablet, art.desktop].map((src) => (
+                    <ArtIcon key={src} src={src} size={15} />
+                  ))}
+                </span>
+                <Button type="submit" variant="primary" trailing={busy === 'url' ? <Spinner /> : <ArrowRight size={14} />} disabled={!url.trim()}>
+                  Simulate
+                </Button>
+              </div>
+              <p className={s.urlNote}>
+                {server.capabilities?.browser.available
+                  ? 'Public sites run in an isolated, controlled Chromium: fully interactive, with real device emulation and DevTools data.'
+                  : 'Public sites open as read-only embeds where the site allows framing. Install Chromium (npm run browsers:install) for full simulation.'}
+              </p>
+            </form>
+          </section>
+
+          <figure className={s.shot}>
+            <div className={s.shotBar}>
+              <span className={s.shotDots} aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className={s.shotTitle}>Harborline Mortgage · Surface Duo · expanded</span>
+            </div>
+            <img src={art.productShot} alt="The IFDY workspace inspecting a page on an unfolded Surface Duo" className={s.shotImg} draggable={false} />
+          </figure>
+        </div>
+
+        <section className={s.features} aria-label="Capabilities">
           {FEATURES.map((f) => (
             <div key={f.title} className={s.feature}>
-              <img src={f.img} alt="" className={s.featureArt} draggable={false} />
+              <ArtIcon src={f.icon} size={18} className={s.featureIcon} />
               <div className={s.featureTitle}>{f.title}</div>
               <div className={s.featureText}>{f.text}</div>
             </div>

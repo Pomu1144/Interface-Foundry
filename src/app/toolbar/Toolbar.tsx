@@ -22,7 +22,7 @@ import {
   TriangleAlert,
   Undo2,
 } from 'lucide-react';
-import { IconButton, Menu, Segmented, Spinner, Tooltip } from '@/ui';
+import { ArtIcon, IconButton, Menu, Segmented, Spinner, Tooltip } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { runAction } from '@/app/actions';
 import { art, deviceArt } from '@/app/art';
@@ -168,7 +168,7 @@ function ActivityCenter() {
       <DevicePicker
         trigger={
           <button className={s.scheme} aria-label="Device">
-            {cat ? <img src={cat} className={s.schemeIcon} alt="" /> : <TabletSmartphone size={14} />}
+            {cat ? <ArtIcon src={cat} size={15} className={s.schemeIcon} /> : <TabletSmartphone size={14} />}
             {device.name}
             <ChevronDown size={11} color="var(--text-3)" />
           </button>

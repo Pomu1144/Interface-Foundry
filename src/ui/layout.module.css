@@ -161,12 +161,29 @@
   text-align: center;
   animation: ifdy-fade-in var(--dur-3) ease;
 }
-.emptyArt {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5));
-  margin-bottom: 4px;
+.artIcon {
+  display: inline-block;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.emptyTile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: var(--bg-2);
+  box-shadow:
+    inset 0 0 0 1px var(--line-2),
+    var(--highlight-top);
+  color: var(--text-1);
 }
 .emptyTitle {
   color: var(--text-0);

@@ -30,11 +30,6 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.group img {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-}
 .item {
   display: flex;
   align-items: center;
