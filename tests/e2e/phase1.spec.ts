@@ -80,7 +80,8 @@ test('unfolding reflows the real page and preserves form state', async ({ page }
 test('project state persists across a reload', async ({ page }) => {
   const frame = await openDemo(page);
   await frame.locator('[data-testid="login-submit"]').click();
-  await page.getByRole('button', { name: 'Hide in preview' }).first().click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __IFDY__: { useStudio: { getState(): { selection: { info: { selector: string } | null } } } } }).__IFDY__.useStudio.getState().selection.info?.selector ?? '')).toContain('login-submit');
+  await page.getByRole('toolbar', { name: 'Selection' }).getByRole('button', { name: 'Hide in preview' }).click();
   await expect(page.getByText(/\d+ edits?/)).toBeVisible();
   await expect(page.locator('[data-status="saved"]')).toBeVisible({ timeout: 5000 });
   await page.reload();
@@ -90,5 +91,5 @@ test('project state persists across a reload', async ({ page }) => {
   await expect(page.getByText(/Restored “Harborline Mortgage”/)).toBeVisible();
   // The saved edit is re-applied to the freshly loaded preview.
   await expect.poll(() => page.evaluate(() => (window as unknown as { __IFDY__: { useStudio: { getState(): { changes: unknown[] } } } }).__IFDY__.useStudio.getState().changes.length)).toBeGreaterThan(0);
-  await expect.poll(() => page.frame({ url: /\/demo\// })?.evaluate(() => document.getElementById('__ifdy-overrides')?.textContent ?? '')).toContain('display: none');
+  await expect.poll(() => page.frame({ url: /\/demo\// })?.evaluate(() => document.getElementById('__ifdy-overrides')?.textContent ?? '')).toMatch(/login-submit[^{]*\{\s*display: none/);
 });

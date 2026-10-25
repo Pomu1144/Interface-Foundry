@@ -61,6 +61,8 @@ export type PreviewInstance = {
   engine: 'frame' | 'remote' | 'embed';
 };
 
+export type Duplicate = { id: string; deviceId: string; posture: Posture; orientation: Orientation };
+
 export type TransitionState = {
   /** 0 = folded, 1 = expanded. */
   progress: number;
@@ -173,6 +175,8 @@ export type StudioState = {
   viewport: ViewportState;
   transition: TransitionState;
   compare: { enabled: boolean; partner: ViewportState };
+  /** Extra live copies of the current view on other devices ("Duplicate into"). */
+  duplicates: Duplicate[];
   colorScheme: 'light' | 'dark' | null;
   fontScale: number;
   camera: { x: number; y: number; zoom: number; fitNonce: number };

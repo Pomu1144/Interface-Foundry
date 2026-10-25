@@ -49,6 +49,7 @@
 }
 .boardLabel {
   position: absolute;
+  overflow: hidden;
   bottom: calc(100% + 14px);
   left: 0;
   display: flex;
@@ -57,6 +58,16 @@
   white-space: nowrap;
   font-size: 12px;
   pointer-events: none;
+}
+.boardLabel > * {
+  flex: none;
+}
+.boardLabel > .boardDims,
+.boardLabel > .boardMeta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .boardName {
   color: var(--text-0);
@@ -486,4 +497,24 @@
   background: var(--bg-1);
   border-right: 1px solid var(--line-2);
   border-bottom: 1px solid var(--line-2);
+}
+
+.boardRemove {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.boardRemove:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
 }

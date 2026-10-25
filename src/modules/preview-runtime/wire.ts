@@ -98,6 +98,18 @@ export function wireConnection(conn: PreviewConnection, role: 'primary' | 'compa
       if (info?.id === id && info.editableText) await conn.call('text.beginEdit', { id }).catch(() => null);
     }),
   );
+  offs.push(
+    conn.on('contextmenu', (c) => {
+      if (isWorker) return;
+      // Right-click selects what's under the cursor, then opens the canvas menu there.
+      if (c.id !== null) {
+        studio().select(conn.id, c.id, null);
+        void refreshSelection();
+        watchOverlayIds();
+      }
+      bus.emit('agent-contextmenu', { ...c, instanceId: conn.id });
+    }),
+  );
   offs.push(conn.on('rects', ({ rects }) => useOverlay.getState().setRects(conn.id, rects as Record<NodeId, never>)));
 
   let domTimer: ReturnType<typeof setTimeout> | null = null;

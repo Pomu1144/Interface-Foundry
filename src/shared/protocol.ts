@@ -239,6 +239,8 @@ export interface AgentEvents {
   hover: { id: NodeId | null; rect: Rect | null; label: string };
   select: { id: NodeId; rect: Rect; label: string; additive: boolean };
   dblselect: { id: NodeId };
+  /** Right-click in Inspect mode, in the page's client coordinates. */
+  contextmenu: { id: NodeId | null; x: number; y: number };
   rects: { rects: Record<NodeId, Rect | null>; scroll: { x: number; y: number } };
   'dom.changed': { reason: string };
   console: { level: LogLevel; args: string[]; ts: number; source?: string; stack?: string };
@@ -276,6 +278,7 @@ export const AGENT_EVENTS: readonly AgentEvent[] = [
   'hover',
   'select',
   'dblselect',
+  'contextmenu',
   'rects',
   'dom.changed',
   'console',

@@ -23,6 +23,7 @@ import type {
   StudioState,
   Tool,
   TransitionState,
+  Duplicate,
 } from './types';
 
 export * from './types';
@@ -80,6 +81,10 @@ type Actions = {
   foldTo: (posture: 'folded' | 'expanded') => void;
   toggleFold: () => void;
   setCompare: (c: Partial<StudioState['compare']>) => void;
+  /** Open the current view on another device; returns the duplicate's id. */
+  addDuplicate: (d: Omit<Duplicate, 'id'>) => string;
+  removeDuplicate: (id: string) => void;
+  clearDuplicates: () => void;
   setColorScheme: (s: StudioState['colorScheme']) => void;
   setFontScale: (n: number) => void;
   setCamera: (c: Partial<StudioState['camera']>) => void;
@@ -180,6 +185,7 @@ export const useStudio = create<Studio>()(
     viewport: initialViewport,
     transition: { progress: 0, playing: false, direction: 1, duration: 2000, mode: 'continuous', style: 'hinge', loop: false },
     compare: { enabled: false, partner: { deviceId: DEFAULT_DEVICE_ID, posture: 'expanded', orientation: 'portrait' } },
+    duplicates: [],
     colorScheme: null,
     fontScale: 1,
     camera: { x: 0, y: 0, zoom: 1, fitNonce: 0 },
@@ -282,6 +288,13 @@ export const useStudio = create<Studio>()(
       s.foldTo(goingTo);
     },
     setCompare: (c) => set((s) => ({ compare: { ...s.compare, ...c }, camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } })),
+    addDuplicate: (d) => {
+      const id = Math.random().toString(36).slice(2, 8);
+      set((s) => ({ duplicates: [...s.duplicates, { ...d, id }], camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } }));
+      return id;
+    },
+    removeDuplicate: (id) => set((s) => ({ duplicates: s.duplicates.filter((d) => d.id !== id), camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } })),
+    clearDuplicates: () => set((s) => ({ duplicates: [], camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } })),
     setColorScheme: (colorScheme) => set({ colorScheme }),
     setFontScale: (fontScale) => set({ fontScale }),
     setCamera: (c) => set((s) => ({ camera: { ...s.camera, ...c } })),

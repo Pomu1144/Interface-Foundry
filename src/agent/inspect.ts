@@ -22,10 +22,16 @@ export class Inspector {
       if (this.editing && this.editing.el.contains(e.target as Node)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
+      // Right-click opens the studio's canvas menu at the cursor.
+      if (e.type === 'contextmenu') {
+        const el = this.pick(e as MouseEvent);
+        this.emit('contextmenu', { id: el ? idOf(el) : null, x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY });
+      }
     };
     for (const type of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'contextmenu', 'touchstart', 'touchend', 'auxclick', 'submit', 'dragstart']) {
       window.addEventListener(type, block, { capture: true, passive: false });
     }
+
     window.addEventListener(
       'click',
       (e) => {

@@ -22,8 +22,13 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
   const labelScale = 1 / Math.max(0.35, zoom);
 
   return (
-    <div className={s.board} data-role={spec.role}>
-      <div className={s.boardLabel} style={{ transform: `scale(${labelScale})`, transformOrigin: 'left bottom' }}>
+    <div className={s.board} data-role={spec.role} data-board={spec.instanceId}>
+      <div className={s.boardLabel} style={{ transform: `scale(${labelScale})`, transformOrigin: 'left bottom', maxWidth: (spec.slotWidth + 100) / labelScale }}>
+        {spec.duplicateId && (
+          <button className={s.boardRemove} aria-label={`Remove the ${d.name} duplicate`} title="Remove duplicate" onClick={() => studio().removeDuplicate(spec.duplicateId!)} onPointerDown={(e) => e.stopPropagation()}>
+            ×
+          </button>
+        )}
         <span className={s.boardName}>{d.name}</span>
         <span className={s.boardDims}>
           {g.viewport.width} × {g.viewport.height}
@@ -40,7 +45,8 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
             Provisional
           </Badge>
         )}
-        {spec.role === 'compare' && <Badge tone="violet">Compare</Badge>}
+        {spec.role === 'compare' && !spec.duplicateId && <Badge tone="violet">Compare</Badge>}
+        {spec.duplicateId && <Badge tone="accent">Duplicate</Badge>}
         {instance?.status === 'loading' && <Spinner size={10} />}
       </div>
       <div className={s.frameWrap}>

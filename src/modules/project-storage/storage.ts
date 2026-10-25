@@ -24,6 +24,7 @@ export type SavedProject = {
   customDevices: DeviceProfile[];
   viewport: ViewportState;
   compare: StudioState['compare'];
+  duplicates?: StudioState['duplicates'];
   settings: Partial<Settings>;
   panels: StudioState['panels'];
   savedAt: number;
@@ -111,6 +112,7 @@ function snapshot(): SavedProject | null {
     customDevices: s.customDevices,
     viewport: s.viewport,
     compare: s.compare,
+    duplicates: s.duplicates,
     settings,
     panels: s.panels,
     savedAt: Date.now(),
@@ -140,7 +142,7 @@ export function startAutosave() {
     useStudio.setState({ saveStatus: 'unsaved' });
     timer = setTimeout(() => void saveProjectNow(), 700);
   };
-  const keys = ['changes', 'tokens', 'assets', 'stylePresets', 'scenarios', 'captures', 'baselines', 'customDevices', 'viewport', 'compare', 'settings', 'currentRoute', 'panels', 'responsiveIssues', 'a11yIssues'] as const;
+  const keys = ['changes', 'tokens', 'assets', 'stylePresets', 'scenarios', 'captures', 'baselines', 'customDevices', 'viewport', 'compare', 'duplicates', 'settings', 'currentRoute', 'panels', 'responsiveIssues', 'a11yIssues'] as const;
   for (const k of keys) useStudio.subscribe((s) => s[k], schedule);
   window.addEventListener('beforeunload', (e) => {
     if (studio().saveStatus === 'unsaved' || studio().saveStatus === 'saving') {

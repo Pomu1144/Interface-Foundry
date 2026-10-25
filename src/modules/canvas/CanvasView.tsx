@@ -10,6 +10,7 @@ import { ZoomHud } from './ZoomHud';
 import { Rulers } from './Rulers';
 import { BreakpointBar } from './BreakpointBar';
 import { useCameraControls } from './useCamera';
+import { CanvasContextMenu } from './CanvasContextMenu';
 import s from './canvas.module.css';
 
 const GAP = 140;
@@ -26,6 +27,8 @@ type BoardSpec = {
   expanded: PostureGeometry | null;
   progress: number;
   animating: boolean;
+  /** Set for "Duplicate into" copies of the view. */
+  duplicateId?: string;
   /** Width reserved in the layout (max of folded/expanded) so boards never overlap mid-animation. */
   slotWidth: number;
   frameHeight: number;
@@ -48,6 +51,7 @@ export function CanvasView() {
   const playing = useStudio((st) => st.transition.playing);
   const flatProgress = useStudio((st) => (st.transition.style === 'reflow' ? st.transition.progress : -1));
   const compare = useStudio((st) => st.compare);
+  const duplicates = useStudio((st) => st.duplicates);
   const customDevices = useStudio((st) => st.customDevices);
   const responsiveSize = useStudio((st) => st.responsiveSize);
   const source = useStudio((st) => st.source);
@@ -105,8 +109,33 @@ export function CanvasView() {
         frameHeight: frameDims(pg, pd.frameStyle === 'bare').h,
       });
     }
+    const all = [...BUILT_IN_DEVICES, ...customDevices];
+    for (const dup of duplicates) {
+      const dd = dup.deviceId === RESPONSIVE_ID ? device : all.find((d) => d.id === dup.deviceId);
+      if (!dd) continue;
+      const posture = dd.expanded ? dup.posture : 'folded';
+      const dg = resolveViewport(dd, posture, dup.orientation).geometry;
+      const fg = resolveViewport(dd, 'folded', dup.orientation).geometry;
+      const eg = dd.expanded ? resolveViewport(dd, 'expanded', dup.orientation).geometry : null;
+      const b = dd.frameStyle === 'bare';
+      list.push({
+        instanceId: `dup-${dup.id}`,
+        role: 'compare',
+        duplicateId: dup.id,
+        device: dd,
+        posture,
+        orientation: dup.orientation,
+        geometry: dg,
+        folded: fg,
+        expanded: eg,
+        progress: posture === 'expanded' ? 1 : 0,
+        animating: false,
+        slotWidth: Math.max(frameDims(dg, b).w, frameDims(fg, b).w, eg ? frameDims(eg, b).w : 0),
+        frameHeight: Math.max(frameDims(dg, b).h, frameDims(fg, b).h, eg ? frameDims(eg, b).h : 0),
+      });
+    }
     return list;
-  }, [device, viewport, style, mode, playing, flatProgress, compare, customDevices]);
+  }, [device, viewport, style, mode, playing, flatProgress, compare, duplicates, customDevices]);
 
   // Fit the boards into view when asked (device change, compare toggle, Shift+1).
   const contentSize = useMemo(() => {
@@ -147,40 +176,42 @@ export function CanvasView() {
   const gridSize = 24 * camera.zoom;
   let x = 0;
   return (
-    <div
-      ref={ref}
-      className={s.canvas}
-      data-ifdy-canvas
-      data-panning={panning ? 'true' : undefined}
-      data-tool={tool}
-      onPointerDown={handlers.onPointerDown}
-      onPointerMove={handlers.onPointerMove}
-      onPointerUp={handlers.onPointerUp}
-      style={{
-        backgroundSize: `${gridSize}px ${gridSize}px`,
-        backgroundPosition: `${camera.x}px ${camera.y}px`,
-      }}
-    >
-      <div className={s.vignette} data-canvas-bg />
-      <div className={s.world} style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})` }} data-canvas-bg>
-        {source &&
-          boards.map((b, i) => {
-            const left = x;
-            x += b.slotWidth + GAP;
-            void i;
-            return (
-              <div key={b.instanceId} className={s.boardSlot} style={{ left, width: b.slotWidth }}>
-                {b.role === 'primary' && <BreakpointBar width={b.geometry.viewport.width} zoom={camera.zoom} offset={(b.device.frameStyle === 'bare' ? 0 : b.geometry.bezel.left) + b.geometry.safeArea.left} />}
-                <Artboard spec={b} interactive={!panning} zoom={camera.zoom} />
-              </div>
-            );
-          })}
+    <CanvasContextMenu>
+      <div
+        ref={ref}
+        className={s.canvas}
+        data-ifdy-canvas
+        data-panning={panning ? 'true' : undefined}
+        data-tool={tool}
+        onPointerDown={handlers.onPointerDown}
+        onPointerMove={handlers.onPointerMove}
+        onPointerUp={handlers.onPointerUp}
+        style={{
+          backgroundSize: `${gridSize}px ${gridSize}px`,
+          backgroundPosition: `${camera.x}px ${camera.y}px`,
+        }}
+      >
+        <div className={s.vignette} data-canvas-bg />
+        <div className={s.world} style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})` }} data-canvas-bg>
+          {source &&
+            boards.map((b, i) => {
+              const left = x;
+              x += b.slotWidth + GAP;
+              void i;
+              return (
+                <div key={b.instanceId} className={s.boardSlot} style={{ left, width: b.slotWidth }}>
+                  {b.role === 'primary' && <BreakpointBar width={b.geometry.viewport.width} zoom={camera.zoom} offset={(b.device.frameStyle === 'bare' ? 0 : b.geometry.bezel.left) + b.geometry.safeArea.left} />}
+                  <Artboard spec={b} interactive={!panning} zoom={camera.zoom} />
+                </div>
+              );
+            })}
+        </div>
+        <SelectionOverlay container={ref} />
+        {showRulers && source && <Rulers container={ref} />}
+        <FoldDock />
+        <ZoomHud />
       </div>
-      <SelectionOverlay container={ref} />
-      {showRulers && source && <Rulers container={ref} />}
-      <FoldDock />
-      <ZoomHud />
-    </div>
+    </CanvasContextMenu>
   );
 }
 

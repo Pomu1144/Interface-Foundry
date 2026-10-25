@@ -273,6 +273,8 @@ function ContextToolbar({ rect }: { rect: ScreenRect }) {
   return (
     <div
       className={s.contextBar}
+      role="toolbar"
+      aria-label="Selection"
       style={{ left: Math.max(8, rect.left), top: above ? rect.top - 44 : rect.top + rect.height + 34 }}
       onPointerDown={(e) => e.stopPropagation()}
     >

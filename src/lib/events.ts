@@ -5,6 +5,7 @@ export type BusEvents = {
   'agent-key': AgentEvents['key'] & { instanceId: string };
   'agent-wheel': AgentEvents['wheel'] & { instanceId: string };
   'agent-scroll': AgentEvents['scroll'] & { instanceId: string };
+  'agent-contextmenu': AgentEvents['contextmenu'] & { instanceId: string };
   'preview-hello': { instanceId: string };
   'selection-changed': { instanceId: string | null; nodeId: number | null };
   'run-tests': void;
