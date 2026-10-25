@@ -80,6 +80,20 @@ export function screenshotScale(device: Pick<RemoteDevice, 'width' | 'height' | 
   return device.width * device.height * device.dpr * device.dpr <= pixelBudget ? 'device' : 'css';
 }
 
+/**
+ * Frame size for WebKit's push screencast, which scales on the GPU so any size is cheap:
+ * the size the studio displays (`maxWidth` × `maxHeight` device pixels), at least one image
+ * pixel per CSS pixel (sharp when the canvas is zoomed before the studio asks for more),
+ * never more than the device's real resolution, and capped at `pixelBudget` on the wire.
+ */
+export function streamSize(device: Pick<RemoteDevice, 'width' | 'height' | 'dpr'>, maxWidth: number, maxHeight: number, pixelBudget = 2_000_000): { width: number; height: number } {
+  const w = Math.max(1, device.width);
+  const h = Math.max(1, device.height);
+  let k = Math.max(1, Math.min(device.dpr, maxWidth / w, maxHeight / h));
+  k = Math.min(k, Math.sqrt(pixelBudget / (w * h)));
+  return { width: Math.max(16, Math.round(w * k)), height: Math.max(16, Math.round(h * k)) };
+}
+
 /** Width × height of a baseline or progressive JPEG (SOF0/1/2 marker), or null. */
 export function jpegSize(buf: Uint8Array): { width: number; height: number } | null {
   if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) return null;

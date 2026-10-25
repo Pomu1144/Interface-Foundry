@@ -18,7 +18,7 @@ import type { BrowserManager } from './manager';
 import { redactText, redactUrl } from './redact';
 import { consoleMessage, friendlyNetError, pageUrl, type PageHost } from './remote-page';
 import type { WebKitBrowser } from './webkit-browser';
-import { FOLD_DETAIL, jpegSize, planEmulation, recreateDetail, screenshotScale, webkitContextOptions } from './webkit-emulation';
+import { FOLD_DETAIL, jpegSize, planEmulation, recreateDetail, screenshotScale, streamSize, webkitContextOptions } from './webkit-emulation';
 import { modifierChanges, mouseButton, toScreenPoint, TouchGesture, unknownKeyText } from './webkit-input';
 
 /** Agent events the companion replaces with WebKit's own data (complete, incl. failed requests). */
@@ -35,7 +35,9 @@ const osName = () => OS_NAME[process.platform] ?? process.platform;
  * One live page rendered by WebKit (Playwright's build), without CDP:
  *  - emulation through a dedicated BrowserContext: size changes in place (`setViewportSize`),
  *    DPR / mobile / touch / UA changes rebuild the context and reload the same URL;
- *  - "screencast" by polling viewport screenshots, paced by `FramePacer`;
+ *  - screencast pushed by WebKit as the page repaints (`page.screencast`, ~30–45 fps,
+ *    nothing while the page is still); polling screenshots paced by `FramePacer` is the
+ *    fallback when the push stream cannot start;
  *  - input through Playwright's mouse / keyboard / touchscreen (see webkit-input.ts);
  *  - the IFDY agent through a Playwright binding + init script (same envelopes as Chromium);
  *  - lifecycle, console, page errors, network, popups and dialogs reported like RemotePage.
@@ -61,6 +63,12 @@ export class WebKitPage implements LivePage {
   private awaitingAck = false;
   private swapping = false;
   private lastJpeg: Buffer | null = null;
+  /* push stream: WebKit sends a frame whenever the page repaints */
+  private push: { page: Page; key: string } | null = null;
+  private pushFailed = false;
+  private pushOp: Promise<void> = Promise.resolve();
+  /** Newest frame that arrived while waiting for an ack; older ones are dropped. */
+  private heldFrame: { data: Buffer; viewportWidth: number; viewportHeight: number } | null = null;
   private frameSeq = 0;
   lastFrameAt = 0;
   private visual: VisualViewport | null = null;
@@ -138,6 +146,9 @@ export class WebKitPage implements LivePage {
     this.visual = null;
     this.metricsKey = '';
     this.lastJpeg = null;
+    // The old page's push stream ends with its context.
+    this.push = null;
+    this.heldFrame = null;
     this.gesture = new TouchGesture();
     this.heldModifiers.clear();
     old.agent?.dispose();
@@ -219,10 +230,15 @@ export class WebKitPage implements LivePage {
     if (!this.screencast.enabled) {
       if (this.timer) clearTimeout(this.timer);
       this.timer = null;
+      this.syncPush();
       return;
     }
-    // Shown again: the studio needs a fresh frame even if the page did not change.
-    if (!was) this.lastJpeg = null;
+    // Shown again: the studio needs a fresh frame even if the page did not change
+    // (a restarted push stream starts with one).
+    if (!was) {
+      this.lastJpeg = null;
+      if (this.push) this.push.key = '';
+    }
     this.wake();
   }
 
@@ -252,9 +268,76 @@ export class WebKitPage implements LivePage {
 
   /** Capture soon (input, navigation, emulation): never overlapping a capture or skipping back-pressure. */
   private wake() {
+    // The push stream follows repaints on its own; only its size or page may need updating.
+    if (!this.pushFailed) return this.syncPush();
     this.pacer.bump();
     if (this.inflight || this.awaitingAck) return;
     if (!this.timer || this.nextAt - Date.now() > 40) this.schedule(this.timer ? 16 : 0);
+  }
+
+  /**
+   * Start, restart or stop WebKit's push stream to match the current page, size and quality.
+   * Operations run one at a time; each re-reads the wanted state, so bursts collapse.
+   */
+  private syncPush() {
+    this.pushOp = this.pushOp.then(() => this.applyPush()).catch(() => {});
+  }
+
+  private async applyPush() {
+    const page = this.page;
+    const want = this.canCapture() && page && !this.pushFailed;
+    const sc = this.screencast;
+    const size = streamSize(this.emu.device, sc.maxWidth, sc.maxHeight);
+    const key = `${size.width}x${size.height}@${sc.quality}`;
+    if (want && this.push?.page === page && this.push.key === key) return;
+    const old = this.push;
+    this.push = null;
+    this.heldFrame = null;
+    if (old && !old.page.isClosed()) await old.page.screencast.stop().catch(() => {});
+    if (!want || !page || page !== this.page || !this.canCapture()) return;
+    try {
+      await page.screencast.start({ size, quality: sc.quality, onFrame: (f) => this.onPushFrame(page, f) });
+      this.push = { page, key };
+    } catch (err) {
+      if (page.isClosed() || page !== this.page || this.closed) return;
+      // No push stream in this WebKit build: poll screenshots instead.
+      console.warn(`[webkit] screencast unavailable, polling screenshots: ${(err as Error).message.split('\n')[0]}`);
+      this.pushFailed = true;
+      this.wake();
+    }
+  }
+
+  private onPushFrame(page: Page, f: { data: Buffer; viewportWidth: number; viewportHeight: number }) {
+    if (page !== this.page || !this.canCapture() || this.push?.page !== page) return;
+    if (this.awaitingAck) {
+      this.heldFrame = f;
+      return;
+    }
+    this.sendPushFrame(page, f);
+  }
+
+  private sendPushFrame(page: Page, f: { data: Buffer; viewportWidth: number; viewportHeight: number }) {
+    // viewportWidth/Height are device pixels of the page's current viewport.
+    const dpr = Math.max(0.1, this.applied?.device.dpr ?? this.emu.device.dpr);
+    const header: FrameHeader = {
+      t: 'frame',
+      pageId: this.id,
+      width: Math.round(f.viewportWidth / dpr),
+      height: Math.round(f.viewportHeight / dpr),
+      ts: Date.now() / 1000,
+      pageScale: this.visual?.scale ?? 1,
+      seq: ++this.frameSeq,
+    };
+    this.lastFrameAt = Date.now();
+    this.host.sendFrame(header, f.data);
+    void this.refreshMetrics(page).catch(() => {});
+    this.awaitingAck = true;
+    this.host.scheduleAck(this, () => {
+      this.awaitingAck = false;
+      const held = this.heldFrame;
+      this.heldFrame = null;
+      if (held && page === this.page && this.canCapture()) this.sendPushFrame(page, held);
+    });
   }
 
   /** One capture; resolves to the delay before the next one, or null when the session's ack schedules it. */
@@ -327,8 +410,10 @@ export class WebKitPage implements LivePage {
     this.swapping = true;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    this.syncPush();
     try {
       await this.inflight?.catch(() => {});
+      await this.pushOp;
       await fn();
     } finally {
       this.swapping = false;
@@ -605,7 +690,7 @@ export class WebKitPage implements LivePage {
         const dy = Math.max(-5000, Math.min(5000, num(ev.deltaY)));
         if (d.mobile) {
           // Playwright has no wheel in mobile WebKit: scroll what is under the pointer instead.
-          await scrollAt(page, { x: cx(ev.x), y: cy(ev.y), dx, dy });
+          await scrollAt(page, { x: cx(ev.x), y: cy(ev.y), dx, dy }, 'wheel');
           return;
         }
         await page.mouse.move(cx(ev.x), cy(ev.y));
@@ -642,7 +727,7 @@ export class WebKitPage implements LivePage {
             const p = toScreenPoint(a, this.visual);
             await page.touchscreen.tap(p.x, p.y);
           } else {
-            await scrollAt(page, a);
+            await scrollAt(page, a, 'touch');
           }
         }
         return;
@@ -673,6 +758,8 @@ export class WebKitPage implements LivePage {
     this.agent?.dispose();
     this.offGone?.();
     this.inputQueue = [];
+    this.push = null;
+    this.heldFrame = null;
     const ctx = this.context;
     this.context = null;
     await ctx?.close().catch(() => {});
@@ -685,31 +772,66 @@ export class WebKitPage implements LivePage {
 
 const num = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
 
-/**
- * Runs in the page: scroll the innermost scrollable element under (x, y) along the delta,
- * or the document. Stands in for wheel events (mobile WebKit) and touch panning.
- * Page-side code is kept as source text: transpilers (tsx, Vite SSR) may inject helpers
- * such as `__name` into a function's body, which do not exist in the page.
- */
 const VISUAL_VIEWPORT = `(function () {
   var vv = window.visualViewport;
   return vv ? { width: vv.width, height: vv.height, scale: vv.scale, offsetX: vv.offsetLeft, offsetY: vv.offsetTop } : null;
 })()`;
 
+/**
+ * Runs in the page: scroll the innermost scrollable element under (x, y) along the delta,
+ * or the document. Stands in for wheel events (mobile WebKit) and touch panning.
+ * Deltas are queued in the page and applied over the next animation frames, moving `ease`
+ * of what is left each frame (like native smooth wheel scrolling), so the page repaints
+ * every frame instead of jumping once per companion round trip.
+ * Page-side code is kept as source text: transpilers (tsx, Vite SSR) may inject helpers
+ * such as `__name` into a function's body, which do not exist in the page.
+ */
 const SCROLL_AT = `(function (a) {
   function scrollable(el, vertical) {
     var s = getComputedStyle(el);
     if (!/(auto|scroll|overlay)/.test(vertical ? s.overflowY : s.overflowX)) return false;
     return vertical ? el.scrollHeight > el.clientHeight : el.scrollWidth > el.clientWidth;
   }
+  var target = null;
   for (var el = document.elementFromPoint(a.x, a.y); el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
-    if ((a.dy && scrollable(el, true)) || (a.dx && scrollable(el, false))) { el.scrollBy(a.dx, a.dy); return; }
+    if ((a.dy && scrollable(el, true)) || (a.dx && scrollable(el, false))) { target = el; break; }
   }
-  window.scrollBy(a.dx, a.dy);
+  var q = window.__ifdyScroll || (window.__ifdyScroll = { items: [], raf: 0 });
+  var item = null;
+  for (var i = 0; i < q.items.length; i++) if (q.items[i].el === target) item = q.items[i];
+  if (!item) q.items.push(item = { el: target, dx: 0, dy: 0, ease: a.ease });
+  item.dx += a.dx;
+  item.dy += a.dy;
+  item.ease = a.ease;
+  function part(rest, ease) {
+    if (Math.abs(rest) <= 1) return rest;
+    var d = Math.round(rest * ease);
+    return d === 0 ? (rest > 0 ? 1 : -1) : d;
+  }
+  function by(it, x, y) {
+    var o = it.el || window;
+    try { o.scrollBy({ left: x, top: y, behavior: 'instant' }); } catch (e) { o.scrollBy(x, y); }
+  }
+  function step() {
+    q.raf = 0;
+    for (var i = q.items.length - 1; i >= 0; i--) {
+      var it = q.items[i];
+      var x = part(it.dx, it.ease), y = part(it.dy, it.ease);
+      it.dx -= x;
+      it.dy -= y;
+      if (x || y) by(it, x, y);
+      if (Math.abs(it.dx) < 0.5 && Math.abs(it.dy) < 0.5) q.items.splice(i, 1);
+    }
+    if (q.items.length) q.raf = requestAnimationFrame(step);
+  }
+  if (!q.raf) q.raf = requestAnimationFrame(step);
 })`;
 
-const scrollAt = (page: Page, a: { x: number; y: number; dx: number; dy: number }) =>
-  page.evaluate(`${SCROLL_AT}(${JSON.stringify({ x: num(a.x), y: num(a.y), dx: num(a.dx), dy: num(a.dy) })})`);
+/** Wheel scrolls glide (native smooth wheel scrolling); touch pans follow the finger more closely. */
+const SCROLL_EASE = { wheel: 0.3, touch: 0.6 } as const;
+
+const scrollAt = (page: Page, a: { x: number; y: number; dx: number; dy: number }, kind: keyof typeof SCROLL_EASE) =>
+  page.evaluate(`${SCROLL_AT}(${JSON.stringify({ x: num(a.x), y: num(a.y), dx: num(a.dx), dy: num(a.dy), ease: SCROLL_EASE[kind] })})`);
 
 /** Factory used by the session (see live-page.ts). */
 export function createWebKitPage(id: string, host: PageHost, open: OpenMessage, manager: BrowserManager): LivePage {

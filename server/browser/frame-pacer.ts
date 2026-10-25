@@ -1,6 +1,6 @@
 /**
- * Pacing for engines that stream by polling screenshots (WebKit has no
- * screencast). Pure so it is unit-testable.
+ * Pacing for engines that stream by polling screenshots (WebKit when its push
+ * screencast cannot start). Pure so it is unit-testable.
  *
  *  - Aims at `fps` while the page changes, but never spends more than about half
  *    the time capturing (slow captures lower the rate instead of queueing).
@@ -13,7 +13,7 @@ export class FramePacer {
   private unchanged = 0;
 
   constructor(
-    private readonly opts: { fps: number; idleFps: number; idleAfter: number } = { fps: 15, idleFps: 4, idleAfter: 3 },
+    private readonly opts: { fps: number; idleFps: number; idleAfter: number } = { fps: 30, idleFps: 4, idleAfter: 3 },
   ) {}
 
   /** Delay (ms) from the end of a capture to the start of the next one. */

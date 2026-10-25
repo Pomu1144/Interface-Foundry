@@ -94,8 +94,9 @@ only read for assertions. The test takes about 1.2 minutes.
 - **Browser engines:** each board can render with Chromium, WebKit (Safari's
   engine on any OS, not iOS Safari) or real Mobile Safari in the iOS Simulator
   (companion on a Mac with Xcode; written and unit-tested without a Mac, see
-  `docs/IOS_SIMULATOR.md`). WebKit streams at ~15 fps; page `touchmove`
-  handlers don't fire there, and it has no fold emulation.
+  `docs/IOS_SIMULATOR.md`). WebKit pushes frames as the page repaints (30–40
+  fps, about 25–30 fps while scrolling); page `touchmove` handlers don't fire
+  there, and it has no fold emulation.
 - **Hinge fixes:** fixes for the hinge include a pixel fallback that applies
   only at exactly 1114px wide, because previews cannot emulate viewport
   segments.

@@ -4,7 +4,7 @@ import { remoteEmulation } from '@/modules/preview-runtime/remote/emulation';
 import { MOD, type EmulationParams } from '@/modules/preview-runtime/remote/protocol';
 import { sanitizeEmulation } from '../../server/browser/emulation';
 import { FramePacer } from '../../server/browser/frame-pacer';
-import { jpegSize, planEmulation, recreateDetail, screenshotScale, webkitContextOptions } from '../../server/browser/webkit-emulation';
+import { jpegSize, planEmulation, recreateDetail, screenshotScale, streamSize, webkitContextOptions } from '../../server/browser/webkit-emulation';
 import { modifierChanges, mouseButton, toScreenPoint, TouchGesture, unknownKeyText } from '../../server/browser/webkit-input';
 
 const dev = (id: string) => BUILT_IN_DEVICES.find((d) => d.id === id)!;
@@ -129,10 +129,32 @@ describe('WebKit input mapping', () => {
   });
 });
 
+describe('push stream size', () => {
+  const phone = { width: 390, height: 844, dpr: 3 };
+
+  it('matches the displayed size', () => {
+    expect(streamSize(phone, 488, 1055)).toEqual({ width: 488, height: 1055 });
+  });
+
+  it('never exceeds the device resolution', () => {
+    expect(streamSize({ width: 390, height: 844, dpr: 1 }, 2000, 4000)).toEqual({ width: 390, height: 844 });
+  });
+
+  it('keeps at least one image pixel per CSS pixel when the board is shown small', () => {
+    expect(streamSize(phone, 195, 4096)).toEqual({ width: 390, height: 844 });
+  });
+
+  it('caps very large frames at the pixel budget', () => {
+    const s = streamSize(phone, 4096, 4096);
+    expect(s.width * s.height).toBeLessThanOrEqual(2_000_000 * 1.01);
+    expect(s.width / s.height).toBeCloseTo(390 / 844, 2);
+  });
+});
+
 describe('frame pacing', () => {
-  it('aims at 15 fps while the page changes', () => {
+  it('aims at 30 fps while the page changes', () => {
     const p = new FramePacer();
-    expect(p.next(10, true)).toBe(57); // 1000/15 - 10
+    expect(p.next(10, true)).toBe(23); // 1000/30 - 10
   });
 
   it('never spends more than half the time capturing', () => {
@@ -148,10 +170,10 @@ describe('frame pacing', () => {
     expect(p.next(10, false)).toBe(240); // 4 fps
     expect(p.idle).toBe(true);
     p.bump();
-    expect(p.next(10, true)).toBe(57);
+    expect(p.next(10, true)).toBe(23);
     p.next(10, false);
     p.next(10, false);
     p.next(10, false);
-    expect(p.next(10, true)).toBe(57);
+    expect(p.next(10, true)).toBe(23);
   });
 });
