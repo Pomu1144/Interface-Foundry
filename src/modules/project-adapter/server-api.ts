@@ -27,16 +27,24 @@ export class CompanionError extends Error {
 }
 
 export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
-  const t = await token();
-  if (!t) throw new CompanionError(0, 'The IFDY companion is not running. Start the studio with "npm run dev".');
-  const headers = new Headers(init.headers);
-  headers.set('x-ifdy-token', t);
   let body = init.body;
+  const headers = new Headers(init.headers);
   if (init.json !== undefined) {
     headers.set('content-type', 'application/json');
     body = JSON.stringify(init.json);
   }
-  const res = await fetch(path, { ...init, headers, body });
+  const send = async () => {
+    const t = await token();
+    if (!t) throw new CompanionError(0, 'The IFDY companion is not running. Start the studio with "npm run dev".');
+    headers.set('x-ifdy-token', t);
+    return fetch(path, { ...init, headers, body });
+  };
+  let res = await send();
+  // The token is per launch: after a companion restart, fetch the new one and retry once.
+  if (res.status === 401) {
+    tokenPromise = null;
+    res = await send();
+  }
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     try {
