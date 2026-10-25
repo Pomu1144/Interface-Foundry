@@ -308,6 +308,8 @@ export class BrowserSession implements PageHost {
     if (this.disposed) return;
     this.disposed = true;
     clearInterval(this.heartbeat);
+    // Companion shutting down / restarting: tell the studio so it reconnects to the new instance.
+    if (this.ws.readyState === 1) this.ws.close(1001, 'Companion restarting');
     const pages = [...this.pages.values()];
     this.pages.clear();
     await Promise.all(pages.map((p) => p.close()));

@@ -2,6 +2,7 @@ import type { NodeId } from '@shared/types';
 import { bus } from '@/lib/events';
 import { studio } from '@/store';
 import { makeChange } from '@/modules/change-manager/changes';
+import { routeFromUrl as routeForUrl } from '@/modules/project-adapter/source';
 import { currentViewportContext } from '@/modules/device-simulator/context';
 import type { PreviewConnection } from './connection';
 import { heartbeats, useOverlay } from './overlay-store';
@@ -14,14 +15,7 @@ const eid = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 export function wireConnection(conn: PreviewConnection, role: 'primary' | 'compare' | 'wall' | 'worker'): () => void {
   const offs: (() => void)[] = [];
   const isWorker = role === 'worker';
-  const routeFromUrl = (url: string) => {
-    try {
-      const u = new URL(url);
-      return u.hash || u.pathname;
-    } catch {
-      return '';
-    }
-  };
+  const routeFromUrl = (url: string) => routeForUrl(studio().source, url);
 
   offs.push(
     conn.on('hello', async (h) => {

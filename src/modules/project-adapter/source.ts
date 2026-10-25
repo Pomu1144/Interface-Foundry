@@ -24,6 +24,28 @@ export function sourceUrl(source: PreviewSource, route: string): string {
   }
 }
 
+/**
+ * Inverse of sourceUrl: the route that a URL loaded in the preview corresponds
+ * to, so that sourceUrl(source, routeFromUrl(source, url)) === url. Paths are
+ * kept relative to the entry's directory; feeding an absolute pathname back
+ * into sourceUrl would nest it under the base again (/fs/0/fs/0/...).
+ */
+export function routeFromUrl(source: PreviewSource | null, url: string): string {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return '';
+  }
+  if (!source || source.kind === 'url') return u.hash || u.pathname;
+  const entry = new URL(sourceUrl(source, ''));
+  if (u.origin === entry.origin && u.pathname === entry.pathname && u.hash) return u.hash;
+  const dir = entry.origin + entry.pathname.replace(/[^/]*$/, '');
+  const here = u.origin + u.pathname + u.search;
+  if (here.startsWith(dir)) return here.slice(dir.length) + u.hash;
+  return u.href;
+}
+
 export function sourceSupportsInspection(source: PreviewSource | null): boolean {
   return Boolean(source && (source.kind !== 'url' || source.engine === 'remote'));
 }

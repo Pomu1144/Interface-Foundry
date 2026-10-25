@@ -97,17 +97,15 @@ export function PreviewFrame({
   }, [src, instanceId]);
 
   // Explicit reloads keep the session; the agent says hello again and state is re-applied.
-  const firstReload = useRef(true);
+  const lastReload = useRef(reloadNonce);
   useEffect(() => {
-    if (firstReload.current) {
-      firstReload.current = false;
-      return;
-    }
+    if (lastReload.current === reloadNonce) return;
+    lastReload.current = reloadNonce;
     const frame = ref.current;
     if (!frame) return;
     previews.get(instanceId)?.resetPending('Reloading');
     studio().upsertInstance(instanceId, { status: 'loading', error: undefined });
-    frame.src = frame.src;
+    reloadFrame(frame);
   }, [reloadNonce, instanceId]);
 
   // Instrumentation flags are read by the agent at document start: update name and reload.
@@ -117,7 +115,7 @@ export function PreviewFrame({
     if (!frame || lastFlags.current === flags) return;
     lastFlags.current = flags;
     frame.name = `${encodeWindowName(session, location.origin)}|${flags}`;
-    frame.src = frame.src;
+    reloadFrame(frame);
   }, [flags, session]);
 
   // Detect pages that load without the agent answering.
@@ -160,4 +158,19 @@ export function PreviewFrame({
       }}
     />
   );
+}
+
+/**
+ * Reload the frame's document. Re-assigning the same src is only a fragment
+ * navigation when the URL has a hash (hash routes), so the page would not
+ * reload: go through about:blank first in that case.
+ */
+function reloadFrame(frame: HTMLIFrameElement) {
+  const url = frame.src;
+  if (!url.includes('#')) {
+    frame.src = url;
+    return;
+  }
+  frame.addEventListener('load', () => void (frame.src = url), { once: true });
+  frame.src = 'about:blank';
 }

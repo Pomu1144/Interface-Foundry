@@ -609,6 +609,12 @@ button.chip:hover {
   line-height: 1.4;
   word-break: break-word;
 }
+.notice[data-compact='true'] .noticeText {
+  display: none;
+}
+.notice[data-compact='true'] .noticeCard {
+  padding: 10px 8px;
+}
 .noticeBtn {
   display: inline-flex;
   align-items: center;

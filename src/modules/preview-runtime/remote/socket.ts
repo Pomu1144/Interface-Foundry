@@ -77,9 +77,10 @@ class BrowserSocket {
   private async connect() {
     let url: string;
     try {
-      url = await wsUrl(BROWSER_WS_PATH);
+      // The companion issues a new token on every launch: after a failed attempt, fetch a fresh one.
+      url = this.retries === 0 ? await wsUrl(BROWSER_WS_PATH) : await freshWsUrl();
     } catch {
-      return this.fail('The IFDY companion is not reachable.');
+      return this.scheduleRetry();
     }
     if (!this.wantOpen) return this.setState('idle');
     const ws = new WebSocket(url);
@@ -164,6 +165,14 @@ class BrowserSocket {
     this.state = s;
     this.listeners.forEach((l) => l());
   }
+}
+
+async function freshWsUrl(): Promise<string> {
+  const r = await fetch('/api/bootstrap', { cache: 'no-store' });
+  if (!r.ok) throw new Error(`bootstrap ${r.status}`);
+  const { token } = (await r.json()) as { token: string };
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${location.host}${BROWSER_WS_PATH}?token=${encodeURIComponent(token)}`;
 }
 
 export const browserSocket = new BrowserSocket();

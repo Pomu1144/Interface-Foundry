@@ -404,7 +404,7 @@ function RunDrilldown({ run, scenario, routeLabel, deviceName, busy }: { run: Sc
     { id: 'repro', label: 'Reproduce' },
     { id: 'issues', label: 'Issues', count: run.issues.length },
     { id: 'console', label: 'Console', count: run.consoleErrors.length },
-    { id: 'shots', label: 'Screenshots', count: shots.length },
+    { id: 'shots', label: 'Shots', count: shots.length },
   ];
   const stepById = new Map(scenario?.steps.map((x) => [x.id, x]) ?? []);
   return (
@@ -422,7 +422,7 @@ function RunDrilldown({ run, scenario, routeLabel, deviceName, busy }: { run: Sc
           label="Open in timeline"
           onClick={() => {
             useRunner.setState({ follow: false });
-            showInTimeline({ kind: 'scenario', scenarioId: run.scenarioId, runId: run.id });
+            showInTimeline({ kind: 'scenario', scenarioId: run.scenarioId, runId: run.id }, run.steps.find((x) => x.status === 'failed')?.stepId ?? null);
             studio().setBottomTab('timeline');
           }}
         >

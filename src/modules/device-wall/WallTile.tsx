@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { AlertTriangle, Camera, Check, CircleSlash, Crosshair, Lock, Maximize2, RefreshCw, ShieldAlert, Smartphone, TabletSmartphone, Unplug } from 'lucide-react';
+import { AlertTriangle, Camera, Check, CircleSlash, Crosshair, Maximize2, RefreshCw, ShieldAlert, Smartphone, TabletSmartphone, Unplug } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { NodeId, ResponsiveIssue } from '@shared/types';
 import { IconButton, Popover, Spinner, Tooltip } from '@/ui';
@@ -109,12 +109,12 @@ function TileShimmer({ id }: { id: string }) {
 }
 
 /** Error / paused notices, drawn in screen space over the device so they stay readable at any tile scale. */
-function TileNotice({ id, engine, budgetBlocked, onReload }: { id: string; engine: TileEngine; budgetBlocked: boolean; onReload: () => void }) {
+function TileNotice({ id, engine, budgetBlocked, compact, onReload }: { id: string; engine: TileEngine; budgetBlocked: boolean; compact: boolean; onReload: () => void }) {
   const inst = useStudio((st) => st.instances[id]);
   if (budgetBlocked) {
     return (
-      <div className={s.notice} data-tone="neutral">
-        <div className={s.noticeCard}>
+      <div className={s.notice} data-tone="neutral" data-compact={compact ? 'true' : undefined}>
+        <div className={s.noticeCard} title={compact ? 'Over the controlled Chromium page budget for this tab. Remove a device or close other previews.' : undefined}>
           <span className={s.noticeIcon}>
             <CircleSlash size={14} />
           </span>
@@ -127,8 +127,8 @@ function TileNotice({ id, engine, budgetBlocked, onReload }: { id: string; engin
   if (!inst || inst.status === 'ready' || inst.status === 'idle' || inst.status === 'loading') return null;
   const crashed = inst.status === 'crashed';
   return (
-    <div className={s.notice} role="alert">
-      <div className={s.noticeCard}>
+    <div className={s.notice} role="alert" data-compact={compact ? 'true' : undefined}>
+      <div className={s.noticeCard} title={compact ? inst.error : undefined}>
         <span className={s.noticeIcon} data-tone={crashed ? 'warning' : 'danger'}>
           {inst.status === 'blocked' ? <ShieldAlert size={14} /> : engine === 'remote' && /unavailable|connect/i.test(inst.error ?? '') ? <Unplug size={14} /> : <AlertTriangle size={14} />}
         </span>
@@ -306,7 +306,17 @@ export const WallTile = memo(function WallTile({
     >
       <div className={s.label} style={{ height: LABEL_HEIGHT, width: cell.width + labelOverhang }}>
         <div className={s.labelRow}>
-          <Tooltip content={statusText}>
+          <Tooltip
+            content={
+              <>
+                {statusText}
+                <br />
+                <span style={{ opacity: 0.7 }}>
+                  {engineLabel}: {engineHint}
+                </span>
+              </>
+            }
+          >
             <span className={s.dot} data-tone={statusTone} />
           </Tooltip>
           <span className={s.name} title={device.name}>
@@ -346,17 +356,7 @@ export const WallTile = memo(function WallTile({
               <span>landscape</span>
             </>
           )}
-          {engine !== 'frame' && (
-            <>
-              <span className={s.metaSep}>·</span>
-              <Tooltip content={engineHint}>
-                <span className={s.engine} data-engine={engine}>
-                  {engine === 'embed' && <Lock size={9} />}
-                  {engineLabel}
-                </span>
-              </Tooltip>
-            </>
-          )}
+
           {segmentsHint && (
             <Tooltip content={segmentsHint}>
               <span className={s.segments} data-on={engine === 'remote' && remote?.displayFeature === 'applied' ? 'true' : undefined}>
@@ -425,7 +425,7 @@ export const WallTile = memo(function WallTile({
             <Maximize2 size={12} />
           </IconButton>
         </div>
-        <TileNotice id={instanceId} engine={engine} budgetBlocked={budgetBlocked} onReload={() => onReload(tile)} />
+        <TileNotice id={instanceId} engine={engine} budgetBlocked={budgetBlocked} compact={cell.width < 170} onReload={() => onReload(tile)} />
         <Feedback id={instanceId} />
         {leader && mirroring && <span className={s.leadTag}>Leading</span>}
       </div>
