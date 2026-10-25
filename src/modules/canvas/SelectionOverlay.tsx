@@ -10,6 +10,7 @@ import { cancelPreview, isHidden, previewStyles, setStyles, toggleHidden } from 
 import { planResize } from './resize';
 import { copyText, cssForInfo } from './clipboard';
 import { saveSelectionAsStyle } from '@/modules/style-inspector/presets';
+import { isMoving, useDeviceMoving } from '@/modules/device-simulator/motion';
 import s from './canvas.module.css';
 
 type ScreenRect = { left: number; top: number; width: number; height: number };
@@ -39,13 +40,15 @@ export function SelectionOverlay({ container }: { container: React.RefObject<HTM
   const hover = useOverlay((o) => o.hover);
   const rects = useOverlay((o) => o.rects);
   const mirrors = useOverlay((o) => o.mirrors);
+  // Outlines are drawn in screen space and can't follow a device that is folding or turning in 3D.
+  const moving = useDeviceMoving();
 
   // Track frame positions every animation frame (camera moves, fold transitions, resizes).
   useEffect(() => {
     let raf = 0;
     let lastKey = '';
     const loop = () => {
-      const c = container.current?.getBoundingClientRect();
+      const c = isMoving() ? null : container.current?.getBoundingClientRect();
       if (c) {
         const ids = new Set<string>(Object.keys(studio().instances));
         const next: Record<string, FrameGeom | null> = {};
@@ -77,6 +80,7 @@ export function SelectionOverlay({ container }: { container: React.RefObject<HTM
     };
   }, []);
 
+  if (moving) return null;
   const selGeom = selection.instanceId ? geoms.current[selection.instanceId] : null;
   const selRectRaw: Rect | null = selection.nodeId !== null && selection.instanceId ? rects[selection.instanceId]?.[selection.nodeId] ?? selection.info?.rect ?? null : null;
   const sel = selGeom && selRectRaw ? toScreen(selGeom, selRectRaw) : null;

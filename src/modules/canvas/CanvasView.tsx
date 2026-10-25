@@ -21,6 +21,9 @@ type BoardSpec = {
   posture: Posture;
   orientation: Orientation;
   geometry: PostureGeometry;
+  /** Both postures, for the 3D hinge frame of foldables. */
+  folded: PostureGeometry;
+  expanded: PostureGeometry | null;
   progress: number;
   animating: boolean;
   /** Width reserved in the layout (max of folded/expanded) so boards never overlap mid-animation. */
@@ -38,7 +41,12 @@ export function CanvasView() {
   const [panning, setPanning] = useState(false);
   const camera = useStudio((st) => st.camera);
   const viewport = useStudio((st) => st.viewport);
-  const transition = useStudio((st) => st.transition);
+  // In the 3D hinge style the frame animates through CSS variables (motion.ts), so the
+  // canvas only re-renders when the content posture flips, not on every frame.
+  const style = useStudio((st) => st.transition.style);
+  const mode = useStudio((st) => st.transition.mode);
+  const playing = useStudio((st) => st.transition.playing);
+  const flatProgress = useStudio((st) => (st.transition.style === 'reflow' ? st.transition.progress : -1));
   const compare = useStudio((st) => st.compare);
   const customDevices = useStudio((st) => st.customDevices);
   const responsiveSize = useStudio((st) => st.responsiveSize);
@@ -50,10 +58,13 @@ export function CanvasView() {
 
   const boards = useMemo<BoardSpec[]>(() => {
     const list: BoardSpec[] = [];
-    const inFlight = Boolean(device.expanded) && (transition.playing || (transition.progress > 0 && transition.progress < 1));
+    const flat = style === 'reflow';
+    const inFlight = flat && Boolean(device.expanded) && (playing || (flatProgress > 0 && flatProgress < 1));
     const geometry = inFlight
-      ? resolveTransition(device, viewport.orientation, transition.progress, transition.mode)
+      ? resolveTransition(device, viewport.orientation, flatProgress, mode)
       : resolveViewport(device, viewport.posture, viewport.orientation).geometry;
+    const foldedG = resolveViewport(device, 'folded', viewport.orientation).geometry;
+    const expandedG = device.expanded ? resolveViewport(device, 'expanded', viewport.orientation).geometry : null;
     const bare = device.frameStyle === 'bare';
     const slotW = Math.max(
       frameDims(resolveViewport(device, 'folded', viewport.orientation).geometry, bare).w,
@@ -66,10 +77,12 @@ export function CanvasView() {
       posture: viewport.posture,
       orientation: viewport.orientation,
       geometry,
-      progress: inFlight ? transition.progress : viewport.posture === 'expanded' ? 1 : 0,
-      animating: inFlight,
+      folded: foldedG,
+      expanded: expandedG,
+      progress: inFlight ? flatProgress : viewport.posture === 'expanded' ? 1 : 0,
+      animating: inFlight || (!flat && playing),
       slotWidth: slotW,
-      frameHeight: frameDims(geometry, bare).h,
+      frameHeight: Math.max(frameDims(geometry, bare).h, frameDims(foldedG, bare).h, expandedG ? frameDims(expandedG, bare).h : 0),
     });
     if (compare.enabled) {
       const pd =
@@ -84,6 +97,8 @@ export function CanvasView() {
         posture: pd.expanded ? compare.partner.posture : 'folded',
         orientation: compare.partner.orientation,
         geometry: pg,
+        folded: resolveViewport(pd, 'folded', compare.partner.orientation).geometry,
+        expanded: pd.expanded ? resolveViewport(pd, 'expanded', compare.partner.orientation).geometry : null,
         progress: compare.partner.posture === 'expanded' ? 1 : 0,
         animating: false,
         slotWidth: frameDims(pg, pd.frameStyle === 'bare').w,
@@ -91,7 +106,7 @@ export function CanvasView() {
       });
     }
     return list;
-  }, [device, viewport, transition.playing, transition.progress, transition.mode, compare, customDevices]);
+  }, [device, viewport, style, mode, playing, flatProgress, compare, customDevices]);
 
   // Fit the boards into view when asked (device change, compare toggle, Shift+1).
   const contentSize = useMemo(() => {

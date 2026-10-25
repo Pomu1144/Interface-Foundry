@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef } from 'react';
 import { studio, useStudio } from '@/store';
 import { bus } from '@/lib/events';
 
+/** True while Space is held for temporary panning (read by device drag handlers). */
+export const panKey = { down: false };
+
 export const MIN_ZOOM = 0.05;
 export const MAX_ZOOM = 8;
 const clampZoom = (z: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
@@ -60,12 +63,14 @@ export function useCameraControls(ref: React.RefObject<HTMLDivElement | null>, o
     const down = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !e.repeat && !isTyping(e)) {
         spaceDown.current = true;
+        panKey.down = true;
         onPanChange(true);
       }
     };
     const up = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         spaceDown.current = false;
+        panKey.down = false;
         if (!drag.current) onPanChange(studio().tool === 'pan');
       }
     };

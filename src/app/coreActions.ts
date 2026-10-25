@@ -24,6 +24,7 @@ import {
   Keyboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { rotateDevice } from '@/modules/device-simulator/rotate';
 import { studio } from '@/store';
 import { registerActions } from './actions';
 import { closeProject, openDemoProject } from '@/modules/project-adapter/projects';
@@ -79,10 +80,7 @@ export function registerCoreActions() {
     { id: 'preview.reload', label: 'Run (reload preview, re-apply edits)', group: 'View', shortcut: 'Mod+R', icon: RefreshCw, enabled: hasProject, run: () => studio().reloadPreview() },
 
     { id: 'device.fold', label: 'Fold / unfold', group: 'Device', shortcut: 'F', icon: TabletSmartphone, run: () => studio().toggleFold() },
-    { id: 'device.rotate', label: 'Rotate device', group: 'Device', shortcut: 'R', icon: RotateCw, run: () => {
-      const st = studio();
-      st.setViewport({ orientation: st.viewport.orientation === 'portrait' ? 'landscape' : 'portrait' });
-    } },
+    { id: 'device.rotate', label: 'Rotate device', group: 'Device', shortcut: 'R', icon: RotateCw, run: () => void rotateDevice() },
     { id: 'device.manager', label: 'Device Manager…', group: 'Device', icon: Smartphone, run: () => studio().setDialog('deviceManager', true) },
     ...BUILT_IN_DEVICES.map((d) => ({
       id: `device.use.${d.id}`,

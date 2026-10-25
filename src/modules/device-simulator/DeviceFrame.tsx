@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import type { CSSProperties, ReactNode } from 'react';
-import type { DeviceProfile, Orientation, PostureGeometry } from '@shared/types';
+import type { DeviceProfile, Orientation, Posture, PostureGeometry } from '@shared/types';
+import { fold3dLayout, type Fold3DLayout, type Rect } from './fold3d';
 import s from './DeviceFrame.module.css';
 
 export type FrameVisual = {
@@ -10,23 +11,9 @@ export type FrameVisual = {
   style: 'hinge' | 'reflow';
 };
 
-/**
- * Hardware-styled frame around a live viewport. All geometry is CSS px at
- * zoom 1; the canvas scales the whole frame. The viewport slot receives the
- * real preview, sized exactly to `geometry.viewport`.
- */
-export function DeviceFrame({
-  device,
-  geometry,
-  orientation,
-  visual,
-  showSystemUI,
-  showHinge,
-  colorScheme,
-  children,
-  viewportOverlay,
-}: {
+type FrameProps = {
   device: DeviceProfile;
+  /** Geometry of the live content (the posture the page is currently laid out for). */
   geometry: PostureGeometry;
   orientation: Orientation;
   visual: FrameVisual;
@@ -35,30 +22,44 @@ export function DeviceFrame({
   colorScheme?: 'light' | 'dark' | null;
   children: ReactNode;
   viewportOverlay?: ReactNode;
-}) {
+  /** Both postures of a foldable, for the 3D hinge frame. */
+  fold3d?: { folded: PostureGeometry; expanded: PostureGeometry; posture: Posture };
+};
+
+/**
+ * Hardware-styled frame around a live viewport. All geometry is CSS px at
+ * zoom 1; the canvas scales the whole frame. The viewport slot receives the
+ * real preview, sized exactly to `geometry.viewport`.
+ *
+ * Foldables in the 3D hinge style render as two panels driven by CSS
+ * variables from the motion engine (see motion.ts); everything else renders
+ * as a single slab.
+ */
+export function DeviceFrame(props: FrameProps) {
+  if (props.fold3d && props.visual.style === 'hinge' && props.device.frameStyle !== 'bare') {
+    const layout = fold3dLayout(props.device, props.fold3d.folded, props.fold3d.expanded);
+    if (layout) return <FoldableFrame3D {...props} layout={layout} posture={props.fold3d.posture} />;
+  }
+  return <FlatFrame {...props} />;
+}
+
+function FlatFrame({ device, geometry, orientation, visual, showSystemUI, showHinge, colorScheme, children, viewportOverlay }: FrameProps) {
   const g = geometry;
   const bare = device.frameStyle === 'bare';
   const bezel = bare ? { top: 0, right: 0, bottom: 0, left: 0 } : g.bezel;
   const frameW = g.screen.width + bezel.left + bezel.right;
   const frameH = g.screen.height + bezel.top + bezel.bottom;
   const p = visual.progress;
-  const swing = visual.animating && visual.style === 'hinge' ? Math.sin(Math.PI * p) : 0;
   const landscape = orientation === 'landscape';
   const fold = g.fold && showHinge ? g.fold : undefined;
-  const dark = colorScheme === 'dark';
-  const isFoldable = Boolean(device.expanded);
   const showDualSlabs = device.frameStyle === 'dual-screen' && fold && fold.kind === 'hinge' && p > 0.02;
 
   const deviceStyle: CSSProperties = {
     width: frameW,
     height: frameH,
-    transform: swing ? `perspective(2400px) rotateY(${-9 * swing}deg) rotateX(${2.5 * swing}deg) scale(${1 - 0.025 * swing})` : undefined,
     ['--radius' as string]: `${g.cornerRadius + Math.min(bezel.left, bezel.top)}px`,
     ['--screen-radius' as string]: `${g.cornerRadius}px`,
   };
-
-  const vpTop = g.safeArea.top + g.browserChrome.top;
-  const vpLeft = g.safeArea.left;
 
   return (
     <div className={clsx(s.device, s[device.frameStyle], landscape && s.landscape, visual.animating && s.animating)} style={deviceStyle} data-frame={device.frameStyle}>
@@ -69,23 +70,153 @@ export function DeviceFrame({
         className={clsx(s.screen, bare && s.screenBare)}
         style={{ left: bezel.left, top: bezel.top, width: g.screen.width, height: g.screen.height, borderRadius: g.cornerRadius }}
       >
-        {showSystemUI && g.safeArea.top > 0 && !landscape && <StatusBar platform={device.platform} height={g.safeArea.top} dark={dark} style={device.frameStyle} />}
-        {showSystemUI && g.safeArea.left > 0 && landscape && <div className={s.sideSafe} style={{ width: g.safeArea.left, background: dark ? '#000' : '#fff' }} />}
-        {g.browserChrome.top > 0 && <BrowserBar top={g.safeArea.top} height={g.browserChrome.top} />}
-        <div className={s.viewport} style={{ left: vpLeft, top: vpTop, width: g.viewport.width, height: g.viewport.height }}>
+        <ScreenContents device={device} g={g} landscape={landscape} showSystemUI={showSystemUI} fold={fold} progress={p} colorScheme={colorScheme} overlay={viewportOverlay}>
           {children}
-          {fold && <FoldMask fold={{ ...fold, offset: fold.axis === 'vertical' ? fold.offset - vpLeft : fold.offset - vpTop }} progress={p} />}
-          {isFoldable && visual.animating && visual.style === 'hinge' && fold && <PanelShade fold={fold} progress={p} />}
-          {viewportOverlay}
-        </div>
-        {showSystemUI && g.safeArea.bottom > 0 && !landscape && <HomeIndicator platform={device.platform} height={g.safeArea.bottom} dark={dark} />}
-        {showSystemUI && g.safeArea.right > 0 && landscape && <div className={s.sideSafe} style={{ right: 0, left: 'auto', width: g.safeArea.right, background: dark ? '#000' : '#fff' }} />}
-        {!bare && <Cutout style={device.frameStyle} screenW={g.screen.width} landscape={landscape} fold={fold} />}
-        {!bare && <div className={s.glare} />}
-        {swing > 0 && <div className={s.sweep} style={{ opacity: swing * 0.9, transform: `translateX(${(p - 0.5) * 140}%)` }} />}
+        </ScreenContents>
       </div>
       {device.frameStyle === 'laptop' && <div className={s.laptopBase} style={{ width: frameW * 1.16, left: -frameW * 0.08 }} />}
       {device.frameStyle === 'monitor' && <MonitorStand width={frameW} />}
+    </div>
+  );
+}
+
+/** Everything drawn inside the glass: system bars, browser chrome, the live viewport and its fold mask. */
+function ScreenContents({
+  device,
+  g,
+  landscape,
+  showSystemUI,
+  fold,
+  progress,
+  colorScheme,
+  overlay,
+  children,
+}: {
+  device: DeviceProfile;
+  g: PostureGeometry;
+  landscape: boolean;
+  showSystemUI: boolean;
+  fold?: PostureGeometry['fold'];
+  progress: number;
+  colorScheme?: 'light' | 'dark' | null;
+  overlay?: ReactNode;
+  children: ReactNode;
+}) {
+  const bare = device.frameStyle === 'bare';
+  const dark = colorScheme === 'dark';
+  const vpTop = g.safeArea.top + g.browserChrome.top;
+  const vpLeft = g.safeArea.left;
+  return (
+    <>
+      {showSystemUI && g.safeArea.top > 0 && !landscape && <StatusBar platform={device.platform} height={g.safeArea.top} dark={dark} style={device.frameStyle} />}
+      {showSystemUI && g.safeArea.left > 0 && landscape && <div className={s.sideSafe} style={{ width: g.safeArea.left, background: dark ? '#000' : '#fff' }} />}
+      {g.browserChrome.top > 0 && <BrowserBar top={g.safeArea.top} height={g.browserChrome.top} />}
+      <div className={s.viewport} style={{ left: vpLeft, top: vpTop, width: g.viewport.width, height: g.viewport.height }}>
+        {children}
+        {fold && <FoldMask fold={{ ...fold, offset: fold.axis === 'vertical' ? fold.offset - vpLeft : fold.offset - vpTop }} progress={progress} />}
+        {overlay}
+      </div>
+      {showSystemUI && g.safeArea.bottom > 0 && !landscape && <HomeIndicator platform={device.platform} height={g.safeArea.bottom} dark={dark} />}
+      {showSystemUI && g.safeArea.right > 0 && landscape && <div className={s.sideSafe} style={{ right: 0, left: 'auto', width: g.safeArea.right, background: dark ? '#000' : '#fff' }} />}
+      {!bare && <Cutout style={device.frameStyle} screenW={g.screen.width} landscape={landscape} fold={fold} />}
+      {!bare && <div className={s.glare} />}
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 3D hinge frame                                                      */
+/* ------------------------------------------------------------------ */
+
+const px = (r: Rect): CSSProperties => ({ left: r.x, top: r.y, width: r.width, height: r.height });
+
+/** Border radius with the hinge-side corners tightened. */
+function panelRadius(axis: 'vertical' | 'horizontal', hingeSide: 'start' | 'end' | 'none', outer: number, inner = 3): string {
+  if (hingeSide === 'none') return `${outer}px`;
+  const [tl, tr, br, bl] =
+    axis === 'vertical'
+      ? hingeSide === 'end'
+        ? [outer, inner, inner, outer]
+        : [inner, outer, outer, inner]
+      : hingeSide === 'end'
+        ? [outer, outer, inner, inner]
+        : [inner, inner, outer, outer];
+  return `${tl}px ${tr}px ${br}px ${bl}px`;
+}
+
+function FoldableFrame3D({
+  device,
+  geometry,
+  orientation,
+  showSystemUI,
+  showHinge,
+  colorScheme,
+  children,
+  viewportOverlay,
+  layout: L,
+  posture,
+  fold3d,
+}: FrameProps & { layout: Fold3DLayout; posture: Posture }) {
+  const landscape = orientation === 'landscape';
+  const vertical = L.axis === 'vertical';
+  const after = L.moving === 'after';
+  const g = geometry;
+  const sc = L.screen[posture];
+  const sp = L.staticPanel[posture];
+  const E = fold3d!.expanded;
+  const outer = E.cornerRadius + Math.min(E.bezel.left, E.bezel.top);
+  // Hinge side of each panel, along the fold axis.
+  const staticHinge = posture === 'folded' && device.frameStyle !== 'dual-screen' ? 'none' : after ? 'end' : 'start';
+  const movingHinge = after ? 'start' : 'end';
+  const swing = vertical ? `rotateY(calc(var(--fold-angle) * ${after ? 1 : -1}))` : `rotateX(calc(var(--fold-angle) * ${after ? -1 : 1}))`;
+  const origin = vertical ? (after ? '0% 50%' : '100% 50%') : after ? '50% 0%' : '50% 100%';
+  const backFlip = vertical ? 'rotateY(180deg)' : 'rotateX(180deg)';
+  const lean = after ? 1 : -1;
+  const containerTransform = [
+    `translate(calc((1 - var(--fold-open)) * ${L.foldedShift.x}px), calc((1 - var(--fold-open)) * ${L.foldedShift.y}px))`,
+    vertical ? `rotateX(calc(var(--fold-lift) * 7deg)) rotateY(calc(var(--fold-lift) * ${-13 * lean}deg))` : `rotateX(calc(var(--fold-lift) * ${11 * lean}deg)) rotateY(calc(var(--fold-lift) * -7deg))`,
+  ].join(' ');
+  const fold = g.fold && showHinge ? g.fold : undefined;
+  const coverSlide = vertical ? `translateX(calc(var(--fold-slide) * ${after ? 100 : -100}%))` : `translateY(calc(var(--fold-slide) * ${after ? 100 : -100}%))`;
+
+  return (
+    <div
+      className={clsx(s.fold3d, s[device.frameStyle], landscape && s.landscape)}
+      style={{
+        width: L.container.width,
+        height: L.container.height,
+        transform: containerTransform,
+        ['--radius' as string]: `${outer}px`,
+        ['--screen-radius' as string]: `${g.cornerRadius}px`,
+      }}
+      data-frame={device.frameStyle}
+      data-fold3d={posture}
+    >
+      <div className={s.floorShadow} />
+      <div className={clsx(s.panel, s.panelStatic)} style={{ ...px(sp), borderRadius: panelRadius(L.axis, staticHinge, outer) }}>
+        <div className={s.body} style={{ borderRadius: 'inherit' }} />
+      </div>
+      <div className={clsx(s.panel, s.panelMoving)} style={{ ...px(L.movingPanel), transformOrigin: origin, transform: swing }}>
+        <div className={s.face} style={{ borderRadius: panelRadius(L.axis, movingHinge, outer) }}>
+          <div className={s.body} style={{ borderRadius: 'inherit' }} />
+          <div className={s.screenOff} style={{ ...px(L.movingScreen), borderRadius: g.cornerRadius }} />
+          <div className={s.faceShade} style={{ borderRadius: 'inherit' }} />
+        </div>
+        <div className={clsx(s.face, s.faceBack)} style={{ transform: backFlip, borderRadius: panelRadius(L.axis, movingHinge === 'start' ? 'end' : 'start', outer) }}>
+          <div className={s.backBody} />
+        </div>
+      </div>
+      {L.hinge && <div className={clsx(s.hinge3d, !vertical && s.hinge3dH)} style={px(L.hinge)} />}
+      <div className={clsx(s.screen, s.screen3d)} style={{ ...px(sc), borderRadius: g.cornerRadius }}>
+        <ScreenContents device={device} g={g} landscape={landscape} showSystemUI={showSystemUI} fold={fold} progress={posture === 'expanded' ? 1 : 0} colorScheme={colorScheme} overlay={viewportOverlay}>
+          {children}
+        </ScreenContents>
+        {posture === 'expanded' && (
+          <div className={s.revealWindow} style={px(L.reveal)}>
+            <div className={clsx(s.revealCover, !vertical && s.revealCoverH)} data-edge={after ? 'start' : 'end'} style={{ transform: coverSlide }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -177,21 +308,6 @@ function FoldMask({ fold, progress }: { fold: NonNullable<PostureGeometry['fold'
     <div
       className={clsx(s.crease, !vertical && s.creaseH)}
       style={{ ...(vertical ? { left: fold.offset - 8, width: 16, top: 0, bottom: 0 } : { top: fold.offset - 8, height: 16, left: 0, right: 0 }), opacity: 0.25 + 0.75 * (1 - progress) }}
-    />
-  );
-}
-
-/** Shading on the panel that is still swinging open during a hinge animation. */
-function PanelShade({ fold, progress }: { fold: NonNullable<PostureGeometry['fold']>; progress: number }) {
-  const vertical = fold.axis === 'vertical';
-  const k = 1 - progress;
-  return (
-    <div
-      className={s.panelShade}
-      style={{
-        ...(vertical ? { left: fold.offset, right: 0, top: 0, bottom: 0 } : { top: fold.offset, bottom: 0, left: 0, right: 0 }),
-        background: `linear-gradient(${vertical ? 'to right' : 'to bottom'}, rgba(0,0,0,${0.55 * k}), rgba(0,0,0,${0.15 * k}) 45%, rgba(255,255,255,${0.06 * k}) 70%, rgba(0,0,0,${0.35 * k}))`,
-      }}
     />
   );
 }

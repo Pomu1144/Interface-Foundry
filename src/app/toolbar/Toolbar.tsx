@@ -28,6 +28,8 @@ import { runAction } from '@/app/actions';
 import { art, deviceArt } from '@/app/art';
 import { describeSource } from '@/modules/project-adapter/source';
 import { DevicePicker } from './DevicePicker';
+import { useFoldProgress } from '@/modules/device-simulator/motion';
+import { rotateDevice } from '@/modules/device-simulator/rotate';
 import s from '../shell.module.css';
 
 export function Toolbar() {
@@ -121,7 +123,8 @@ function ActivityCenter() {
   const project = useStudio((st) => st.project);
   const device = useStudio((st) => st.device());
   const viewport = useStudio((st) => st.viewport);
-  const transition = useStudio((st) => st.transition);
+  const transitionPlaying = useStudio((st) => st.transition.playing);
+  const transitionDirection = useStudio((st) => st.transition.direction);
   const primary = useStudio((st) => st.instances.primary);
   const errors = useStudio((st) => st.console.filter((c) => c.level === 'error').length);
   const warnings = useStudio((st) => st.console.filter((c) => c.level === 'warn').length);
@@ -134,7 +137,7 @@ function ActivityCenter() {
   const stateText = (() => {
     if (!project) return <>No project open</>;
     if (running) return <><b>Running tests</b> on {device.name}…</>;
-    if (transition.playing) return <><b>{transition.direction === 1 ? 'Unfolding' : 'Folding'}</b> {device.name} · {Math.round(transition.progress * 100)}%</>;
+    if (transitionPlaying) return <><b>{transitionDirection === 1 ? 'Unfolding' : 'Folding'}</b> {device.name} · <FoldPct /></>;
     switch (status) {
       case 'loading':
         return <><b>Loading</b> {project.name}…</>;
@@ -222,7 +225,7 @@ function RightCluster() {
         label="Rotate"
         shortcut="R"
         active={viewport.orientation === 'landscape'}
-        onClick={() => studio().setViewport({ orientation: viewport.orientation === 'portrait' ? 'landscape' : 'portrait' })}
+        onClick={() => void rotateDevice()}
       >
         <RotateCw size={15} />
       </IconButton>
@@ -274,4 +277,9 @@ function RightCluster() {
       </IconButton>
     </div>
   );
+}
+
+/** Live fold percentage; re-renders only itself while the hinge animates. */
+function FoldPct() {
+  return <>{Math.round(useFoldProgress() * 100)}%</>;
 }

@@ -3,6 +3,8 @@ import { useRef } from 'react';
 import { Badge, Button, Spinner } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { DeviceFrame } from '@/modules/device-simulator/DeviceFrame';
+import { DeviceStage } from '@/modules/device-simulator/DeviceStage';
+import { useFoldProgress } from '@/modules/device-simulator/motion';
 import { RESPONSIVE_ID } from '@/modules/device-simulator/devices';
 import { PreviewSurface } from '@/modules/preview-runtime/PreviewSurface';
 import type { BoardSpec } from './CanvasView';
@@ -29,7 +31,7 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
         <span className={s.boardMeta}>@{d.pixelRatio}x</span>
         {d.expanded && (
           <Badge tone={spec.animating ? 'molten' : spec.posture === 'expanded' ? 'accent' : 'neutral'}>
-            {spec.animating ? `${Math.round(spec.progress * 100)}%` : spec.posture === 'expanded' ? 'Expanded' : 'Folded'}
+            {spec.animating ? <FoldPercent flat={spec.progress} /> : spec.posture === 'expanded' ? 'Expanded' : 'Folded'}
           </Badge>
         )}
         {spec.orientation === 'landscape' && <Badge tone="outline">Landscape</Badge>}
@@ -42,34 +44,43 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
         {instance?.status === 'loading' && <Spinner size={10} />}
       </div>
       <div className={s.frameWrap}>
-        <DeviceFrame
-          device={d}
-          geometry={g}
-          orientation={spec.orientation}
-          visual={{ progress: spec.progress, animating: spec.animating, style: studio().transition.style }}
-          showSystemUI={settings.showSystemUI}
-          showHinge={settings.showHinge}
-          colorScheme={colorScheme}
-          viewportOverlay={<StatusOverlay instanceId={spec.instanceId} />}
-        >
-          <PreviewSurface
-            source={source}
-            route={route}
-            instanceId={spec.instanceId}
-            role={spec.role}
-            width={g.viewport.width}
-            height={g.viewport.height}
+        <DeviceStage live={spec.role === 'primary'} posture={spec.posture} orientation={spec.orientation} zoom={zoom}>
+          <DeviceFrame
             device={d}
-            posture={spec.posture}
+            geometry={g}
             orientation={spec.orientation}
+            visual={{ progress: spec.progress, animating: spec.animating, style: studio().transition.style }}
+            showSystemUI={settings.showSystemUI}
+            showHinge={settings.showHinge}
             colorScheme={colorScheme}
-            interactive={interactive && tool === 'select'}
-          />
-        </DeviceFrame>
+            viewportOverlay={<StatusOverlay instanceId={spec.instanceId} />}
+            fold3d={spec.expanded ? { folded: spec.folded, expanded: spec.expanded, posture: spec.posture } : undefined}
+          >
+            <PreviewSurface
+              source={source}
+              route={route}
+              instanceId={spec.instanceId}
+              role={spec.role}
+              width={g.viewport.width}
+              height={g.viewport.height}
+              device={d}
+              posture={spec.posture}
+              orientation={spec.orientation}
+              colorScheme={colorScheme}
+              interactive={interactive && tool === 'select'}
+            />
+          </DeviceFrame>
+        </DeviceStage>
         {d.id === RESPONSIVE_ID && spec.role === 'primary' && <ResponsiveHandles zoom={zoom} />}
       </div>
     </div>
   );
+}
+
+/** Live percentage while a fold animates; re-renders only itself. */
+function FoldPercent({ flat }: { flat: number }) {
+  const p = useFoldProgress();
+  return <>{Math.round((studio().transition.style === 'reflow' ? flat : p) * 100)}%</>;
 }
 
 function StatusOverlay({ instanceId }: { instanceId: string }) {

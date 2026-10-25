@@ -142,18 +142,22 @@ test.describe('IFDY acceptance workflow', () => {
       await expect.poll(async () => (await primaryFrame(page)).evaluate(() => innerWidth)).toBe(540);
       await expect.poll(() => store(page, (s) => s.viewport.posture)).toBe('folded');
       await expect.poll(() => overflow(page)).toBeGreaterThan(0);
+      // The page snaps back as soon as the content slides off; wait for the hinge to close too.
+      await expect.poll(() => store(page, (s) => ({ playing: s.transition.playing, p: s.transition.progress }))).toEqual({ playing: false, p: 0 });
     });
 
     await step('5. Animate the device transition', async () => {
-      // Sample the transition progress and the device viewport (iframe layout width)
-      // on every animation frame, and the page's own innerWidth on every resize.
+      // Sample the 3D hinge (CSS variables written by the motion engine), the slide-across
+      // reveal and the device viewport (iframe layout width) on every animation frame,
+      // and the page's own innerWidth on every resize.
       await page.evaluate(() => {
-        const w = window as unknown as { __IFDY__: { useStudio: { getState(): { transition: { progress: number } } } }; __samples: { p: number; w: number }[]; __sampling: boolean };
+        const w = window as unknown as { __samples: { a: number; s: number; w: number }[]; __sampling: boolean };
         const el = document.querySelector('iframe[data-instance="primary"]') as HTMLIFrameElement;
+        const stage = document.querySelector('[data-device-stage="primary"]') as HTMLElement;
         w.__samples = [];
         w.__sampling = true;
         const tick = () => {
-          w.__samples.push({ p: w.__IFDY__.useStudio.getState().transition.progress, w: el.offsetWidth });
+          w.__samples.push({ a: parseFloat(stage.style.getPropertyValue('--fold-angle')), s: parseFloat(stage.style.getPropertyValue('--fold-slide')), w: el.offsetWidth });
           if (w.__sampling) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
@@ -169,19 +173,24 @@ test.describe('IFDY acceptance workflow', () => {
       await expect.poll(() => store(page, (s) => s.transition.playing)).toBe(true);
       await expect.poll(() => store(page, (s) => ({ playing: s.transition.playing, posture: s.viewport.posture, p: s.transition.progress }))).toEqual({ playing: false, posture: 'expanded', p: 1 });
       const samples = await page.evaluate(() => {
-        const w = window as unknown as { __samples: { p: number; w: number }[]; __sampling: boolean };
+        const w = window as unknown as { __samples: { a: number; s: number; w: number }[]; __sampling: boolean };
         w.__sampling = false;
         return w.__samples;
       });
       const widths = await f.evaluate(() => (window as unknown as { __widths: number[] }).__widths);
-      const mid = samples.filter((x) => x.p > 0.05 && x.p < 0.95);
-      expect(mid.length, 'progress passes through intermediate values').toBeGreaterThanOrEqual(5);
-      expect(samples.every((x, i) => i === 0 || x.p >= samples[i - 1].p), 'unfold progress is monotonic').toBe(true);
-      // The device viewport follows the progress (the width can trail it by one render).
-      expect(samples.every((x, i) => x.w >= 540 && x.w <= 1114 && (i === 0 || x.w >= samples[i - 1].w)), 'viewport width grows from 540 to 1114').toBe(true);
-      expect(new Set(samples.map((x) => x.w).filter((w) => w > 540 && w < 1114)).size, 'the device viewport interpolates between 540 and 1114').toBeGreaterThanOrEqual(5);
-      expect(widths.filter((x) => x > 560 && x < 1100).length, 'the real page reflows at intermediate widths').toBeGreaterThanOrEqual(3);
+      // The second panel swings round its hinge from behind (180°) to flat (0°).
+      const swinging = samples.filter((x) => x.a > 5 && x.a < 175);
+      expect(swinging.length, 'the hinge passes through intermediate angles').toBeGreaterThanOrEqual(5);
+      expect(samples.every((x, i) => i === 0 || x.a <= samples[i - 1].a + 0.001), 'the hinge only opens').toBe(true);
+      // The live page keeps its folded viewport while the hinge moves, and reflows once it is flat.
+      expect(samples.filter((x) => x.a > 0.5).every((x) => x.w === 540), 'viewport stays 540 while the hinge swings').toBe(true);
+      expect(new Set(samples.map((x) => x.w)), 'the viewport switches once, 540 → 1114').toEqual(new Set([540, 1114]));
+      expect(widths.filter((x) => x > 560 && x < 1100), 'no intermediate reflows').toEqual([]);
       expect(widths.at(-1)).toBe(1114);
+      // Then the expanded content slides across the second screen.
+      const sliding = samples.filter((x) => x.w === 1114 && x.s > 0.02 && x.s < 0.98);
+      expect(sliding.length, 'content slides across after the reflow').toBeGreaterThanOrEqual(2);
+      expect(samples.at(-1)!.s).toBe(1);
       await expect(dock.getByText('100%', { exact: true })).toBeVisible();
 
       // Fold back, animated, to work on the compact defect.
