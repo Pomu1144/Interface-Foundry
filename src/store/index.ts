@@ -84,6 +84,7 @@ type Actions = {
   /** Open the current view on another device; returns the duplicate's id. */
   addDuplicate: (d: Omit<Duplicate, 'id'>) => string;
   removeDuplicate: (id: string) => void;
+  updateDuplicate: (id: string, patch: Partial<Omit<Duplicate, 'id'>>) => void;
   clearDuplicates: () => void;
   setColorScheme: (s: StudioState['colorScheme']) => void;
   setFontScale: (n: number) => void;
@@ -294,6 +295,7 @@ export const useStudio = create<Studio>()(
       return id;
     },
     removeDuplicate: (id) => set((s) => ({ duplicates: s.duplicates.filter((d) => d.id !== id), camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } })),
+    updateDuplicate: (id, patch) => set((s) => ({ duplicates: s.duplicates.map((d) => (d.id === id ? { ...d, ...patch } : d)) })),
     clearDuplicates: () => set((s) => ({ duplicates: [], camera: { ...s.camera, fitNonce: s.camera.fitNonce + 1 } })),
     setColorScheme: (colorScheme) => set({ colorScheme }),
     setFontScale: (fontScale) => set({ fontScale }),

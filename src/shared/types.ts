@@ -61,10 +61,18 @@ export type DeviceProfile = {
   builtIn: boolean;
 };
 
+/**
+ * Engine that renders a board. `auto` keeps the default (sandboxed iframe for
+ * project sources, controlled Chromium for public URLs); the others stream the
+ * page from the companion's Chromium, WebKit, or Safari in the iOS Simulator.
+ */
+export type PreviewEngine = 'auto' | 'chromium' | 'webkit' | 'ios-simulator';
+
 export type ViewportState = {
   deviceId: string;
   posture: Posture;
   orientation: Orientation;
+  engine?: PreviewEngine;
 };
 
 /** Fully resolved geometry for rendering a device at a given state (orientation applied). */

@@ -1,4 +1,5 @@
 import type { BrowserContext, CDPSession, ConsoleMessage, Dialog, Page, Request } from 'playwright-core';
+import type { LivePage } from './live-page';
 import type {
   DisplayFeatureMethod,
   EmulationParams,
@@ -22,7 +23,7 @@ export type PageHost = {
   sendRaw(json: string): void;
   sendFrame(header: FrameHeader, jpeg: Buffer): void;
   /** Throttles screencast acknowledgements across every streaming page of the session. */
-  scheduleAck(page: RemotePage, ack: () => void): void;
+  scheduleAck(page: LivePage, ack: () => void): void;
   agent: AgentBundle;
   browserVersion: string;
   displayFeatureMethod(): Promise<{ method: DisplayFeatureMethod; detail: string }>;
@@ -45,7 +46,7 @@ const CONSOLE_BUFFER = 200;
  * reloading), screencast, input dispatch, agent relay and passive network /
  * lifecycle reporting.
  */
-export class RemotePage {
+export class RemotePage implements LivePage {
   page!: Page;
   private cdp!: CDPSession;
   private agent!: AgentChannel;
@@ -80,6 +81,7 @@ export class RemotePage {
     readonly id: string,
     private readonly host: PageHost,
     private readonly open: OpenMessage,
+    private readonly getContext: () => Promise<BrowserContext>,
   ) {
     this.emu = sanitizeEmulation(open);
   }
@@ -88,7 +90,8 @@ export class RemotePage {
     return this.streaming;
   }
 
-  async start(context: BrowserContext) {
+  async start() {
+    const context = await this.getContext();
     this.page = await context.newPage();
     this.cdp = await context.newCDPSession(this.page);
     this.agent = new AgentChannel(this.page, this.cdp, {

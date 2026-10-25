@@ -10,7 +10,7 @@ import { previews } from '../registry';
 import { wireConnection } from '../wire';
 import { remoteEmulation } from './emulation';
 import { buttonName, ClickTracker, isComposingKey, isPasteShortcut, mapPoint, modifiersOf, normalizeWheel, screencastSize } from './input';
-import type { EmulationParams, FrameHeader, RemoteInput, ScreencastOptions, TouchPoint, VisualViewport } from './protocol';
+import type { EmulationParams, FrameHeader, RemoteEngine, RemoteInput, ScreencastOptions, TouchPoint, VisualViewport } from './protocol';
 import { useRemoteInfo, type RemoteInfo } from './remote-store';
 import { browserSocket, type PageEvent } from './socket';
 import { createRemoteTransport, type RemoteTransport } from './transport';
@@ -56,7 +56,10 @@ export function RemoteFrame({
   orientation,
   colorScheme,
   interactive,
+  engine = 'chromium',
 }: {
+  /** Engine that renders the page (see protocol.ts RemoteEngine). */
+  engine?: RemoteEngine;
   instanceId: string;
   role: PreviewRole;
   url: string;
@@ -174,7 +177,7 @@ export function RemoteFrame({
       if (reopening) conn.resetPending('Reconnected to Chromium');
       setPhase('opening');
       studio().upsertInstance(instanceId, { status: 'loading', error: undefined });
-      browserSocket.send({ t: 'open', pageId, url: L.url, session, flags, ...L.emu, screencast: L.screencast });
+      browserSocket.send({ t: 'open', pageId, url: L.url, session, flags, ...L.emu, screencast: L.screencast, engine, deviceId: device.id });
     };
     L.open = () => {
       L.openedGen = -1;
@@ -305,7 +308,7 @@ export function RemoteFrame({
       L.transport = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instanceId, role, flags, available]);
+  }, [instanceId, role, flags, available, engine]);
 
   /* ------------------------------------------------------------------ */
   /* Navigation, reload, emulation                                       */

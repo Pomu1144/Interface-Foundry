@@ -9,6 +9,7 @@ import type {
   NodeId,
   NodeInfo,
   Orientation,
+  PreviewEngine,
   Posture,
   Rect,
   ResponsiveIssue,
@@ -61,7 +62,7 @@ export type PreviewInstance = {
   engine: 'frame' | 'remote' | 'embed';
 };
 
-export type Duplicate = { id: string; deviceId: string; posture: Posture; orientation: Orientation };
+export type Duplicate = { id: string; deviceId: string; posture: Posture; orientation: Orientation; engine?: PreviewEngine };
 
 export type TransitionState = {
   /** 0 = folded, 1 = expanded. */
@@ -113,6 +114,8 @@ export type ServerInfo = {
   status: 'unknown' | 'online' | 'offline';
   token: string | null;
   previewOrigin: string | null;
+  /** Engines reported by the companion's browser websocket (see remote/protocol.ts). */
+  engines?: import('@/modules/preview-runtime/remote/protocol').EngineInfo[];
   capabilities: {
     browser: { available: boolean; reason: string };
     ai: { anthropic: boolean; model: string; local: boolean; localModel: string | null };

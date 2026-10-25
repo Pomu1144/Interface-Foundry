@@ -11,6 +11,25 @@
  */
 
 export const BROWSER_PROTOCOL_VERSION = 1;
+
+/**
+ * Rendering engines the companion can drive.
+ *  - chromium: controlled Chromium (Blink), emulated over CDP.
+ *  - webkit: Playwright's WebKit build — Safari's engine, any OS, but not iOS Safari.
+ *  - ios-simulator: real Mobile Safari in Xcode's iOS Simulator (macOS companion only).
+ */
+export type RemoteEngine = 'chromium' | 'webkit' | 'ios-simulator';
+
+export type EngineInfo = {
+  id: RemoteEngine;
+  available: boolean;
+  /** Human label, e.g. "Chromium 140", "WebKit 26.6", "Safari · iOS 18.2 Simulator". */
+  label: string;
+  /** Why it is unavailable, or a caveat when available. */
+  detail?: string;
+  /** Features the engine supports; the studio disables/labels the rest. */
+  features: { inspect: boolean; input: boolean; touch: boolean; foldEmulation: boolean; rotate: boolean };
+};
 export const BROWSER_WS_PATH = '/api/ws/browser';
 
 /* ------------------------------------------------------------------ */
@@ -86,6 +105,10 @@ export type OpenMessage = {
   /** Agent instrumentation flags (e.g. 'ev', 'net'). */
   flags: string[];
   screencast?: ScreencastOptions;
+  /** Engine to open the page in (default chromium). */
+  engine?: RemoteEngine;
+  /** Device profile id (lets engines such as the iOS Simulator pick matching hardware). */
+  deviceId?: string;
 } & EmulationParams;
 
 export type ClientMessage =
@@ -109,7 +132,7 @@ export type ClientMessage =
 export type DisplayFeatureMethod = 'displayFeaturesOverride' | 'deviceMetrics' | 'none';
 
 export type BrowserCapabilities = {
-  engine: 'chromium';
+  engine: RemoteEngine;
   /** How foldable display features are emulated, verified with viewport-segment media queries. */
   displayFeatures: { supported: boolean; method: DisplayFeatureMethod; detail: string };
   touch: boolean;
@@ -123,6 +146,8 @@ export type ServerHello = {
   browser: string;
   maxPages: number;
   capabilities: BrowserCapabilities;
+  /** Every engine this companion knows about, available or not. */
+  engines?: EngineInfo[];
 };
 
 export type PageStatus = 'opening' | 'loading' | 'ready' | 'error' | 'crashed' | 'closed';
@@ -145,7 +170,7 @@ export type WireNetworkEntry = {
   failureReason?: string;
   initiator?: string;
   fromCache?: boolean;
-  source: 'chromium';
+  source: RemoteEngine;
 };
 
 export type ServerErrorCode = 'launch-failed' | 'page-limit' | 'invalid' | 'no-page' | 'forbidden' | 'internal';

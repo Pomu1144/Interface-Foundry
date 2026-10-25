@@ -1,6 +1,6 @@
 import { AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useRef } from 'react';
-import { Badge, Button, Spinner } from '@/ui';
+import { Badge, Button, Menu, Spinner } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { DeviceFrame } from '@/modules/device-simulator/DeviceFrame';
 import { DeviceStage } from '@/modules/device-simulator/DeviceStage';
@@ -8,6 +8,7 @@ import { useFoldProgress } from '@/modules/device-simulator/motion';
 import { RESPONSIVE_ID } from '@/modules/device-simulator/devices';
 import { PreviewSurface } from '@/modules/preview-runtime/PreviewSurface';
 import type { BoardSpec } from './CanvasView';
+import type { PreviewEngine } from '@shared/types';
 import s from './canvas.module.css';
 
 export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interactive: boolean; zoom: number }) {
@@ -34,6 +35,7 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
           {g.viewport.width} × {g.viewport.height}
         </span>
         <span className={s.boardMeta}>@{d.pixelRatio}x</span>
+        <EnginePicker spec={spec} />
         {d.expanded && (
           <Badge tone={spec.animating ? 'molten' : spec.posture === 'expanded' ? 'accent' : 'neutral'}>
             {spec.animating ? <FoldPercent flat={spec.progress} /> : spec.posture === 'expanded' ? 'Expanded' : 'Folded'}
@@ -74,12 +76,64 @@ export function Artboard({ spec, interactive, zoom }: { spec: BoardSpec; interac
               orientation={spec.orientation}
               colorScheme={colorScheme}
               interactive={interactive && tool === 'select'}
+              engine={spec.engine}
             />
           </DeviceFrame>
         </DeviceStage>
         {d.id === RESPONSIVE_ID && spec.role === 'primary' && <ResponsiveHandles zoom={zoom} />}
       </div>
     </div>
+  );
+}
+
+const ENGINE_LABEL: Record<PreviewEngine, string> = { auto: 'Auto', chromium: 'Chromium', webkit: 'WebKit', 'ios-simulator': 'Safari · iOS Sim' };
+
+/** Which engine renders this board: iframe (auto), Chromium, WebKit, or Safari in the iOS Simulator. */
+function EnginePicker({ spec }: { spec: BoardSpec }) {
+  const engines = useStudio((st) => st.server.engines);
+  const info = (id: PreviewEngine) => engines?.find((e) => e.id === id);
+  const set = (engine: PreviewEngine) => {
+    if (spec.duplicateId) studio().updateDuplicate(spec.duplicateId, { engine });
+    else if (spec.role === 'primary') studio().setViewport({ engine });
+    else studio().setCompare({ partner: { ...studio().compare.partner, engine } });
+  };
+  const hint = (id: PreviewEngine) => {
+    const e = info(id);
+    if (!e) return id === 'auto' ? 'iframe / default' : undefined;
+    return e.available ? e.label : 'Unavailable';
+  };
+  const current = spec.engine;
+  return (
+    <Menu
+      width={300}
+      trigger={
+        <button className={s.engineChip} data-engine={current} title="Rendering engine" onPointerDown={(e) => e.stopPropagation()}>
+          {ENGINE_LABEL[current]}
+        </button>
+      }
+      items={[
+        { type: 'label', label: 'Render this board with' },
+        ...(['auto', 'chromium', 'webkit', 'ios-simulator'] as PreviewEngine[]).map((id) => ({
+          label: ENGINE_LABEL[id] === 'Safari · iOS Sim' ? 'Safari (iOS Simulator)' : ENGINE_LABEL[id],
+          hint: hint(id),
+          checked: current === id,
+          disabled: id !== 'auto' && info(id)?.available === false,
+          onSelect: () => set(id),
+        })),
+        { type: 'separator' },
+        {
+          type: 'label',
+          label:
+            current === 'webkit'
+              ? "Safari's engine on this OS, not iOS Safari."
+              : current === 'ios-simulator'
+                ? (info('ios-simulator')?.detail ?? 'Real Mobile Safari; needs the companion on a Mac with Xcode.')
+                : current === 'chromium'
+                  ? 'Streamed from the companion with full device emulation.'
+                  : 'Default: sandboxed iframe (viewport size only) or Chromium for URLs.',
+        },
+      ]}
+    />
   );
 }
 
