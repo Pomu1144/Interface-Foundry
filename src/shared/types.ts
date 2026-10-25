@@ -377,7 +377,7 @@ export type Locator = {
 };
 
 export type StepAction =
-  | { type: 'click'; locator: Locator }
+  | { type: 'click'; locator: Locator; /** 2 = double-click (both clicks dispatched in the same task). */ clickCount?: number }
   | { type: 'fill'; locator: Locator; value: string; masked: boolean }
   | { type: 'press'; locator?: Locator; key: string }
   | { type: 'focus'; locator: Locator }

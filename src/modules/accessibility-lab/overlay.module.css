@@ -1,0 +1,61 @@
+.clip {
+  position: fixed;
+  z-index: 15;
+  overflow: hidden;
+  pointer-events: none;
+}
+.layer {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.path {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+}
+.path polyline {
+  fill: none;
+  stroke: var(--violet);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+.stop {
+  position: absolute;
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px var(--violet),
+    0 0 0 3px rgba(167, 139, 250, 0.18);
+}
+.stop[data-warn='true'] {
+  box-shadow:
+    0 0 0 1px var(--warning),
+    0 0 0 3px rgba(245, 181, 68, 0.2);
+}
+.badge {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--violet);
+  color: #160f2b;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(10, 10, 14, 0.85), 0 2px 6px rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+.stop[data-warn='true'] .badge {
+  background: var(--warning);
+  color: #2a1a02;
+}

@@ -21,6 +21,7 @@ import { captureRaster } from './raster';
 import { Recorder, isSensitiveField } from './recorder';
 import { replayStep } from './recorder';
 import { boxFor, breakpoints, computedFor, curatedComputed, layoutFor, scanTokens, stylesFor } from './styles';
+import { scanAssets, tokenUsage } from './assets';
 import { createTransport } from './transport';
 
 (function bootstrap() {
@@ -170,6 +171,8 @@ import { createTransport } from './transport';
     'record.stop': () => recorder.stop(),
     'replay.step': ({ action, timeout }) => replayStep(action, timeout),
     'tokens.scan': () => scanTokens(),
+    'tokens.usage': ({ name }) => tokenUsage(name),
+    'assets.scan': () => scanAssets(),
     'env.set': (env) => setEnv(env),
     'nav.go': ({ url }) => {
       if (url.startsWith('#')) location.hash = url;
