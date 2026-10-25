@@ -4,21 +4,21 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 /**
  * Final acceptance: the 15-step product workflow, end to end through the real
  * UI, on the synthetic Harborline mortgage demo. Each test.step maps 1:1 to a
- * step of the acceptance workflow. The store (window.__IFDY__) is only read for
- * assertions; every action is driven through the studio UI.
+ * step of the acceptance workflow. Every action is driven through the studio
+ * UI (clicks, the command palette, the toolbar); the store (window.__IFDY__,
+ * dev builds only) is read for assertions only.
  */
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-/** Read from the studio store (dev hook). `pick` must be self-contained: it is serialized into the page. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/** Read from the studio store. `pick` must be self-contained: it is serialized into the page. */
 function store<T>(page: Page, pick: (s: any) => T): Promise<T> {
   return page.evaluate(`(${pick.toString()})(window.__IFDY__.useStudio.getState())`) as Promise<T>;
 }
 
-/** The canvas preview (the real demo page inside the device frame). */
+/** The canvas preview: the real demo document inside the device frame. */
 async function primaryFrame(page: Page): Promise<Frame> {
   const handle = await page.locator('iframe[data-instance="primary"]').elementHandle();
   const frame = await handle?.contentFrame();
@@ -26,17 +26,21 @@ async function primaryFrame(page: Page): Promise<Frame> {
   return frame;
 }
 
-/** Horizontal page overflow of the canvas page, in CSS px (> 0 means the page scrolls sideways). */
+/** Horizontal page overflow of the canvas page in CSS px (> 0: the page scrolls sideways). */
 async function overflow(page: Page): Promise<number> {
-  const f = await primaryFrame(page);
-  return f.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  return (await primaryFrame(page)).evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+}
+
+/** Right edge of the promotional banner vs. the viewport width. */
+async function bannerEdge(page: Page) {
+  return (await primaryFrame(page)).evaluate(() => ({ right: document.querySelector('.rate-banner')!.getBoundingClientRect().right, vw: innerWidth }));
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Run a registered action from the command palette by its label. */
+/** Run a registered action from the command palette (Mod+K) by its label. */
 async function runCommand(page: Page, label: string) {
-  // Shortcuts belong to the studio document, not the previewed page.
+  // Studio shortcuts belong to the studio document, not to the previewed page.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
   await page.keyboard.press('ControlOrMeta+k');
   const input = page.getByPlaceholder(/Search actions/);
@@ -46,11 +50,30 @@ async function runCommand(page: Page, label: string) {
   await expect(input).toBeHidden();
 }
 
+/** test.step that also logs its duration. */
+async function step(title: string, body: () => Promise<void>) {
+  const t0 = Date.now();
+  await test.step(title, body);
+  console.log(`[acceptance] ${title}: ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+}
+
 async function download(page: Page, click: () => Promise<void>) {
   const [dl] = await Promise.all([page.waitForEvent('download'), click()]);
-  const path = await dl.path();
-  return { name: dl.suggestedFilename(), text: await readFile(path, 'utf8') };
+  return { name: dl.suggestedFilename(), text: await readFile(await dl.path(), 'utf8') };
 }
+
+type Cap = { id: string; kind: string; changes: number; w: number; posture: string; png: boolean };
+const listCaptures = (page: Page) =>
+  store(page, (s) =>
+    s.captures.map((c: { id: string; kind: string; changeCount: number; viewport: { width: number; posture: string }; dataUrl: string }) => ({
+      id: c.id,
+      kind: c.kind,
+      changes: c.changeCount,
+      w: c.viewport.width,
+      posture: c.viewport.posture,
+      png: c.dataUrl.startsWith('data:image/png;base64,'),
+    })),
+  ) as Promise<Cap[]>;
 
 /* ------------------------------------------------------------------ */
 /* The workflow                                                        */
@@ -58,12 +81,13 @@ async function download(page: Page, click: () => Promise<void>) {
 
 test.describe('IFDY acceptance workflow', () => {
   test('15-step acceptance workflow on the synthetic mortgage login', async ({ page }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(240_000);
     const iframe = page.locator('iframe[data-instance="primary"]');
     const frame = page.frameLocator('iframe[data-instance="primary"]');
     const posture = page.getByRole('radiogroup', { name: 'Posture' });
+    const inspector = page.getByTestId('right');
 
-    await test.step('1. Open the studio', async () => {
+    await step('1. Open the studio', async () => {
       await page.goto('/');
       await expect(page.getByRole('heading', { name: /Build interfaces against the real browser/ })).toBeVisible();
       await expect(page.getByText('Companion connected')).toBeVisible();
@@ -71,49 +95,47 @@ test.describe('IFDY acceptance workflow', () => {
       expect(await store(page, (s) => s.project)).toBeNull();
     });
 
-    await test.step('2. Load the authorized synthetic mortgage login', async () => {
+    await step('2. Load the authorized synthetic mortgage login', async () => {
       await page.getByRole('button', { name: /Open the Harborline demo/ }).click();
       await expect(frame.locator('[data-testid="login-submit"]')).toBeVisible();
       await expect(frame.getByLabel('Demo credentials')).toContainText('demo.borrower');
       await expect(frame.getByText(/fictional mortgage servicer/)).toBeAttached();
       const p = await store(page, (s) => ({ project: s.project, route: s.currentRoute, origin: s.server.previewOrigin, status: s.instances.primary?.status, url: s.instances.primary?.url }));
-      console.log('[acceptance] project', JSON.stringify(p));
       expect(p.project).toMatchObject({ name: 'Harborline Mortgage', source: { kind: 'demo', label: expect.stringMatching(/synthetic/i) } });
       expect(p.route).toBe('#/login');
       expect(p.status).toBe('ready');
-      // Served by the companion's authorised preview origin, not an arbitrary site.
-      expect(p.origin).toBeTruthy();
-      expect(p.url.startsWith(p.origin)).toBe(true);
-      expect((await primaryFrame(page)).url()).toMatch(/#\/login$/);
+      // Served from the companion's authorised preview origin (a separate origin from the studio).
+      expect(p.origin).toMatch(/^http:\/\/localhost:\d+$/);
+      expect(p.origin).not.toBe(new URL(page.url()).origin);
+      expect(p.url).toBe(`${p.origin}/demo/index.html#/login`);
+      expect((await primaryFrame(page)).url()).toBe(p.url);
     });
 
-    await test.step('3. Inspect the actual page in the device simulator', async () => {
+    await step('3. Inspect the actual page in the device simulator', async () => {
       await expect(page.getByText(/Running\s+Harborline Mortgage on Surface Duo/)).toBeVisible();
       await expect(iframe).toHaveAttribute('style', /width: 540px/);
+      expect(await store(page, (s) => s.viewport)).toMatchObject({ deviceId: 'surface-duo', posture: 'folded' });
+      // The real rendered document at the device's CSS viewport, not a picture of it.
       const f = await primaryFrame(page);
-      // The real rendered document at the device viewport, not a screenshot.
-      const page540 = await f.evaluate(() => ({ w: innerWidth, h: innerHeight, title: document.title, hasForm: Boolean(document.querySelector('form [data-testid="login-username"]')) }));
-      expect(page540).toMatchObject({ w: 540, h: 720, hasForm: true });
-      expect(page540.title).toMatch(/Harborline/);
-      const vp = await store(page, (s) => s.viewport);
-      expect(vp).toMatchObject({ deviceId: 'surface-duo', posture: 'folded' });
-      // Hovering the page in Inspect mode outlines the real element with its measured size.
+      const doc = await f.evaluate(() => ({ w: innerWidth, h: innerHeight, title: document.title, form: Boolean(document.querySelector('form [data-testid="login-username"]')) }));
+      expect(doc).toMatchObject({ w: 540, h: 720, form: true });
+      expect(doc.title).toMatch(/Harborline/);
+      // Inspect mode: hovering outlines the real element and labels it with its measured size.
       const dims = await f.evaluate(() => {
         const b = document.querySelector('[data-testid="login-submit"]')!.getBoundingClientRect();
         return `${Math.round(b.width)}×${Math.round(b.height)}`;
       });
       await frame.locator('[data-testid="login-submit"]').hover({ position: { x: 12, y: 24 } });
       await expect(page.getByText(dims, { exact: true })).toBeVisible();
-      await expect(page.getByText(/^button/).filter({ visible: true }).first()).toBeVisible();
     });
 
-    await test.step('4. Switch between compact and expanded viewports', async () => {
-      await expect.poll(() => overflow(page)).toBeGreaterThan(0); // D1 manifests when compact
+    await step('4. Switch between compact and expanded viewports', async () => {
+      await expect.poll(() => overflow(page)).toBeGreaterThan(0); // D1 manifests when compact...
       await posture.getByRole('radio', { name: 'Expanded' }).click();
       await expect(iframe).toHaveAttribute('style', /width: 1114px/, { timeout: 8000 });
       await expect.poll(async () => (await primaryFrame(page)).evaluate(() => innerWidth)).toBe(1114);
       await expect.poll(() => store(page, (s) => s.viewport.posture)).toBe('expanded');
-      await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0); // ...and not when expanded
+      await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0); // ...and not when expanded.
 
       await posture.getByRole('radio', { name: 'Folded' }).click();
       await expect(iframe).toHaveAttribute('style', /width: 540px/, { timeout: 8000 });
@@ -122,17 +144,16 @@ test.describe('IFDY acceptance workflow', () => {
       await expect.poll(() => overflow(page)).toBeGreaterThan(0);
     });
 
-    await test.step('5. Animate the device transition', async () => {
-      // Sample the store progress and the iframe layout width every frame, and the
-      // page's own innerWidth on every resize, while the unfold animation plays.
+    await step('5. Animate the device transition', async () => {
+      // Sample the transition progress and the device viewport (iframe layout width)
+      // on every animation frame, and the page's own innerWidth on every resize.
       await page.evaluate(() => {
-        const w = window as unknown as { __IFDY__: { useStudio: { getState(): { transition: { progress: number; playing: boolean } } } }; __samples: unknown[]; __sampling: boolean };
+        const w = window as unknown as { __IFDY__: { useStudio: { getState(): { transition: { progress: number } } } }; __samples: { p: number; w: number }[]; __sampling: boolean };
         const el = document.querySelector('iframe[data-instance="primary"]') as HTMLIFrameElement;
         w.__samples = [];
         w.__sampling = true;
         const tick = () => {
-          const t = w.__IFDY__.useStudio.getState().transition;
-          w.__samples.push({ p: t.progress, playing: t.playing, w: el.offsetWidth });
+          w.__samples.push({ p: w.__IFDY__.useStudio.getState().transition.progress, w: el.offsetWidth });
           if (w.__sampling) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
@@ -143,269 +164,320 @@ test.describe('IFDY acceptance workflow', () => {
         w.__widths = [];
         addEventListener('resize', () => w.__widths.push(innerWidth));
       });
-      await page.getByTestId('fold-dock').getByRole('button', { name: 'Play unfold' }).click();
+      const dock = page.getByTestId('fold-dock');
+      await dock.getByRole('button', { name: 'Play unfold' }).click();
       await expect.poll(() => store(page, (s) => s.transition.playing)).toBe(true);
       await expect.poll(() => store(page, (s) => ({ playing: s.transition.playing, posture: s.viewport.posture, p: s.transition.progress }))).toEqual({ playing: false, posture: 'expanded', p: 1 });
       const samples = await page.evaluate(() => {
-        const w = window as unknown as { __samples: { p: number; playing: boolean; w: number }[]; __sampling: boolean };
+        const w = window as unknown as { __samples: { p: number; w: number }[]; __sampling: boolean };
         w.__sampling = false;
         return w.__samples;
       });
       const widths = await f.evaluate(() => (window as unknown as { __widths: number[] }).__widths);
       const mid = samples.filter((x) => x.p > 0.05 && x.p < 0.95);
-      console.log(`[acceptance] transition: ${samples.length} frames, ${mid.length} intermediate, iframe widths ${[...new Set(samples.map((x) => x.w))].slice(0, 12).join(',')}…; page resize widths ${widths.slice(0, 12).join(',')}…`);
       expect(mid.length, 'progress passes through intermediate values').toBeGreaterThanOrEqual(5);
-      for (let i = 1; i < samples.length; i++) expect(samples[i].p).toBeGreaterThanOrEqual(samples[i - 1].p); // monotonic unfold
-      expect(samples.some((x) => x.w > 560 && x.w < 1100), 'device frame width interpolates').toBe(true);
-      expect(widths.some((x) => x > 560 && x < 1100), 'the real page reflows at intermediate widths').toBe(true);
-      await expect(iframe).toHaveAttribute('style', /width: 1114px/);
+      expect(samples.every((x, i) => i === 0 || x.p >= samples[i - 1].p), 'unfold progress is monotonic').toBe(true);
+      // The device viewport follows the progress (the width can trail it by one render).
+      expect(samples.every((x, i) => x.w >= 540 && x.w <= 1114 && (i === 0 || x.w >= samples[i - 1].w)), 'viewport width grows from 540 to 1114').toBe(true);
+      expect(new Set(samples.map((x) => x.w).filter((w) => w > 540 && w < 1114)).size, 'the device viewport interpolates between 540 and 1114').toBeGreaterThanOrEqual(5);
+      expect(widths.filter((x) => x > 560 && x < 1100).length, 'the real page reflows at intermediate widths').toBeGreaterThanOrEqual(3);
+      expect(widths.at(-1)).toBe(1114);
+      await expect(dock.getByText('100%', { exact: true })).toBeVisible();
 
-      // Fold back (animated) for the compact defect.
-      await page.getByTestId('fold-dock').getByRole('button', { name: 'Play fold' }).click();
+      // Fold back, animated, to work on the compact defect.
+      await dock.getByRole('button', { name: 'Play fold' }).click();
       await expect.poll(() => store(page, (s) => ({ playing: s.transition.playing, posture: s.viewport.posture, p: s.transition.progress }))).toEqual({ playing: false, posture: 'folded', p: 0 });
       await expect(iframe).toHaveAttribute('style', /width: 540px/);
+      await expect(dock.getByText('0%', { exact: true })).toBeVisible();
     });
 
-    await test.step('6. Select a problematic element', async () => {
+    await step('6. Select a problematic element', async () => {
       await expect(page.getByRole('radio', { name: /Inspect/ })).toBeChecked();
       await frame.locator('.rate-banner').click({ position: { x: 6, y: 6 } });
-      await expect.poll(() => store(page, (s) => s.selection.info?.selector ?? null)).toMatch(/rate-banner/);
-      const sel = await store(page, (s) => ({ selector: s.selection.selector, info: { selector: s.selection.info.selector, tag: s.selection.info.tag, component: s.selection.info.component?.name, w: s.selection.info.rect.width } }));
-      console.log('[acceptance] selection', JSON.stringify(sel));
-      expect(sel.info).toMatchObject({ tag: 'aside', component: 'RateBanner', w: 560 });
-      await expect(page.getByText('RateBanner').first()).toBeVisible();
+      await expect.poll(() => store(page, (s) => s.selection.info?.selector ?? null)).toBe('[data-testid="rate-banner"]');
+      const info = await store(page, (s) => ({ tag: s.selection.info.tag, classes: s.selection.info.classes, component: s.selection.info.component?.name, w: s.selection.info.rect.width }));
+      expect(info).toMatchObject({ tag: 'aside', classes: ['rate-banner'], component: 'RateBanner', w: 560 });
+      // The inspector header names the element, its component and its size.
+      await expect(inspector.getByText('RateBanner', { exact: true })).toBeVisible();
+      await expect(inspector.getByText(/^560×\d+$/)).toBeVisible();
     });
 
-    await test.step('7. Inspect its DOM, computed CSS, and box model', async () => {
+    await step('7. Inspect its DOM, computed CSS, and box model', async () => {
       await page.getByRole('tab', { name: 'DOM', exact: true }).click();
       await expect(page.getByRole('tree', { name: 'DOM' }).locator('[role="treeitem"][aria-selected="true"]')).toContainText('rate-banner');
 
       await page.getByRole('tab', { name: 'Computed', exact: true }).click();
       await page.getByPlaceholder('Filter computed styles').fill('width');
       // Computed width 560px, attributed to the authored .rate-banner rule in login.css.
-      await expect(page.locator('[title^="From .rate-banner"]', { hasText: /^width/ }).filter({ hasText: '560px' })).toBeVisible();
+      await expect(inspector.locator('[title^="From .rate-banner"]', { hasText: /^width/ }).filter({ hasText: '560px' })).toBeVisible();
 
       await page.getByRole('tab', { name: 'Box', exact: true }).click();
-      await expect(page.getByText(/^560 × \d+(\.\d+)? CSS px$/)).toBeVisible();
-      await expect(page.getByText(/box-sizing: border-box/)).toBeVisible();
+      await expect(inspector.getByText(/^560 × \d+(\.\d+)? CSS px$/)).toBeVisible(); // border box
+      await expect(inspector.getByText(/box-sizing: border-box/)).toBeVisible();
 
       await page.getByRole('tab', { name: 'Styles', exact: true }).click();
-      await expect(page.getByText('560px').first()).toBeVisible();
-      await expect(page.getByText(/login\.css/).first()).toBeVisible();
+      await expect(inspector.getByText('.rate-banner', { exact: true }).first()).toBeVisible();
+      await expect(inspector.getByRole('button', { name: /^login\.css:\d+$/ }).first()).toBeVisible();
+      await expect(inspector.getByText('560px', { exact: true })).toBeVisible();
     });
 
-    await test.step('8. Identify a responsive defect', async () => {
-      // The banner's right edge is past the 540px viewport...
-      const edge = await (await primaryFrame(page)).evaluate(() => ({ right: document.querySelector('.rate-banner')!.getBoundingClientRect().right, vw: innerWidth }));
+    await step('8. Identify a responsive defect', async () => {
+      // The banner's right edge lies past the 540px viewport...
+      const edge = await bannerEdge(page);
       expect(edge.right).toBeGreaterThan(edge.vw);
-      // ...and the responsive audit names it.
+      // ...and the responsive audit (all postures + reference viewports) names it.
       await runCommand(page, 'Run responsive audit (all postures + reference viewports)');
       await expect.poll(() => store(page, (s) => s.auditStatus.responsive), { timeout: 90_000 }).toBe('done');
-      const issues = await store(page, (s) => s.responsiveIssues.map((i: { rule: string; selector: string; viewport: { width: number; posture: string; deviceId: string }; classification: string; severity: string }) => ({ rule: i.rule, selector: i.selector, w: i.viewport.width, posture: i.viewport.posture, device: i.viewport.deviceId, c: i.classification, sev: i.severity })));
-      console.log('[acceptance] responsive issues', issues.length, JSON.stringify(issues.slice(0, 40)));
-      const d1 = issues.filter((i) => i.rule === 'horizontal-overflow' && /rate-banner/.test(i.selector));
-      expect(d1.some((i) => i.w === 540 && i.device === 'surface-duo'), 'audit reports the .rate-banner overflow at 540px').toBe(true);
-      expect(d1.some((i) => i.w === 1114), 'not reported when expanded').toBe(false);
-      // Shown in the Responsive findings panel.
-      await expect(page.getByLabel('Responsive findings').getByText(/rate-banner/).first()).toBeVisible();
+      const issues = await store<{ rule: string; selector: string; c: string; w: number; device: string }[]>(page, (s) => s.responsiveIssues.map((i: { rule: string; selector: string; classification: string; viewport: { width: number; deviceId: string } }) => ({ rule: i.rule, selector: i.selector, c: i.classification, w: i.viewport.width, device: i.viewport.deviceId })));
+      const d1 = issues.filter((i) => i.rule === 'horizontal-overflow' && i.selector.includes('rate-banner'));
+      expect(d1.some((i) => i.w === 540 && i.device === 'surface-duo'), 'D1: .rate-banner overflows the folded Surface Duo').toBe(true);
+      expect(d1.some((i) => i.w >= 1114), 'D1 does not apply when expanded or on desktop').toBe(false);
+      // D2 is found too: the sign-in button sits under the hinge when the Duo is spanned.
+      expect(issues).toContainEqual(expect.objectContaining({ rule: 'fold-intersection', selector: '[data-testid="login-submit"]', w: 1114, c: 'regression' }));
+      // The finding is listed in the Responsive panel.
+      await expect(page.getByLabel('Responsive findings').getByText('[data-testid="rate-banner"]', { exact: true }).first()).toBeVisible();
     });
 
-    await test.step('9. Apply and undo a visual fix', async () => {
-      await page.getByRole('tab', { name: 'Design', exact: true }).click();
-      const width = page.locator('label', { has: page.locator('span', { hasText: /^W$/ }) }).locator('input').first();
-      await width.click();
-      await width.fill('100%');
-      await width.press('Enter');
+    await step('9. Apply and undo a visual fix', async () => {
+      // Edit the authored declaration in the cascade: .rate-banner { width: 560px → 100% }.
+      await page.getByRole('tab', { name: 'Styles', exact: true }).click();
+      await inspector.getByText('560px', { exact: true }).click();
+      const value = inspector.locator('input:focus');
+      await expect(value).toHaveValue('560px');
+      await value.fill('100%');
+      await value.press('Enter');
       await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
-      await expect(page.getByText('1 edit')).toBeVisible();
-      const ch = await store(page, (s) => s.changes.map((c: { property: string; before: string; after: string; viewport: { width: number } }) => ({ property: c.property, before: c.before, after: c.after, w: c.viewport.width })));
-      expect(ch).toEqual([expect.objectContaining({ property: 'width', after: '100%', w: 540 })]);
+      const edge = await bannerEdge(page);
+      expect(edge.right).toBeLessThanOrEqual(edge.vw);
+      await expect(page.getByText('1 edit', { exact: true })).toBeVisible();
+      const changes = await store(page, (s) => s.changes.map((c: { kind: string; property: string; before: string; after: string; target: { ruleSelector?: string }; viewport: { width: number } }) => ({ kind: c.kind, rule: c.target.ruleSelector, property: c.property, before: c.before, after: c.after, w: c.viewport.width })));
+      expect(changes).toEqual([{ kind: 'rule', rule: '.rate-banner', property: 'width', before: '560px', after: '100%', w: 540 }]);
 
+      // Undo restores the defect...
       await page.getByRole('button', { name: 'Undo', exact: true }).click();
       await expect.poll(() => overflow(page)).toBeGreaterThan(0);
       await expect.poll(() => store(page, (s) => s.changes.length)).toBe(0);
-      await expect(page.getByText('1 edit')).toBeHidden();
+      await expect(page.getByText('1 edit', { exact: true })).toBeHidden();
+      await expect(inspector.getByText('560px', { exact: true })).toBeVisible();
 
-      // Keep the fix for the rest of the workflow.
+      // ...and redo brings the fix back for the rest of the workflow.
       await page.getByRole('button', { name: 'Redo', exact: true }).click();
       await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
       await expect.poll(() => store(page, (s) => s.changes.length)).toBe(1);
     });
 
-    await test.step('10. Run the responsive diff and accessibility checks', async () => {
+    let a11yCount = 0;
+    await step('10. Run the responsive diff and accessibility checks', async () => {
       await runCommand(page, 'Run all audits (responsive + accessibility)');
       await expect.poll(() => store(page, (s) => [s.auditStatus.responsive, s.auditStatus.a11y]), { timeout: 120_000 }).toEqual(['done', 'done']);
-      const a11y = await store(page, (s) => s.a11yIssues.map((i: { ruleId: string; impact: string; nodes: { selector: string }[] }) => ({ rule: i.ruleId, impact: i.impact, nodes: i.nodes.map((n) => n.selector) })));
-      console.log('[acceptance] a11y', JSON.stringify(a11y));
-      expect(a11y.length).toBeGreaterThan(0);
-      expect(a11y.some((i) => i.rule === 'color-contrast' && i.nodes.some((n) => /login-form__forgot|forgot-password/.test(n))), 'D3 low-contrast link').toBe(true);
-      // With the fix applied, the folded overflow of the banner is gone.
-      const after = await store(page, (s) => s.responsiveIssues.filter((i: { rule: string; selector: string; viewport: { width: number } }) => i.rule === 'horizontal-overflow' && /rate-banner/.test(i.selector) && i.viewport.width === 540).length);
-      expect(after).toBe(0);
-      await page.getByRole('tab', { name: /Accessibility/ }).click();
-      await expect(page.getByText(/color-contrast|contrast/i).first()).toBeVisible();
+      const a11y = await store(page, (s) => s.a11yIssues.map((i: { ruleId: string; nodes: { selector: string }[] }) => ({ rule: i.ruleId, nodes: i.nodes.map((n) => n.selector) })));
+      a11yCount = a11y.length;
+      // The seeded accessibility defects: D3 contrast (axe), D4 placeholder-only label and D5 tap target (IFDY checks).
+      expect(a11y).toContainEqual({ rule: 'color-contrast', nodes: expect.arrayContaining(['.login-form__forgot']) });
+      expect(a11y).toContainEqual({ rule: 'ifdy-placeholder-label', nodes: expect.arrayContaining(['#login-loan-number']) });
+      expect(a11y).toContainEqual({ rule: 'ifdy-target-size', nodes: expect.arrayContaining(['#login-remember']) });
+      await page.getByRole('tab', { name: new RegExp(`^Accessibility\\s*${a11yCount}$`) }).click();
+      await expect(page.getByText('color-contrast', { exact: true }).first()).toBeVisible();
+      // Re-audited with the fix applied: the folded banner overflow is gone, the hinge defect is not.
+      const responsive = await store<{ rule: string; selector: string; w: number }[]>(page, (s) => s.responsiveIssues.map((i: { rule: string; selector: string; viewport: { width: number } }) => ({ rule: i.rule, selector: i.selector, w: i.viewport.width })));
+      expect(responsive.filter((i) => i.rule === 'horizontal-overflow' && i.selector.includes('rate-banner'))).toEqual([]);
+      expect(responsive).toContainEqual({ rule: 'fold-intersection', selector: '[data-testid="login-submit"]', w: 1114 });
 
-      // Responsive diff: capture both postures and compare them.
-      const before = await store(page, (s) => s.captures.length);
+      // Responsive diff: capture the device folded and expanded, then compare.
+      const known = new Set((await listCaptures(page)).map((c) => c.id));
       await runCommand(page, 'Compare folded vs expanded (capture both postures + diff)');
-      await expect.poll(() => store(page, (s) => s.captures.length), { timeout: 90_000 }).toBeGreaterThanOrEqual(before + 2);
-      const pair = await store(page, (s) => s.captures.slice(-2).map((c: { viewport: { width: number; posture: string } }) => ({ w: c.viewport.width, posture: c.viewport.posture })));
-      console.log('[acceptance] fold pair', JSON.stringify(pair));
-      expect(pair.map((c) => c.posture).sort()).toEqual(['expanded', 'folded']);
-      await expect(page.getByLabel('Capture A')).toBeVisible();
-      await expect(page.getByText(/\d+ structural changes? · \d+ suspicious/)).toBeVisible({ timeout: 30_000 });
+      await expect.poll(async () => (await listCaptures(page)).filter((c) => !known.has(c.id)).length, { timeout: 90_000 }).toBe(2);
+      const pair = (await listCaptures(page)).filter((c) => !known.has(c.id));
+      const folded = pair.find((c) => c.posture === 'folded');
+      const expanded = pair.find((c) => c.posture === 'expanded');
+      expect(folded).toMatchObject({ w: 540, png: true });
+      expect(expanded).toMatchObject({ w: 1114, png: true });
+      await expect(page.getByLabel('Capture A')).toHaveValue(folded!.id);
+      await expect(page.getByLabel('Capture B')).toHaveValue(expanded!.id);
+      await expect(page.getByText('Size Δ', { exact: false }).first()).toBeVisible();
+      const summary = page.getByText(/^\d+ structural changes? · \d+ suspicious · \d+ unchanged$/);
+      await expect(summary).toBeVisible({ timeout: 30_000 });
+      expect(parseInt((await summary.textContent())!, 10), 'layout differs between postures').toBeGreaterThan(0);
     });
 
     let scenarioName = '';
-    await test.step('11. Record and replay an interaction', async () => {
-      await page.getByRole('tab', { name: 'Canvas' }).first().click().catch(() => {});
+    await step('11. Record and replay an interaction', async () => {
+      await page.getByRole('tab', { name: 'Canvas', exact: true }).click();
       await runCommand(page, 'Start / stop recording an interaction');
       await expect.poll(() => store(page, (s) => s.recording.active)).toBe(true);
-      await expect(page.getByRole('radio', { name: /Interact/ })).toBeChecked();
+      await expect(page.getByRole('radio', { name: /Interact/ })).toBeChecked(); // recording switches to Interact
       const username = frame.locator('[data-testid="login-username"]');
+      const remember = frame.locator('[data-testid="login-remember"]');
       await username.click();
       await username.pressSequentially('demo.borrower', { delay: 20 });
-      await frame.locator('[data-testid="login-password"]').click();
+      await remember.check();
       await runCommand(page, 'Start / stop recording an interaction');
       await expect.poll(() => store(page, (s) => s.recording.active)).toBe(false);
+
       const dialog = page.getByRole('dialog', { name: 'Save recorded scenario' });
       await expect(dialog).toBeVisible();
       scenarioName = `Acceptance sign-in ${Date.now() % 100000}`;
       await dialog.getByLabel('Name').fill(scenarioName);
       await dialog.getByRole('button', { name: 'Save scenario' }).click();
       await expect(dialog).toBeHidden();
-      const sc = await store(page, (s) => s.scenarios.filter((x: { builtIn: boolean }) => !x.builtIn).map((x: { name: string; route: string; steps: { action: { type: string; value?: string } }[] }) => ({ name: x.name, route: x.route, steps: x.steps.map((st) => st.action) })));
-      console.log('[acceptance] scenarios', JSON.stringify(sc));
-      expect(sc).toHaveLength(1);
-      expect(sc[0]).toMatchObject({ name: scenarioName, route: '#/login' });
-      // Typed credentials are stored as fixture placeholders, never as the value.
-      expect(sc[0].steps).toContainEqual(expect.objectContaining({ type: 'fill', value: '{{secret:username}}' }));
+      const saved = await store(page, (s) =>
+        s.scenarios
+          .filter((x: { builtIn: boolean }) => !x.builtIn)
+          .map((x: { name: string; route: string; steps: { action: { type: string; value?: string; checked?: boolean } }[] }) => ({ name: x.name, route: x.route, steps: x.steps.map((st) => ({ type: st.action.type, value: st.action.value, checked: st.action.checked })) })),
+      );
+      expect(saved).toHaveLength(1);
+      expect(saved[0]).toMatchObject({ name: scenarioName, route: '#/login' });
+      // Typed credentials are stored as fixture placeholders, never as the typed value.
+      expect(saved[0].steps).toEqual([
+        { type: 'fill', value: '{{secret:username}}', checked: undefined },
+        { type: 'check', value: undefined, checked: true },
+      ]);
 
-      // Clear the field, then replay from the scenarios panel.
+      // Reset the form by hand, then replay from the Test scenarios panel.
       await username.fill('');
+      await remember.uncheck();
       await runCommand(page, 'Show test scenarios');
       await page.getByPlaceholder('Filter scenarios').fill(scenarioName);
       const item = page.getByRole('treeitem').filter({ hasText: scenarioName });
-      await item.getByRole('button', { name: 'Replay on the canvas device' }).click();
-      await expect.poll(() => store(page, (s) => s.runs.at(-1)?.status ?? null), { timeout: 60_000 }).toBe('passed');
-      const run = await store(page, (s) => { const r = s.runs.at(-1); return { name: r.scenarioName, steps: r.steps.map((x: { status: string }) => x.status) }; });
-      console.log('[acceptance] run', JSON.stringify(run));
-      expect(run.name).toBe(scenarioName);
-      expect(run.steps.length).toBeGreaterThan(0);
-      expect(run.steps.every((x) => x === 'passed')).toBe(true);
-      // The replay really drove the page: the fixture value is back in the field.
+      await item.hover(); // row actions appear on hover
+      await item.getByRole('button', { name: 'Replay on the canvas device' }).click({ timeout: 10_000 });
+      const latestRun = () =>
+        store(page, (s) => {
+          const r = s.runs[0]; // newest first
+          return r ? { name: r.scenarioName as string, status: r.status as string, steps: r.steps.map((x: { status: string }) => x.status) as string[], device: r.viewport.deviceId as string, w: r.viewport.width as number } : null;
+        });
+      await expect.poll(async () => (await latestRun())?.status, { timeout: 60_000 }).toBe('passed');
+      expect(await latestRun()).toEqual({ name: scenarioName, status: 'passed', steps: ['passed', 'passed'], device: 'surface-duo', w: 540 });
+      // The replay drove the real page: the fixture value is typed and the box checked again.
       await expect(username).toHaveValue('demo.borrower');
+      await expect(remember).toBeChecked();
+      await expect(item.getByRole('button', { name: new RegExp(`^Passed ${escapeRe(scenarioName)}`) })).toBeVisible();
       // The fix survives the replay's page reset.
       await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
     });
 
-    let beforeId = '';
-    let afterId = '';
-    await test.step('12. Capture before-and-after screenshots', async () => {
+    await step('12. Capture before-and-after screenshots', async () => {
       await page.getByRole('radio', { name: /Inspect/ }).click();
-      const capture = page.getByRole('button', { name: 'Capture screenshot' });
-      const n0 = await store(page, (s) => s.captures.length);
+      /** Toolbar camera; resolves with the captures it made (DOM raster, plus Chromium when the companion has it). */
+      const shoot = async (): Promise<Cap[]> => {
+        const known = new Set((await listCaptures(page)).map((c) => c.id));
+        await page.getByRole('button', { name: 'Capture screenshot' }).click();
+        const fresh = async () => (await listCaptures(page)).filter((c) => !known.has(c.id));
+        await expect.poll(async () => (await fresh()).length > 0 && !(await page.getByText('Capturing the preview…').isVisible()), { timeout: 60_000 }).toBe(true);
+        return fresh();
+      };
       // Before: the defect (fix undone).
       await page.getByRole('button', { name: 'Undo', exact: true }).click();
       await expect.poll(() => overflow(page)).toBeGreaterThan(0);
-      await capture.click();
-      await expect.poll(() => store(page, (s) => s.captures.length), { timeout: 60_000 }).toBeGreaterThan(n0);
-      await expect(page.getByText(/Screenshot saved/).first()).toBeVisible({ timeout: 60_000 });
-      const n1 = await store(page, (s) => s.captures.length);
+      const before = await shoot();
       // After: the fix re-applied.
       await page.getByRole('button', { name: 'Redo', exact: true }).click();
       await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
-      await page.waitForTimeout(300);
-      await capture.click();
-      await expect.poll(() => store(page, (s) => s.captures.length), { timeout: 60_000 }).toBeGreaterThan(n1);
-      const caps = await store(page, (s) => s.captures.map((c: { id: string; kind: string; changeCount: number; width: number; viewport: { width: number }; dataUrl: string }) => ({ id: c.id, kind: c.kind, changes: c.changeCount, w: c.viewport.width, png: c.dataUrl.startsWith('data:image/png') })));
-      console.log('[acceptance] captures', JSON.stringify(caps));
-      const fresh = caps.slice(n0).filter((c) => c.kind === 'raster');
-      expect(fresh).toHaveLength(2);
-      expect(fresh.map((c) => c.changes)).toEqual([0, 1]);
-      expect(fresh.every((c) => c.w === 540 && c.png)).toBe(true);
-      [beforeId, afterId] = fresh.map((c) => c.id);
+      const after = await shoot();
+      for (const [shots, edits] of [[before, 0], [after, 1]] as const) {
+        expect(shots.some((c) => c.kind === 'raster'), 'live DOM raster of the canvas').toBe(true);
+        for (const c of shots) expect(c).toMatchObject({ changes: edits, w: 540, posture: 'folded', png: true });
+      }
+      // Compare like with like: Chromium (deterministic) when both have it, else the DOM rasters.
+      const kind = before.some((c) => c.kind === 'chromium') && after.some((c) => c.kind === 'chromium') ? 'chromium' : 'raster';
+      const a = before.find((c) => c.kind === kind)!.id;
+      const b = after.find((c) => c.kind === kind)!.id;
 
-      // Compare them in the responsive diff: one edit apart, and the pixels differ.
+      // In the responsive diff they are one edit apart and their pixels differ.
       await runCommand(page, 'Open responsive diff & screenshots');
-      await page.getByLabel('Capture A').selectOption(beforeId);
-      await page.getByLabel('Capture B').selectOption(afterId);
-      await expect(page.getByText('+1 edit')).toBeVisible();
+      await page.getByLabel('Capture A').selectOption(a);
+      await page.getByLabel('Capture B').selectOption(b);
+      await expect(page.getByText('+1 edit', { exact: true })).toBeVisible();
       await page.getByRole('radio', { name: /Pixels/ }).click();
       const pct = page.getByText(/^\d+\.\d\d% changed$/);
       await expect(pct).toBeVisible({ timeout: 30_000 });
-      expect(parseFloat((await pct.textContent()) ?? '0')).toBeGreaterThan(0);
+      expect(parseFloat((await pct.textContent())!), 'before and after differ').toBeGreaterThan(0);
     });
 
-    await test.step('13. Review the generated code changes', async () => {
+    await step('13. Review the generated code changes', async () => {
       await page.getByRole('button', { name: 'Export changes' }).click();
       const panel = page.getByTestId('export-panel');
       await expect(panel).toBeVisible();
-      const diff = panel.getByTestId('diff-file').first();
-      await expect(diff).toBeVisible({ timeout: 20_000 });
-      console.log('[acceptance] diff file', await diff.getAttribute('data-path'), (await diff.innerText()).slice(0, 600));
-      await expect(diff).toHaveAttribute('data-path', /login\.css$/);
-      await expect(diff).toContainText('560px');
-      await expect(diff).toContainText('100%');
+      await expect(panel.getByText('1 exact', { exact: true })).toBeVisible({ timeout: 20_000 }); // mapped exactly to source
+      const files = panel.getByTestId('diff-file');
+      await expect(files).toHaveCount(1);
+      await expect(files.first()).toHaveAttribute('data-path', 'src/styles/login.css');
+      // One hunk replacing the authored declaration in place.
+      const text = await files.first().innerText();
+      expect(text).toMatch(/@@ −\d+,\d+ \+\d+,\d+ @@/);
+      expect(text).toMatch(/−\s*\n\s*width: 560px;/);
+      expect(text).toMatch(/\+\s*\n\s*width: 100%;/);
+      expect(text.match(/^[+−]$/gm)).toHaveLength(2);
     });
 
-    await test.step('14. Export a patch or QA report', async () => {
+    await step('14. Export a patch or QA report', async () => {
       const panel = page.getByTestId('export-panel');
       const patch = await download(page, () => panel.getByRole('button', { name: '.patch' }).click());
-      console.log('[acceptance] patch', patch.name, '\n' + patch.text);
-      expect(patch.name).toMatch(/\.patch$/);
-      expect(patch.text).toMatch(/^diff --git a\/\S*login\.css b\/\S*login\.css/m);
-      expect(patch.text).toMatch(/^-\s*width: 560px;/m);
-      expect(patch.text).toMatch(/^\+\s*width: 100%;/m);
+      expect(patch.name).toBe('harborline-mortgage-ifdy.patch');
+      expect(patch.text).toMatch(/^diff --git a\/src\/styles\/login\.css b\/src\/styles\/login\.css$/m);
+      expect(patch.text).toMatch(/^@@ -\d+,\d+ \+\d+,\d+ @@/m);
+      expect(patch.text).toMatch(/^-  width: 560px;$/m);
+      expect(patch.text).toMatch(/^\+  width: 100%;$/m);
+      expect(patch.text).toMatch(/^ {3}gap: var\(--hl-space-3\);$/m); // context from the .rate-banner rule
+      expect(patch.text.match(/^[-+](?![-+])/gm)).toHaveLength(2);
 
       await runCommand(page, 'Open responsive QA report');
       const report = page.getByTestId('report-doc');
       await expect(report).toBeVisible();
       const html = await download(page, () => report.getByTestId('report-download').click());
-      console.log('[acceptance] report', html.name, html.text.length);
-      expect(html.name).toMatch(/qa-report\.html$/);
+      const counts = await store(page, (s) => ({ responsive: s.responsiveIssues.length, captures: s.captures.length }));
+      expect(html.name).toBe('harborline-mortgage-qa-report.html');
       expect(html.text).toMatch(/^<!doctype html>/i);
+      expect(html.text).toContain('<h1>Responsive QA report</h1>');
       expect(html.text).toContain('Harborline Mortgage');
-      expect(html.text).toContain('rate-banner');
+      expect(html.text).toContain('<h2>Changes <span class="n">1</span></h2>');
+      expect(html.text).toContain('.rate-banner: width 560px → 100%');
+      expect(html.text).toContain(`<h2>Responsive issues <span class="n">${counts.responsive}</span></h2>`);
+      expect(html.text).toContain(`<h2>Accessibility findings <span class="n">${a11yCount}</span></h2>`);
       expect(html.text).toContain('color-contrast');
       expect(html.text).toContain(scenarioName);
+      expect(html.text).toMatch(/<h2>Screenshots <span class="n">[1-9]\d*<\/span><\/h2>/);
+      expect(html.text).toContain('data:image/png;base64,');
     });
 
-    await test.step('15. Reopen the project with its saved configuration intact', async () => {
-      // Leave the device unfolded so the restored posture is not the default.
-      await page.getByRole('tab', { name: 'Canvas' }).first().click().catch(() => {});
+    await step('15. Reopen the project with its saved configuration intact', async () => {
+      // Leave the device unfolded so the restored posture is not the default one.
+      await page.getByRole('tab', { name: 'Canvas', exact: true }).click();
       await posture.getByRole('radio', { name: 'Expanded' }).click();
       await expect(iframe).toHaveAttribute('style', /width: 1114px/, { timeout: 8000 });
-      const saved = await store(page, (s) => ({ captures: s.captures.length, scenarios: s.scenarios.filter((x: { builtIn: boolean }) => !x.builtIn).length, a11y: s.a11yIssues.length, responsive: s.responsiveIssues.length }));
-      await expect(page.locator('[data-status="saved"]')).toBeVisible({ timeout: 10_000 });
+      await expect.poll(() => store(page, (s) => [s.viewport.posture, s.saveStatus]), { timeout: 10_000 }).toEqual(['expanded', 'saved']);
+      await expect(page.locator('[data-status="saved"]')).toBeVisible();
+      const saved = await store(page, (s) => ({ captures: s.captures.length, a11y: s.a11yIssues.length, responsive: s.responsiveIssues.length }));
 
       await page.reload();
       await page.getByText('Recent projects').waitFor();
+      expect(await store(page, (s) => s.project)).toBeNull();
       await page.getByRole('button', { name: /^Harborline Mortgage \d/ }).click();
       await expect(page.getByText(/Restored “Harborline Mortgage”/)).toBeVisible();
       await expect(frame.locator('[data-testid="login-submit"]')).toBeVisible();
 
       const restored = await store(page, (s) => ({
         viewport: s.viewport,
-        changes: s.changes.map((c: { property: string; after: string }) => ({ property: c.property, after: c.after })),
+        changes: s.changes.map((c: { kind: string; property: string; before: string; after: string }) => ({ kind: c.kind, property: c.property, before: c.before, after: c.after })),
         captures: s.captures.length,
         scenarios: s.scenarios.filter((x: { builtIn: boolean }) => !x.builtIn).map((x: { name: string }) => x.name),
         a11y: s.a11yIssues.length,
         responsive: s.responsiveIssues.length,
       }));
-      console.log('[acceptance] restored', JSON.stringify(restored));
-      expect(restored.viewport).toMatchObject({ deviceId: 'surface-duo', posture: 'expanded' });
-      expect(restored.changes).toEqual([{ property: 'width', after: '100%' }]);
-      expect(restored.captures).toBe(saved.captures);
+      expect(restored.viewport).toMatchObject({ deviceId: 'surface-duo', posture: 'expanded', orientation: 'portrait' });
+      expect(restored.changes).toEqual([{ kind: 'rule', property: 'width', before: '560px', after: '100%' }]);
       expect(restored.scenarios).toEqual([scenarioName]);
-      expect(restored.a11y).toBe(saved.a11y);
-      expect(restored.responsive).toBe(saved.responsive);
+      expect({ captures: restored.captures, a11y: restored.a11y, responsive: restored.responsive }).toEqual(saved);
+      // The UI reflects it: unfolded device, one edit.
       await expect(iframe).toHaveAttribute('style', /width: 1114px/, { timeout: 8000 });
-      await expect(page.getByText('1 edit')).toBeVisible();
+      await expect(posture.getByRole('radio', { name: 'Expanded' })).toBeChecked();
+      await expect(page.getByText('1 edit', { exact: true })).toBeVisible();
       // The saved edit is re-applied to the fresh page: folded, the banner no longer overflows.
       await posture.getByRole('radio', { name: 'Folded' }).click();
       await expect(iframe).toHaveAttribute('style', /width: 540px/, { timeout: 8000 });
       await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
+      const edge = await bannerEdge(page);
+      expect(edge.right).toBeLessThanOrEqual(edge.vw);
     });
   });
 });

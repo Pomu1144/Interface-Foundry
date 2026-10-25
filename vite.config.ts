@@ -16,6 +16,9 @@ export default defineConfig({
     host: 'localhost',
   },
   worker: { format: 'es' },
+  // Imported only by the pixel-diff worker, which the dependency scan does not crawl: without this,
+  // its first use in dev re-optimizes dependencies and reloads the whole studio.
+  optimizeDeps: { include: ['pixelmatch'] },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 2500,

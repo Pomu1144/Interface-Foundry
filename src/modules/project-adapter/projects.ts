@@ -62,7 +62,9 @@ export async function openProject(meta: ProjectMeta, routes: RouteEntry[], defau
       panels: saved.panels ?? studio().panels,
       saveStatus: 'saved',
     });
-    toast.success(`Restored “${meta.name}”`, { description: `${saved.changes?.length ?? 0} edits, ${saved.scenarios?.length ?? 0} scenarios, ${saved.captures?.length ?? 0} screenshots` });
+    toast.success(`Restored “${meta.name}”`, {
+      description: [count(saved.changes?.length ?? 0, 'edit'), count(saved.scenarios?.length ?? 0, 'scenario'), count(saved.captures?.length ?? 0, 'screenshot')].join(', '),
+    });
   } else {
     await saveProjectNow();
   }
@@ -188,3 +190,5 @@ export function closeProject() {
   studio().setSource(null);
   useStudio.setState({ project: null, routes: [], currentRoute: '' });
 }
+
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
