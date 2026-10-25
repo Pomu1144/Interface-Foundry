@@ -96,10 +96,10 @@ export function fold3dLayout(device: DeviceProfile, folded: PostureGeometry, exp
       ? rect(axis, fold.offset, 0, E.u - fold.offset, E.v)
       : rect(axis, 0, 0, fold.offset + fold.maskLength, E.v);
 
-  const hinge =
-    fold.kind === 'hinge' && fold.maskLength > 0
-      ? rect(axis, pivot - fold.maskLength / 2, vE + E.t0 * 0.35, fold.maskLength, Ve - E.t0 * 0.7)
-      : null;
+  // The visible hinge is a slim barrel between the two slabs; the rest of the hidden
+  // strip is the black glass edge of each panel.
+  const barrel = Math.max(4, Math.round(fold.maskLength * 0.3));
+  const hinge = fold.kind === 'hinge' && fold.maskLength > 0 ? rect(axis, pivot - barrel / 2, vE, barrel, Ve) : null;
 
   const shiftU = fStart === 0 ? 0 : -fStart;
   return {

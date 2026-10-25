@@ -1,6 +1,6 @@
 import type { Orientation } from '@shared/types';
 import { studio } from '@/store';
-import { animateOrbit, easeInOutCubic, pendingRotation } from './motion';
+import { animateOrbit, easeInOutCubic, motion, normalizeAngle, pendingRotation } from './motion';
 
 let rotating = false;
 
@@ -32,4 +32,13 @@ export async function rotateDevice(to?: Orientation) {
   } finally {
     rotating = false;
   }
+}
+
+/** Turn the device over to show its back, or back to the screen. */
+export async function flipDevice() {
+  const yaw = normalizeAngle(motion.orbit.yaw);
+  motion.setOrbit({ yaw });
+  const showingBack = Math.abs(yaw) > 90;
+  const ms = studio().settings.reducedMotion ? 0 : 900;
+  await animateOrbit({ yaw: showingBack ? 0 : yaw < 0 ? -180 : 180, pitch: 0 }, ms, easeInOutCubic);
 }

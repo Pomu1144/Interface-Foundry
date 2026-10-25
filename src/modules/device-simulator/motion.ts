@@ -12,11 +12,16 @@ import { useSyncExternalStore } from 'react';
  */
 
 /** Fraction of the transition spent swinging the hinge; the rest slides the content across. */
-export const SWING_END = 0.78;
+export const SWING_END = 0.55;
 
 export const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+
+/** Angle in degrees wrapped to (-180, 180]. */
+export const normalizeAngle = (a: number) => {
+  const n = ((((a + 180) % 360) + 360) % 360) - 180;
+  return n === -180 ? 180 : n;
+};
 
 export type FoldVars = {
   /** Hinge angle in degrees: 180 = folded away behind, 0 = flat open. */
@@ -32,7 +37,7 @@ export type FoldVars = {
 export function foldVars(progress: number): FoldVars {
   const swing = clamp01(progress / SWING_END);
   const open = easeInOutCubic(swing);
-  const slide = easeOutCubic(clamp01((progress - SWING_END) / (1 - SWING_END)));
+  const slide = easeInOutCubic(clamp01((progress - SWING_END) / (1 - SWING_END)));
   return { angle: 180 * (1 - open), open, lift: Math.sin(Math.PI * swing), slide };
 }
 

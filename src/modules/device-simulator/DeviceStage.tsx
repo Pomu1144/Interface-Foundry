@@ -1,10 +1,10 @@
-import { RotateCw } from 'lucide-react';
+import { FlipHorizontal2, RotateCw } from 'lucide-react';
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { Orientation, Posture } from '@shared/types';
 import { studio } from '@/store';
 import { panKey } from '@/modules/canvas/useCamera';
-import { animateOrbit, easeInOutCubic, easeOutBack, foldVars, motion, pendingRotation, stopOrbitTween } from './motion';
-import { rotateDevice } from './rotate';
+import { animateOrbit, easeInOutCubic, easeOutBack, foldVars, motion, normalizeAngle, pendingRotation, stopOrbitTween } from './motion';
+import { flipDevice, rotateDevice } from './rotate';
 import s from './DeviceFrame.module.css';
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -32,7 +32,7 @@ export function DeviceStage({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ kind: 'orbit' | 'spin'; x: number; y: number; cx: number; cy: number; a0: number; spin0: number; moved: boolean } | null>(null);
+  const drag = useRef<{ kind: 'orbit' | 'spin'; x: number; y: number; cx: number; cy: number; a0: number; spin0: number; yaw0: number; moved: boolean } | null>(null);
 
   useLayoutEffect(() => {
     if (!live || !ref.current) return;
@@ -77,7 +77,7 @@ export function DeviceStage({
     const r = ref.current!.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
-    drag.current = { kind: spin ? 'spin' : 'orbit', x: e.clientX, y: e.clientY, cx, cy, a0: Math.atan2(e.clientY - cy, e.clientX - cx), spin0: motion.orbit.spin, moved: false };
+    drag.current = { kind: spin ? 'spin' : 'orbit', x: e.clientX, y: e.clientY, cx, cy, a0: Math.atan2(e.clientY - cy, e.clientX - cx), spin0: motion.orbit.spin, yaw0: motion.orbit.yaw, moved: false };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -88,7 +88,8 @@ export function DeviceStage({
     if (!d.moved && Math.hypot(dx, dy) < 4) return;
     d.moved = true;
     if (d.kind === 'orbit') {
-      motion.setOrbit({ yaw: clamp(dx * 0.32, -70, 70), pitch: clamp(-dy * 0.32, -55, 55) });
+      // Yaw turns freely so the device can be turned over to see its back.
+      motion.setOrbit({ yaw: d.yaw0 + dx * 0.45, pitch: clamp(-dy * 0.32, -55, 55) });
     } else {
       const a = Math.atan2(e.clientY - d.cy, e.clientX - d.cx);
       let deg = d.spin0 + ((a - d.a0) * 180) / Math.PI;
@@ -103,7 +104,10 @@ export function DeviceStage({
     drag.current = null;
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
     if (d.kind === 'orbit') {
-      void animateOrbit({ yaw: 0, pitch: 0 }, 700, easeOutBack);
+      // Settle on whichever side faces the viewer: the screen or the back.
+      const yaw = normalizeAngle(motion.orbit.yaw);
+      motion.setOrbit({ yaw });
+      void animateOrbit({ yaw: Math.abs(yaw) > 90 ? Math.sign(yaw) * 180 : 0, pitch: 0 }, 700, easeOutBack);
       return;
     }
     // Rotate handle: a click turns the device; a drag past 40° snaps to the other orientation.
@@ -113,35 +117,38 @@ export function DeviceStage({
 
   return (
     <div
-      ref={ref}
-      className={s.stage}
-      data-device-stage={live ? 'primary' : 'static'}
-      style={staticVars}
+      className={s.stageWrap}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onDoubleClick={(e) => {
-        if (!live || (e.target as HTMLElement).closest('[data-no-orbit]')) return;
+        if (!live || (e.target as HTMLElement).closest('[data-no-orbit],[data-rotate-handle]')) return;
         void animateOrbit({ yaw: 0, pitch: 0, spin: 0 }, 420, easeOutBack);
       }}
     >
-      {children}
+      <div ref={ref} className={s.stage} data-device-stage={live ? 'primary' : 'static'} style={staticVars}>
+        {children}
+      </div>
       {live && (
-        <button
-          type="button"
-          className={s.rotateHandle}
-          data-rotate-handle
-          aria-label={orientation === 'portrait' ? 'Rotate to landscape (drag or click)' : 'Rotate to portrait (drag or click)'}
-          title={orientation === 'portrait' ? 'Drag to rotate · click for landscape (R)' : 'Drag to rotate · click for portrait (R)'}
-          style={{ transform: `scale(${1 / Math.max(0.35, zoom)})` }}
-          onClick={(e) => {
-            // Pointer clicks are handled on pointer-up; this covers keyboard activation.
-            if (e.detail === 0) void rotateDevice();
-          }}
-        >
-          <RotateCw size={15} />
-        </button>
+        <div className={s.stageHandles} style={{ transform: `scale(${1 / Math.max(0.35, zoom)})` }}>
+          <button
+            type="button"
+            className={s.rotateHandle}
+            data-rotate-handle
+            aria-label={orientation === 'portrait' ? 'Rotate to landscape (drag or click)' : 'Rotate to portrait (drag or click)'}
+            title={orientation === 'portrait' ? 'Drag to rotate · click for landscape (R)' : 'Drag to rotate · click for portrait (R)'}
+            onClick={(e) => {
+              // Pointer clicks are handled on pointer-up; this covers keyboard activation.
+              if (e.detail === 0) void rotateDevice();
+            }}
+          >
+            <RotateCw size={15} />
+          </button>
+          <button type="button" className={s.rotateHandle} data-no-orbit aria-label="Show the back of the device" title="Turn over to see the back (B) · or drag the device" onClick={() => void flipDevice()}>
+            <FlipHorizontal2 size={15} />
+          </button>
+        </div>
       )}
     </div>
   );

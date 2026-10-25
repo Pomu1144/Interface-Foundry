@@ -16,11 +16,12 @@ describe('fold3dLayout', () => {
     expect(L.moving).toBe('after');
     expect(L.axis).toBe('vertical');
     // Folded screen sits where the folded device draws it; expanded screen spans both panels.
-    expect(L.screen.folded).toMatchObject({ x: 14, width: 540, height: 720 });
-    expect(L.screen.expanded).toMatchObject({ x: 14, width: 1114 });
-    // Hinge centre = bezel + fold offset + half the 34px hinge.
-    expect(L.movingPanel.x).toBe(14 + 540 + 17);
-    expect(L.hinge).toMatchObject({ x: 14 + 540, width: 34 });
+    expect(L.screen.folded).toMatchObject({ x: 6, width: 540, height: 720 });
+    expect(L.screen.expanded).toMatchObject({ x: 6, width: 1114 });
+    // Hinge centre = bezel + fold offset + half the 34px hinge; the visible barrel is slim.
+    expect(L.movingPanel.x).toBe(6 + 540 + 17);
+    expect(L.hinge!.x + L.hinge!.width / 2).toBe(6 + 540 + 17);
+    expect(L.hinge!.width).toBeLessThan(34);
     // The reveal covers everything right of the left screen.
     expect(L.reveal).toMatchObject({ x: 540, width: 1114 - 540 });
     expect(L.foldedShift).toEqual({ x: 0, y: 0 });

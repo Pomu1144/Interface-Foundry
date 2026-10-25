@@ -182,14 +182,15 @@ test.describe('IFDY acceptance workflow', () => {
       const swinging = samples.filter((x) => x.a > 5 && x.a < 175);
       expect(swinging.length, 'the hinge passes through intermediate angles').toBeGreaterThanOrEqual(5);
       expect(samples.every((x, i) => i === 0 || x.a <= samples[i - 1].a + 0.001), 'the hinge only opens').toBe(true);
-      // The live page keeps its folded viewport while the hinge moves, and reflows once it is flat.
+      // The live page keeps its folded viewport while the hinge moves...
       expect(samples.filter((x) => x.a > 0.5).every((x) => x.w === 540), 'viewport stays 540 while the hinge swings').toBe(true);
-      expect(new Set(samples.map((x) => x.w)), 'the viewport switches once, 540 → 1114').toEqual(new Set([540, 1114]));
-      expect(widths.filter((x) => x > 560 && x < 1100), 'no intermediate reflows').toEqual([]);
+      // ...then, once flat, widens gradually from one screen across both.
+      const sliding = samples.filter((x) => x.s > 0.02 && x.s < 0.98);
+      expect(sliding.length, 'content slides across after the hinge opens').toBeGreaterThanOrEqual(3);
+      expect(sliding.every((x) => x.w > 540 && x.w < 1114), 'the viewport widens through intermediate sizes').toBe(true);
+      expect(samples.every((x, i) => i === 0 || x.w >= samples[i - 1].w), 'the viewport only grows').toBe(true);
+      expect(widths.filter((x) => x > 560 && x < 1100).length, 'the real page reflows as it widens').toBeGreaterThanOrEqual(2);
       expect(widths.at(-1)).toBe(1114);
-      // Then the expanded content slides across the second screen.
-      const sliding = samples.filter((x) => x.w === 1114 && x.s > 0.02 && x.s < 0.98);
-      expect(sliding.length, 'content slides across after the reflow').toBeGreaterThanOrEqual(2);
       expect(samples.at(-1)!.s).toBe(1);
       await expect(dock.getByText('100%', { exact: true })).toBeVisible();
 

@@ -1,5 +1,6 @@
 import {
   Columns2,
+  FlipHorizontal2,
   FolderOpen,
   Globe,
   Hand,
@@ -24,7 +25,7 @@ import {
   Keyboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { rotateDevice } from '@/modules/device-simulator/rotate';
+import { flipDevice, rotateDevice } from '@/modules/device-simulator/rotate';
 import { studio } from '@/store';
 import { registerActions } from './actions';
 import { closeProject, openDemoProject } from '@/modules/project-adapter/projects';
@@ -81,6 +82,7 @@ export function registerCoreActions() {
 
     { id: 'device.fold', label: 'Fold / unfold', group: 'Device', shortcut: 'F', icon: TabletSmartphone, run: () => studio().toggleFold() },
     { id: 'device.rotate', label: 'Rotate device', group: 'Device', shortcut: 'R', icon: RotateCw, run: () => void rotateDevice() },
+    { id: 'device.flip', label: 'Show the back of the device', group: 'Device', shortcut: 'B', icon: FlipHorizontal2, keywords: 'turn over rear camera back side', run: () => void flipDevice() },
     { id: 'device.manager', label: 'Device Manager…', group: 'Device', icon: Smartphone, run: () => studio().setDialog('deviceManager', true) },
     ...BUILT_IN_DEVICES.map((d) => ({
       id: `device.use.${d.id}`,

@@ -178,7 +178,7 @@ export const useStudio = create<Studio>()(
 
     customDevices: [],
     viewport: initialViewport,
-    transition: { progress: 0, playing: false, direction: 1, duration: 1100, mode: 'continuous', style: 'hinge', loop: false },
+    transition: { progress: 0, playing: false, direction: 1, duration: 2000, mode: 'continuous', style: 'hinge', loop: false },
     compare: { enabled: false, partner: { deviceId: DEFAULT_DEVICE_ID, posture: 'expanded', orientation: 'portrait' } },
     colorScheme: null,
     fontScale: 1,
