@@ -19,6 +19,7 @@ import type {
   RouteEntry,
   ServerInfo,
   Settings,
+  StylePreset,
   StudioState,
   Tool,
   TransitionState,
@@ -129,6 +130,8 @@ type Actions = {
   setAssets: (a: AssetRef[]) => void;
   addAsset: (a: AssetRef) => void;
   deleteAsset: (id: string) => void;
+  upsertStylePreset: (p: StylePreset) => void;
+  deleteStylePreset: (id: string) => void;
 
   /* testing */
   setScenarios: (s: Scenario[]) => void;
@@ -206,6 +209,7 @@ export const useStudio = create<Studio>()(
 
     tokens: [],
     assets: [],
+    stylePresets: [],
 
     scenarios: [],
     runs: [],
@@ -361,6 +365,8 @@ export const useStudio = create<Studio>()(
     setAssets: (assets) => set({ assets }),
     addAsset: (a) => set((s) => ({ assets: [...s.assets, a], saveStatus: 'unsaved' })),
     deleteAsset: (id) => set((s) => ({ assets: s.assets.filter((a) => a.id !== id), saveStatus: 'unsaved' })),
+    upsertStylePreset: (p) => set((s) => ({ stylePresets: s.stylePresets.some((x) => x.id === p.id) ? s.stylePresets.map((x) => (x.id === p.id ? p : x)) : [...s.stylePresets, p], saveStatus: 'unsaved' })),
+    deleteStylePreset: (id) => set((s) => ({ stylePresets: s.stylePresets.filter((x) => x.id !== id), saveStatus: 'unsaved' })),
 
     setScenarios: (scenarios) => set({ scenarios }),
     upsertScenario: (sc) => set((s) => ({ scenarios: s.scenarios.some((x) => x.id === sc.id) ? s.scenarios.map((x) => (x.id === sc.id ? sc : x)) : [...s.scenarios, sc], saveStatus: 'unsaved' })),

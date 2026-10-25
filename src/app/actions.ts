@@ -17,6 +17,15 @@ export type StudioAction = {
 
 const registry = new Map<string, StudioAction>();
 const listeners = new Set<() => void>();
+const runListeners = new Set<(id: string) => void>();
+
+/** Observe action executions (used by the local, opt-in telemetry log). */
+export function onActionRun(fn: (id: string) => void): () => void {
+  runListeners.add(fn);
+  return () => {
+    runListeners.delete(fn);
+  };
+}
 
 export function registerActions(actions: StudioAction[]) {
   for (const a of actions) registry.set(a.id, a);
@@ -38,6 +47,7 @@ export function runAction(id: string) {
     return;
   }
   if (a.enabled && !a.enabled()) return;
+  runListeners.forEach((l) => l(id));
   void a.run();
 }
 

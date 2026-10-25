@@ -1,4 +1,4 @@
-import { Code2, Copy, Eye, EyeOff, Puzzle, Ruler, Sparkles, Type } from 'lucide-react';
+import { BookmarkPlus, Code2, Copy, Eye, EyeOff, Puzzle, Ruler, Sparkles, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { NodeId, Rect } from '@shared/types';
 import { IconButton } from '@/ui';
@@ -9,6 +9,7 @@ import { previews } from '@/modules/preview-runtime/registry';
 import { cancelPreview, isHidden, previewStyles, setStyles, toggleHidden } from '@/modules/change-manager/edit';
 import { planResize } from './resize';
 import { copyText, cssForInfo } from './clipboard';
+import { saveSelectionAsStyle } from '@/modules/style-inspector/presets';
 import s from './canvas.module.css';
 
 type ScreenRect = { left: number; top: number; width: number; height: number };
@@ -291,6 +292,9 @@ function ContextToolbar({ rect }: { rect: ScreenRect }) {
       </IconButton>
       <IconButton size="sm" label={hidden ? 'Show in preview' : 'Hide in preview'} active={hidden} onClick={() => toggleHidden(info)}>
         {hidden ? <EyeOff size={13} /> : <Eye size={13} />}
+      </IconButton>
+      <IconButton size="sm" label="Save as reusable style" onClick={() => saveSelectionAsStyle()}>
+        <BookmarkPlus size={13} />
       </IconButton>
       {info.component && (
         <IconButton size="sm" label="Component mapping" onClick={() => studio().setRightTab('component')}>

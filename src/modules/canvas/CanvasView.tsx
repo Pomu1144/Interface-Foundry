@@ -7,6 +7,7 @@ import { Artboard } from './Artboard';
 import { FoldDock } from './FoldDock';
 import { SelectionOverlay } from './SelectionOverlay';
 import { ZoomHud } from './ZoomHud';
+import { Rulers } from './Rulers';
 import { BreakpointBar } from './BreakpointBar';
 import { useCameraControls } from './useCamera';
 import s from './canvas.module.css';
@@ -43,6 +44,7 @@ export function CanvasView() {
   const responsiveSize = useStudio((st) => st.responsiveSize);
   const source = useStudio((st) => st.source);
   const tool = useStudio((st) => st.tool);
+  const showRulers = useStudio((st) => st.settings.showRulers);
 
   const device = useMemo(() => studio().device(), [viewport.deviceId, customDevices, responsiveSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -133,6 +135,7 @@ export function CanvasView() {
     <div
       ref={ref}
       className={s.canvas}
+      data-ifdy-canvas
       data-panning={panning ? 'true' : undefined}
       data-tool={tool}
       onPointerDown={handlers.onPointerDown}
@@ -159,6 +162,7 @@ export function CanvasView() {
           })}
       </div>
       <SelectionOverlay container={ref} />
+      {showRulers && source && <Rulers container={ref} />}
       <FoldDock />
       <ZoomHud />
     </div>

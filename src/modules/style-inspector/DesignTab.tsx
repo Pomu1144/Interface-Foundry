@@ -1,5 +1,7 @@
 import {
   AlignCenter,
+  BookmarkPlus,
+  Trash2,
   AlignJustify,
   AlignLeft,
   AlignRight,
@@ -18,10 +20,11 @@ import {
   WrapText,
 } from 'lucide-react';
 import { useRef } from 'react';
-import { Badge, Button, Grid, IconButton, Row, Section, Segmented, Slider } from '@/ui';
+import { Badge, Button, Grid, IconButton, Row, Section, Segmented, Slider, TextField } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { cancelPreview, isHidden, previewStyle, setAttribute, setStyle, setStyles, setText, toggleHidden } from '@/modules/change-manager/edit';
 import { StyleColor, StyleNumber, StyleSelect } from './fields';
+import { applyPreset, saveSelectionAsStyle } from './presets';
 import s from './inspector.module.css';
 
 export function EditScopeBar() {
@@ -137,6 +140,49 @@ const SHADOWS = [
   { label: 'Medium', value: '0 4px 12px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06)' },
   { label: 'Large', value: '0 18px 40px -12px rgba(15, 23, 42, 0.28), 0 6px 14px rgba(15, 23, 42, 0.08)' },
 ];
+
+function SavedStyles() {
+  const presets = useStudio((st) => st.stylePresets);
+  return (
+    <Section
+      title="Saved styles"
+      id="design-presets"
+      defaultOpen={presets.length > 0}
+      actions={
+        <IconButton size="sm" label="Save selection as a reusable style" onClick={() => saveSelectionAsStyle()}>
+          <BookmarkPlus size={13} />
+        </IconButton>
+      }
+    >
+      {presets.length === 0 ? (
+        <div className={s.muted}>Save an element's typography, colors, borders and effects as a reusable style, then apply it to any other element.</div>
+      ) : (
+        <div className={s.stack}>
+          {presets.map((p) => {
+            const get = (k: string) => p.declarations.find((d) => d.property === k)?.value;
+            return (
+              <div key={p.id} className={s.presetRow}>
+                <span
+                  className={s.presetSwatch}
+                  style={{ background: get('background-color') ?? 'transparent', color: get('color'), fontWeight: Number(get('font-weight')) || 500, borderRadius: get('border-radius'), boxShadow: get('box-shadow') }}
+                >
+                  Aa
+                </span>
+                <TextField className={s.presetName} value={p.name} onCommit={(name) => name && studio().upsertStylePreset({ ...p, name })} />
+                <Button size="sm" onClick={() => applyPreset(p)}>
+                  Apply
+                </Button>
+                <IconButton size="sm" label="Delete style" onClick={() => studio().deleteStylePreset(p.id)}>
+                  <Trash2 size={12} />
+                </IconButton>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Section>
+  );
+}
 
 export function DesignTab() {
   const info = useStudio((st) => st.selection.info)!;
@@ -390,6 +436,8 @@ export function DesignTab() {
           </div>
         )}
       </Section>
+
+      <SavedStyles />
 
       <Section title="Visibility" id="design-visibility">
         <div className={s.stack}>

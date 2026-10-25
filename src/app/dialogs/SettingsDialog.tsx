@@ -4,6 +4,8 @@ import { Badge, Button, Dialog, NumberField, Segmented, Switch } from '@/ui';
 import { studio, useStudio } from '@/store';
 import { art } from '@/app/art';
 import { clearAllData } from '@/modules/project-storage/storage';
+import { isolationReport } from '@/modules/security/isolation';
+import { telemetryEvents } from '@/modules/telemetry-adapter';
 import s from './dialogs.module.css';
 
 export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -45,8 +47,26 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         <Row title="Mask all typed input while recording" desc="Password, card and other sensitive fields are always masked; this masks everything.">
           <Switch ariaLabel="Mask inputs" checked={settings.maskAllInputs} onChange={(maskAllInputs) => set({ maskAllInputs })} />
         </Row>
-        <Row title="Telemetry" desc="IFDY sends no telemetry. This switch only enables a local event log.">
-          <Switch ariaLabel="Telemetry" checked={settings.telemetry} onChange={(telemetry) => set({ telemetry })} />
+        <Row title="Local event log" desc={`IFDY sends no telemetry. This switch keeps an in-memory log of actions you can download (${telemetryEvents().length} events).`}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {settings.telemetry && telemetryEvents().length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(telemetryEvents(), null, 2)], { type: 'application/json' });
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'ifdy-event-log.json';
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}
+              >
+                Download
+              </Button>
+            )}
+            <Switch ariaLabel="Local event log" checked={settings.telemetry} onChange={(telemetry) => set({ telemetry })} />
+          </div>
         </Row>
         <Row title="Local data" desc="Projects, edits, screenshots and recordings are stored in this browser (IndexedDB) only.">
           <Button
@@ -62,6 +82,13 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             Clear all data
           </Button>
         </Row>
+
+        <div className={s.sectionTitle}>Preview security</div>
+        {isolationReport().map((c) => (
+          <Row key={c.id} title={c.label} desc={c.detail}>
+            {c.ok === null ? <Badge tone="outline">Unknown</Badge> : c.ok ? <Badge tone="success">OK</Badge> : <Badge tone="warning">Check</Badge>}
+          </Row>
+        ))}
 
         <div className={s.sectionTitle}>Preview instrumentation</div>
         <Row title="Instrument event listeners" desc="Wraps addEventListener inside the preview (reloads it) so the Events tab can list every listener. Off by default.">
