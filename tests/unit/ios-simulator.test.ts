@@ -383,6 +383,8 @@ describe('iOS Simulator status', () => {
     expect(info.detail).toMatch(/not yet verified on real hardware/i);
     await pool.status();
     expect(simctlCalls(calls, 'list')).toHaveLength(1);
+    // One category at most: extra words would be read as a search filter, so ask for everything.
+    expect(simctlCalls(calls, 'list')[0]).toEqual(['list', '-j']);
 
     const noDriver = new SimulatorPool(makeDeps({ exec, fileExists: async () => false }), { hookProcessExit: false });
     expect(engineInfo(await noDriver.status()).features).toMatchObject({ inspect: false, input: false });

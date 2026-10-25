@@ -62,7 +62,9 @@ export function parseInventory(json: string): SimInventory {
 }
 
 export async function listInventory(deps: IosDeps): Promise<SimInventory> {
-  const { stdout } = await simctl(deps, ['list', '-j', 'devices', 'runtimes', 'devicetypes']);
+  // `simctl list` takes at most one category (anything after it is a search filter), so ask
+  // for the full inventory: devices, runtimes and device types in one JSON document.
+  const { stdout } = await simctl(deps, ['list', '-j']);
   return parseInventory(stdout);
 }
 

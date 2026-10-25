@@ -98,6 +98,8 @@ export function RemoteFrame({
   const [phase, setPhaseState] = useState<Phase>('connecting');
   const [hasFrame, setHasFrame] = useState(false);
   const [visual, setVisual] = useState<VisualViewport | null>(null);
+  /** Frames larger than the board (iOS Simulator full-screen fallback): shown scaled to fit. */
+  const [oversize, setOversize] = useState<{ width: number; height: number } | null>(null);
   const [imePos, setImePos] = useState({ x: 0, y: 0 });
   // iOS Simulator: the page may be view-only (mirrored without idb) and its viewport is the simulator's own.
   const engineNoInput = useStudio((st) => engine !== 'chromium' && st.server.engines?.find((e) => e.id === engine)?.features.input === false);
@@ -437,8 +439,12 @@ export function RemoteFrame({
           // Backing store at the image's own density; the frame is drawn at its natural CSS size so a
           // stale frame during a resize is never stretched.
           const k = bmp.width / Math.max(1, header.width);
-          const bw = Math.max(1, Math.round(L.width * k));
-          const bh = Math.max(1, Math.round(L.height * k));
+          // A frame bigger than the board (e.g. a whole simulator screen with Safari's UI) is
+          // kept whole and scaled to fit instead of being cropped by the board.
+          const over = header.width > L.width + 2 || header.height > L.height + 2;
+          setOversize((o) => (over ? (o && o.width === header.width && o.height === header.height ? o : { width: header.width, height: header.height }) : null));
+          const bw = Math.max(1, Math.round((over ? header.width : L.width) * k));
+          const bh = Math.max(1, Math.round((over ? header.height : L.height) * k));
           if (c.width !== bw || c.height !== bh) {
             c.width = bw;
             c.height = bh;
@@ -467,9 +473,11 @@ export function RemoteFrame({
   const moveRaf = useRef<{ raf: number; ev: RemoteInput | null }>({ raf: 0, ev: null }).current;
   const composing = useRef(false);
 
-  const scaled = visual && Math.abs(visual.scale - 1) > 0.01 && visual.scale > 0 ? visual.scale : 1;
-  const cssW = width / scaled;
-  const cssH = height / scaled;
+  const fit = oversize ? Math.min(width / oversize.width, height / oversize.height) : 1;
+  const scaled = oversize ? fit : visual && Math.abs(visual.scale - 1) > 0.01 && visual.scale > 0 ? visual.scale : 1;
+  const cssW = oversize ? oversize.width : width / scaled;
+  const cssH = oversize ? oversize.height : height / scaled;
+  const fitOffset = oversize ? Math.max(0, (width - oversize.width * fit) / 2) : 0;
 
   const opened = () => L.openedGen === browserSocket.generation && Boolean(L.pageId);
   const send = (event: RemoteInput) => {
@@ -618,7 +626,7 @@ export function RemoteFrame({
         style={{
           width: cssW,
           height: cssH,
-          transform: scaled !== 1 ? `scale(${scaled})` : undefined,
+          transform: scaled !== 1 ? `${fitOffset ? `translateX(${fitOffset}px) ` : ''}scale(${scaled})` : undefined,
           pointerEvents: interactive && !viewOnly ? 'auto' : 'none',
         }}
         onPointerDown={onPointerDown}
