@@ -40,7 +40,8 @@ export function loadConfig(opts: { dev: boolean; studioPort: number }): IfdyServ
     chromiumPath: env.IFDY_CHROMIUM_PATH || undefined,
     ai: {
       anthropicKey: env.ANTHROPIC_API_KEY || undefined,
-      model: env.IFDY_AI_MODEL || 'claude-opus-5-5',
+      // No built-in default: the hosted provider runs only once a model id is configured.
+      model: env.IFDY_AI_MODEL || '',
       localUrl: env.IFDY_LOCAL_AI_URL || undefined,
       localModel: env.IFDY_LOCAL_AI_MODEL || undefined,
     },
